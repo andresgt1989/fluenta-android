@@ -1,0 +1,56 @@
+package com.alturya.fluenta.ui.login
+
+import android.content.Context
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.alturya.fluenta.data.TokenStore
+import com.alturya.fluenta.network.ApiClient
+import com.alturya.fluenta.network.OtpRequestBody
+import com.alturya.fluenta.network.OtpVerifyBody
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+sealed class LoginState {
+    object Idle : LoginState()
+    object Loading : LoginState()
+    object OtpSent : LoginState()
+    object Success : LoginState()
+    data class Error(val message: String) : LoginState()
+}
+
+class LoginViewModel : ViewModel() {
+
+    private val _state = MutableStateFlow<LoginState>(LoginState.Idle)
+    val state = _state.asStateFlow()
+
+    fun requestOtp(phone: String) {
+        viewModelScope.launch {
+            _state.value = LoginState.Loading
+            try {
+                ApiClient.api.requestOtp(OtpRequestBody(phone))
+                _state.value = LoginState.OtpSent
+            } catch (e: Exception) {
+                _state.value = LoginState.Error("No se pudo enviar el código")
+            }
+        }
+    }
+
+    fun verifyOtp(context: Context, phone: String, code: String) {
+        viewModelScope.launch {
+            _state.value = LoginState.Loading
+            try {
+                val res = ApiClient.api.verifyOtp(OtpVerifyBody(phone, code))
+                if (res.token != null) {
+                    TokenStore.save(context, res.token, phone)
+                    ApiClient.setToken(res.token)
+                    _state.value = LoginState.Success
+                } else {
+                    _state.value = LoginState.Error("Código incorrecto")
+                }
+            } catch (e: Exception) {
+                _state.value = LoginState.Error("Código incorrecto")
+            }
+        }
+    }
+}
