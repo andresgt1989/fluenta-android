@@ -130,6 +130,9 @@ data class DiagnosticStartResponse(
     val progress: DiagnosticProgress
 )
 data class DiagnosticAnswerBody(val sessionId: String, val answerIndex: Int)
+data class MatchPair(val l2: String, val l1: String)
+data class MatchResponse(val pairs: List<MatchPair>, val cached: Boolean?, val message: String?)
+
 data class DiagnosticAnswerResponse(
     val done: Boolean,
     val lastCorrect: Boolean,

@@ -38,6 +38,9 @@ interface ApiService {
     @GET("api/pronunciation/drill")
     suspend fun getDrill(@Query("phoneme") phoneme: String? = null): DrillResponse
 
+    @GET("api/exercises/match")
+    suspend fun getMatchExercise(): MatchResponse
+
     @POST("api/diagnostic/start")
     suspend fun diagnosticStart(): DiagnosticStartResponse
 

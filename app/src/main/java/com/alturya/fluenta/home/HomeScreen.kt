@@ -17,7 +17,7 @@ import com.alturya.fluenta.util.levelLabel
 import com.alturya.fluenta.util.levelSystemName
 
 @Composable
-fun HomeScreen(onSeeMap: () -> Unit = {}, onPronunciation: () -> Unit = {}) {
+fun HomeScreen(onSeeMap: () -> Unit = {}, onPronunciation: () -> Unit = {}, onPlayMatch: () -> Unit = {}) {
     val context = LocalContext.current
     val vm: HomeViewModel = viewModel()
     val state by vm.state.collectAsState()
@@ -100,6 +100,11 @@ fun HomeScreen(onSeeMap: () -> Unit = {}, onPronunciation: () -> Unit = {}) {
             onClick = onPronunciation,
             modifier = Modifier.fillMaxWidth()
         ) { Text("Practicar pronunciación 🔊") }
+
+        OutlinedButton(
+            onClick = onPlayMatch,
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("Juego: emparejar vocabulario 🎮") }
 
         OutlinedButton(
             onClick = onSeeMap,
