@@ -1,11 +1,18 @@
 package com.alturya.fluenta.network
 
+import okhttp3.ResponseBody
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Query
+import retrofit2.http.Streaming
 
 interface ApiService {
+
+    @Streaming
+    @GET("api/tts")
+    suspend fun getTts(@Query("text") text: String): Response<ResponseBody>
 
     @POST("api/auth/phone-request")
     suspend fun requestOtp(@Body body: OtpRequestBody): OtpRequestResponse

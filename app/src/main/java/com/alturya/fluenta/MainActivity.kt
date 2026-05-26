@@ -23,6 +23,7 @@ import com.alturya.fluenta.login.LoginScreen
 import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.profile.ProfileScreen
 import com.alturya.fluenta.progress.ProgressScreen
+import com.alturya.fluenta.pronunciation.PronunciationScreen
 import com.alturya.fluenta.ui.theme.FluentaTheme
 
 class MainActivity : ComponentActivity() {
@@ -98,9 +99,13 @@ private fun MainScaffold(onLogout: () -> Unit) {
             modifier = Modifier.padding(pad)
         ) {
             composable("home") {
-                HomeScreen(onSeeMap = { nav.navigate("map") { launchSingleTop = true } })
+                HomeScreen(
+                    onSeeMap = { nav.navigate("map") { launchSingleTop = true } },
+                    onPronunciation = { nav.navigate("pronunciation") { launchSingleTop = true } }
+                )
             }
             composable("map") { CurriculumMapScreen() }
+            composable("pronunciation") { PronunciationScreen() }
             composable("progress") { ProgressScreen() }
             composable("profile") {
                 ProfileScreen(

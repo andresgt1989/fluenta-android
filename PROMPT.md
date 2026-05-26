@@ -50,3 +50,55 @@ Por crear cuando la capa lo requiera: `/api/tts` (audio fonética, envuelve `gen
 
 ## Estado de pantallas (MVP ya construido)
 Login OTP ✅, bottom-nav (Inicio/Mapa/Progreso/Perfil) ✅, Home (nivel+stats+siguiente lección+handoff WhatsApp) ✅, Mapa de currículo ✅, Progreso (radar de 4 subhabilidades + tablero SRS) ✅, Perfil (plan+Stripe+cambiar idioma+logout) ✅, Selector de 113 idiomas ✅.
+
+═══════════════════════════════════════════════════════════════════════
+ANÁLISIS DE ARQUITECTO — CAMINO A LÍDER #1 (enfoque coach-companion, océano azul)
+═══════════════════════════════════════════════════════════════════════
+
+PRINCIPIO QUE REORDENA TODO: el diferenciador NO vive en el app. Vive en WhatsApp
+(voz + memoria + continuidad emocional diaria). El app es la capa que VISUALIZA la
+relación (timeline de memoria, progreso, pronunciación). Ganar a ELSA/Speak/Duolingo
+se hace en el loop de WhatsApp; el app profundiza, no reemplaza.
+
+LÍNEA ÉTICA Y DE NEGOCIO (no cruzar): coach/compañero de aprendizaje, NO pareja
+emocional romántica. Razón: políticas de Play/App Store y Meta WhatsApp, riesgo
+regulatorio (UE), y dependencia malsana = churn + problemas legales. La calidez
+(recuerda nombre/metas, celebra, reengancha sin regaño) se logra igual y engancha sano.
+
+ESTADO REAL (verificado en código, mayo 2026):
+- Voz (Whisper in + ElevenLabs out + audio WhatsApp): ✅ real
+- Memoria almacenada (SRS errores, racha, meta, nivel, sesiones): ✅ rica
+- Memoria INYECTADA al tutor en vivo: 🟡 el prompt acepta topErrors pero en varios
+  flujos (lesson-freechat, ctx default) llega VACÍO → la IA "olvida". Fuga clave.
+- Pronunciación: 🟡 phoneme_errors por juicio del LLM (th, v/b, schwa, vocales…);
+  🔴 NO scoring acústico real (sin forced-alignment). Brecha vs ELSA.
+- Proactivo: ✅ workers daily-lesson, streak-alert, weekly-report, error-review
+- Motor emocional: 🔴 solo campo affectiveState='low' que nadie calcula
+- Personalidad/continuidad de coach: 🔴 no diseñada
+
+CAMINO CRÍTICO (orden de prioridad):
+- P0  Verificar que el app compila y corre con todas las capas (regla #1). Sin esto
+      no se puede decir "listo".
+- P1  Cerrar la fuga de memoria: inyectar SIEMPRE en el tutor → nombre, meta,
+      topErrors (SRS due), nivel, racha, progreso reciente. Es plumbing backend, alto
+      impacto: es lo que hace que el companion SE SIENTA que te conoce.
+- P2  Capa de continuidad emocional (datos reales, no inventados):
+      • endpoint /api/user/coach-message → línea diaria personalizada desde memoria
+        (app Home + puede alimentar WhatsApp). Cachear 1×/día (LLM cuesta/tarda).
+      • computar affectiveState desde señales reales (longitud de respuesta, tendencia
+        de errores, días inactivo, sentimiento) en vez de estático.
+      • tono adaptativo: reenganche / celebración / paciencia según affectiveState+racha.
+- P3  Pronunciación profunda (wedge ELSA): empezar con micro-drills por fonema fallado
+      (datos ya existen) + pantalla de pronunciación con audio lento/rápido + grabación.
+      Scoring acústico real (forced-alignment / API especializada) = inversión posterior.
+- P4  Continuidad en el app: timeline de memoria ("hace 3 meses querías chino para
+      negocios"), progreso en el tiempo, milestones, personalidad consistente.
+- P5  Hábito/engagement: check-ins proactivos (workers ya existen), streak/freeze
+      visible, misiones diarias adaptativas.
+- P6  Océano azul (después): traducción consciente de registro (casual/formal/slang),
+      multimodal (foto/menú/PDF), comunidad/matching, ecosistema de profesores.
+
+WEDGE PARA ARRANCAR: P1 (wire memoria) + P2 (coach-message + affectiveState real).
+Eso convierte el producto de "app de idiomas" a "compañero que te conoce" — con datos
+que YA existen. El motor emocional avanzado (detección por voz/texto, calibración de
+tono) se diseña con la investigación técnica pendiente.

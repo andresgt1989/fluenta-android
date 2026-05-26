@@ -17,7 +17,7 @@ import com.alturya.fluenta.util.levelLabel
 import com.alturya.fluenta.util.levelSystemName
 
 @Composable
-fun HomeScreen(onSeeMap: () -> Unit = {}) {
+fun HomeScreen(onSeeMap: () -> Unit = {}, onPronunciation: () -> Unit = {}) {
     val context = LocalContext.current
     val vm: HomeViewModel = viewModel()
     val state by vm.state.collectAsState()
@@ -73,6 +73,11 @@ fun HomeScreen(onSeeMap: () -> Unit = {}) {
             },
             modifier = Modifier.fillMaxWidth()
         ) { Text("Practicar en WhatsApp") }
+
+        OutlinedButton(
+            onClick = onPronunciation,
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("Practicar pronunciación 🔊") }
 
         OutlinedButton(
             onClick = onSeeMap,
