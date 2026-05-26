@@ -40,6 +40,22 @@ fun HomeScreen(onSeeMap: () -> Unit = {}, onPronunciation: () -> Unit = {}) {
             )
         }
 
+        state.coachMessage?.let { msg ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary)
+            ) {
+                Row(Modifier.padding(16.dp)) {
+                    Text("🎓 ", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        msg,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSecondary
+                    )
+                }
+            }
+        }
+
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             MiniStat("🔥", "${state.progress?.streakDays ?: 0}", "Racha", Modifier.weight(1f))
             MiniStat("⭐", "${state.progress?.totalXp ?: 0}", "XP", Modifier.weight(1f))

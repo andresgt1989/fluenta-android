@@ -14,7 +14,8 @@ data class HomeState(
     val loading: Boolean = true,
     val profile: UserProfile? = null,
     val progress: UserProgress? = null,
-    val nextLesson: NextLesson? = null
+    val nextLesson: NextLesson? = null,
+    val coachMessage: String? = null
 )
 
 class HomeViewModel : ViewModel() {
@@ -30,7 +31,8 @@ class HomeViewModel : ViewModel() {
             val profile = try { ApiClient.api.getProfile() } catch (_: Exception) { null }
             val progress = try { ApiClient.api.getProgress() } catch (_: Exception) { null }
             val next = try { ApiClient.api.getNextLesson().next } catch (_: Exception) { null }
-            _state.value = HomeState(loading = false, profile = profile, progress = progress, nextLesson = next)
+            val coach = try { ApiClient.api.getCoachMessage().message } catch (_: Exception) { null }
+            _state.value = HomeState(loading = false, profile = profile, progress = progress, nextLesson = next, coachMessage = coach)
         }
     }
 }
