@@ -1,4 +1,4 @@
-package com.alturya.fluenta.ui.login
+package com.alturya.fluenta.login
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions

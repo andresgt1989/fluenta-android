@@ -4,13 +4,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.alturya.fluenta.data.TokenStore
+import com.alturya.fluenta.home.HomeScreen
+import com.alturya.fluenta.login.LoginScreen
+import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.ui.theme.FluentaTheme
 
 class MainActivity : ComponentActivity() {
@@ -19,29 +21,29 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             FluentaTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                val context = LocalContext.current
+                val navController = rememberNavController()
+                val token by TokenStore.getToken(context).collectAsState(initial = null)
+
+                LaunchedEffect(token) {
+                    token?.let { ApiClient.setToken(it) }
+                }
+
+                val start = if (token != null) "home" else "login"
+
+                NavHost(navController = navController, startDestination = start) {
+                    composable("login") {
+                        LoginScreen(onSuccess = {
+                            navController.navigate("home") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        })
+                    }
+                    composable("home") {
+                        HomeScreen()
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    FluentaTheme {
-        Greeting("Android")
     }
 }

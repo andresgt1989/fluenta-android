@@ -1,8 +1,5 @@
 package com.alturya.fluenta.network
 
-package com.alturya.fluenta.network
-
-import com.alturya.fluenta.BuildConfig
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -10,6 +7,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object ApiClient {
+
+    private const val BASE_URL = "https://fluenta.alturya.com/"
 
     private var token: String? = null
 
@@ -30,7 +29,7 @@ object ApiClient {
         .build()
 
     val api: ApiService = Retrofit.Builder()
-        .baseUrl(BuildConfig.BASE_URL + "/")
+        .baseUrl(BASE_URL)
         .client(client)
         .addConverterFactory(GsonConverterFactory.create())
         .build()

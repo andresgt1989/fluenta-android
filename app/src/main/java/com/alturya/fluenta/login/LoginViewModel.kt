@@ -1,4 +1,4 @@
-package com.alturya.fluenta.ui.login
+package com.alturya.fluenta.login
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
