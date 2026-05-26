@@ -17,6 +17,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.alturya.fluenta.curriculum.CurriculumMapScreen
 import com.alturya.fluenta.data.TokenStore
+import com.alturya.fluenta.diagnostic.DiagnosticScreen
 import com.alturya.fluenta.home.HomeScreen
 import com.alturya.fluenta.languages.LanguageSelectorScreen
 import com.alturya.fluenta.login.LoginScreen
@@ -110,11 +111,15 @@ private fun MainScaffold(onLogout: () -> Unit) {
             composable("profile") {
                 ProfileScreen(
                     onChangeLanguage = { nav.navigate("languages") },
-                    onLogout = onLogout
+                    onLogout = onLogout,
+                    onDiagnostic = { nav.navigate("diagnostic") }
                 )
             }
             composable("languages") {
                 LanguageSelectorScreen(onChanged = { nav.popBackStack() })
+            }
+            composable("diagnostic") {
+                DiagnosticScreen(onDone = { nav.popBackStack() })
             }
         }
     }

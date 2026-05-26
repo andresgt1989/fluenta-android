@@ -19,7 +19,8 @@ import com.alturya.fluenta.util.levelSystemName
 @Composable
 fun ProfileScreen(
     onChangeLanguage: () -> Unit = {},
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    onDiagnostic: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val vm: ProfileViewModel = viewModel()
@@ -77,6 +78,11 @@ fun ProfileScreen(
         }
 
         Divider(Modifier.padding(vertical = 8.dp))
+
+        OutlinedButton(
+            onClick = onDiagnostic,
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("🎯  Realiza tu test de nivel") }
 
         OutlinedButton(
             onClick = onChangeLanguage,

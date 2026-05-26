@@ -122,6 +122,25 @@ data class PhonemeDrill(
 
 data class DrillResponse(val source: String?, val drill: PhonemeDrill?)
 
+data class DiagnosticQuestion(val level: String?, val prompt: String, val options: List<String>)
+data class DiagnosticProgress(val current: Int, val total: Int)
+data class DiagnosticStartResponse(
+    val sessionId: String,
+    val question: DiagnosticQuestion,
+    val progress: DiagnosticProgress
+)
+data class DiagnosticAnswerBody(val sessionId: String, val answerIndex: Int)
+data class DiagnosticAnswerResponse(
+    val done: Boolean,
+    val lastCorrect: Boolean,
+    val question: DiagnosticQuestion?,
+    val progress: DiagnosticProgress?,
+    val level: String?,
+    val confidence: Double?,
+    val correctCount: Int?,
+    val total: Int?
+)
+
 data class StripeUrlResponse(val url: String?)
 data class SelectLanguageBody(val l2: String)
 data class SelectLanguageResponse(val ok: Boolean, val l1: String?, val l2: String?, val levelSystem: String?)
