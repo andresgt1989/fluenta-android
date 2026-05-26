@@ -1,7 +1,5 @@
 package com.alturya.fluenta.network
 
-package com.alturya.fluenta.network
-
 data class OtpRequestBody(val phone: String)
 data class OtpVerifyBody(val phone: String, val code: String)
 data class OtpRequestResponse(val ok: Boolean, val message: String?)
