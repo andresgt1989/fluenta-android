@@ -102,3 +102,24 @@ WEDGE PARA ARRANCAR: P1 (wire memoria) + P2 (coach-message + affectiveState real
 Eso convierte el producto de "app de idiomas" a "compañero que te conoce" — con datos
 que YA existen. El motor emocional avanzado (detección por voz/texto, calibración de
 tono) se diseña con la investigación técnica pendiente.
+
+═══════════════════════════════════════════════════════════════════════
+ESTRATEGIA DE MERCADO (informe externo, 26-may-2026 — convergente con lo anterior)
+═══════════════════════════════════════════════════════════════════════
+POSICIÓN: NO competir de frente con Duolingo ($1B+ rev) en gamificación. FLANQUEAR:
+crear categoría nueva "el profesor de inglés que vive en tu WhatsApp". Competir contra
+la FRICCIÓN de bajar otra app y la VERGÜENZA de hablar con humanos. La categoría
+"WhatsApp-native AI tutor" no tiene rey (ningún jugador >$5M raised). Ventana 18-24 meses.
+FOCO MVP: SOLO ES→EN (único par con currículo sembrado). Congelar los otros 112 hasta
+tracción (mantener selector como "próximamente"). Sembrar PT→EN cuando ES→EN funcione.
+MERCADOS (orden): México (#1, EF EPI rank 103 Very Low), Colombia (#2, 25h45/mes WhatsApp),
+Brasil (PT→EN, sembrar antes), Ecuador (beta del fundador). Pago en moneda local (Stripe LIVE
+MXN/COP/BRL/USD). Precio piso ~$5-9/mes; trial 7d sin tarjeta.
+FOSO (4 juntos = defendible, ninguno solo): WhatsApp-native + voz bidireccional + perfil
+de errores SRS (FSRS) + roleplays B2 ocupacionales (entrevistas TI, call center, ventas,
+pedir aumento, daily standup, email cliente). Data de errores de hispanohablantes = flywheel.
+RIESGOS: Meta cambia precios/términos WhatsApp (mitigar: app como fallback, multi-canal);
+costo IA (LLM+TTS+STT) → cachear TTS agresivo (ya hecho en /api/tts), modelos baratos para
+chit-chat. Unit economics: cost/lesson <$0.50, LTV/CAC >3:1.
+MÉTRICAS MVP "listo": 20 beta completan onboarding, D7 ≥35%, latencia voz round-trip <8s,
+1 conversión a pago. Bloqueador externo: Business Verification de Meta + templates approved.
