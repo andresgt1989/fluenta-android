@@ -41,6 +41,9 @@ interface ApiService {
     @GET("api/exercises/match")
     suspend fun getMatchExercise(): MatchResponse
 
+    @POST("api/feedback")
+    suspend fun sendFeedback(@Body body: FeedbackBody)
+
     @POST("api/diagnostic/start")
     suspend fun diagnosticStart(): DiagnosticStartResponse
 

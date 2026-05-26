@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alturya.fluenta.ui.FeedbackBar
 
 @Composable
 fun MatchScreen(onDone: () -> Unit = {}) {
@@ -130,6 +131,8 @@ private fun WinPanel(attempts: Int, total: Int, onAgain: () -> Unit, onDone: () 
         Button(onClick = onAgain, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text("Jugar de nuevo") }
         Spacer(Modifier.height(12.dp))
         OutlinedButton(onClick = onDone, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text("Listo") }
+        Spacer(Modifier.height(20.dp))
+        FeedbackBar(surface = "match")
     }
 }
 

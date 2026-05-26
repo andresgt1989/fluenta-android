@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alturya.fluenta.network.DiagnosticQuestion
+import com.alturya.fluenta.ui.FeedbackBar
 import com.alturya.fluenta.util.levelLabel
 import com.alturya.fluenta.util.levelSystemName
 
@@ -224,6 +225,8 @@ private fun ResultPanel(s: DiagnosticUiState.Result, onDone: () -> Unit) {
         Button(onClick = onDone, modifier = Modifier.fillMaxWidth().height(56.dp)) {
             Text("Continuar", style = MaterialTheme.typography.titleMedium)
         }
+        Spacer(Modifier.height(20.dp))
+        FeedbackBar(surface = "diagnostic")
     }
 }
 
