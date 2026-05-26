@@ -19,15 +19,24 @@ interface ApiService {
     @GET("api/user/progress")
     suspend fun getProgress(): UserProgress
 
+    @GET("api/user/errors")
+    suspend fun getErrors(): ErrorsResponse
+
     @GET("api/curriculum/map")
     suspend fun getCurriculumMap(): CurriculumMapResponse
+
+    @GET("api/languages")
+    suspend fun getLanguages(): LanguagesResponse
+
+    @POST("api/languages/select")
+    suspend fun selectLanguage(@Body body: SelectLanguageBody): SelectLanguageResponse
+
+    @GET("api/lessons/next")
+    suspend fun getNextLesson(): NextLessonResponse
 
     @GET("api/stripe/portal")
     suspend fun getPortalUrl(): StripeUrlResponse
 
     @GET("api/stripe/checkout")
     suspend fun getCheckoutUrl(@Query("plan") plan: String): StripeUrlResponse
-
-    @POST("api/languages/select")
-    suspend fun selectLanguage(@Body body: SelectLanguageBody): SelectLanguageResponse
 }

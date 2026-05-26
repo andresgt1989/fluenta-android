@@ -1,8 +1,10 @@
 package com.alturya.fluenta.network
 
+import com.google.gson.annotations.SerializedName
+
 data class OtpRequestBody(val phone: String)
 data class OtpVerifyBody(val phone: String, val code: String)
-data class OtpRequestResponse(val ok: Boolean, val message: String?)
+data class OtpRequestResponse(val ok: Boolean, val delivered: Boolean?, val message: String?)
 data class OtpVerifyResponse(val ok: Boolean, val token: String?, val isNewUser: Boolean?)
 
 data class UserProfile(
@@ -11,6 +13,8 @@ data class UserProfile(
     val l1: String?,
     val l2: String?,
     val level: String?,
+    val levelSystem: String?,
+    val goalTrack: String?,
     val plan: String?,
     val streakDays: Int?,
     val totalXp: Int?,
@@ -23,7 +27,8 @@ data class UserProgress(
     val completedLessons: Int,
     val l1: String?,
     val l2: String?,
-    val level: String?
+    val level: String?,
+    val levelSystem: String?
 )
 
 data class Lesson(
@@ -48,6 +53,37 @@ data class CurriculumMapResponse(
     val l2: String?
 )
 
+data class LanguagePair(
+    val l1: String,
+    val l2: String,
+    val tier: String?,
+    val levelSystem: String?,
+    val script: String?,
+    val curriculumSeeded: Boolean?,
+    val notes: String?
+)
+
+data class LanguagesResponse(val pairs: List<LanguagePair>)
+
+data class ErrorItem(
+    @SerializedName("error_category") val errorCategory: String?,
+    val original: String?,
+    val corrected: String?,
+    val frequency: Int?
+)
+
+data class ErrorsResponse(val errors: List<ErrorItem>)
+
+data class NextLesson(
+    val id: String?,
+    @SerializedName("lesson_number") val lessonNumber: Int?,
+    val title: String?,
+    @SerializedName("lesson_type") val lessonType: String?,
+    @SerializedName("unit_title") val unitTitle: String?
+)
+
+data class NextLessonResponse(val next: NextLesson?, val message: String?)
+
 data class StripeUrlResponse(val url: String?)
 data class SelectLanguageBody(val l2: String)
-data class SelectLanguageResponse(val ok: Boolean, val l1: String?, val l2: String?)
+data class SelectLanguageResponse(val ok: Boolean, val l1: String?, val l2: String?, val levelSystem: String?)

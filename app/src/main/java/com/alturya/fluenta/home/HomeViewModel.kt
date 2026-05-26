@@ -1,40 +1,36 @@
 package com.alturya.fluenta.home
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.alturya.fluenta.data.TokenStore
 import com.alturya.fluenta.network.ApiClient
+import com.alturya.fluenta.network.NextLesson
+import com.alturya.fluenta.network.UserProfile
 import com.alturya.fluenta.network.UserProgress
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+data class HomeState(
+    val loading: Boolean = true,
+    val profile: UserProfile? = null,
+    val progress: UserProgress? = null,
+    val nextLesson: NextLesson? = null
+)
+
 class HomeViewModel : ViewModel() {
 
-    private val _progress = MutableStateFlow<UserProgress?>(null)
-    val progress = _progress.asStateFlow()
-
-    private val _loading = MutableStateFlow(true)
-    val loading = _loading.asStateFlow()
+    private val _state = MutableStateFlow(HomeState())
+    val state = _state.asStateFlow()
 
     init { load() }
 
     fun load() {
         viewModelScope.launch {
-            _loading.value = true
-            try {
-                _progress.value = ApiClient.api.getProgress()
-            } catch (_: Exception) {}
-            _loading.value = false
-        }
-    }
-
-    fun logout(context: Context, onDone: () -> Unit) {
-        viewModelScope.launch {
-            TokenStore.clear(context)
-            ApiClient.setToken(null)
-            onDone()
+            _state.value = HomeState(loading = true)
+            val profile = try { ApiClient.api.getProfile() } catch (_: Exception) { null }
+            val progress = try { ApiClient.api.getProgress() } catch (_: Exception) { null }
+            val next = try { ApiClient.api.getNextLesson().next } catch (_: Exception) { null }
+            _state.value = HomeState(loading = false, profile = profile, progress = progress, nextLesson = next)
         }
     }
 }
