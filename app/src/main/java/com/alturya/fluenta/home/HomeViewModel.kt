@@ -1,7 +1,9 @@
 package com.alturya.fluenta.home
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.alturya.fluenta.data.TokenStore
 import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.network.UserProgress
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +27,14 @@ class HomeViewModel : ViewModel() {
                 _progress.value = ApiClient.api.getProgress()
             } catch (_: Exception) {}
             _loading.value = false
+        }
+    }
+
+    fun logout(context: Context, onDone: () -> Unit) {
+        viewModelScope.launch {
+            TokenStore.clear(context)
+            ApiClient.setToken(null)
+            onDone()
         }
     }
 }

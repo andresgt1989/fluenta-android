@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(onLogout: () -> Unit = {}) {
     val context = LocalContext.current
     val vm: HomeViewModel = viewModel()
     val progress by vm.progress.collectAsState()
@@ -63,6 +63,13 @@ fun HomeScreen() {
                 },
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Practicar en WhatsApp") }
+
+            Spacer(Modifier.height(12.dp))
+
+            TextButton(
+                onClick = { vm.logout(context, onLogout) },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Cerrar sesión") }
         }
     }
 }
