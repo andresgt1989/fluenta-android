@@ -112,6 +112,16 @@ data class CoachMessageResponse(
     val cached: Boolean?
 )
 
+data class PhonemeDrill(
+    val key: String,
+    val label: String,
+    val symbol: String,
+    @SerializedName("tip_es") val tipEs: String,
+    val phrases: List<String>
+)
+
+data class DrillResponse(val source: String?, val drill: PhonemeDrill?)
+
 data class StripeUrlResponse(val url: String?)
 data class SelectLanguageBody(val l2: String)
 data class SelectLanguageResponse(val ok: Boolean, val l1: String?, val l2: String?, val levelSystem: String?)

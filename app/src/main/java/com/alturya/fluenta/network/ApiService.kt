@@ -35,6 +35,9 @@ interface ApiService {
     @GET("api/user/coach-message")
     suspend fun getCoachMessage(): CoachMessageResponse
 
+    @GET("api/pronunciation/drill")
+    suspend fun getDrill(@Query("phoneme") phoneme: String? = null): DrillResponse
+
     @GET("api/curriculum/map")
     suspend fun getCurriculumMap(): CurriculumMapResponse
 

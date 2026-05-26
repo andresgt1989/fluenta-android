@@ -12,25 +12,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-private val SUGGESTED = listOf(
-    "Nice to meet you" to "Encantado de conocerte",
-    "Could you repeat that, please?" to "¿Podrías repetir, por favor?",
-    "I would like to schedule a meeting" to "Me gustaría agendar una reunión",
-    "Thank you for your help" to "Gracias por tu ayuda",
-    "I think the same way" to "Pienso de la misma forma"
-)
-
 @Composable
 fun PronunciationScreen() {
     val context = LocalContext.current
     val vm: PronunciationViewModel = viewModel()
     val state by vm.state.collectAsState()
-    var custom by remember { mutableStateOf("") }
     val snackbar = remember { SnackbarHostState() }
 
     LaunchedEffect(state.error) { state.error?.let { snackbar.showSnackbar(it) } }
 
     Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { pad ->
+        if (state.loading) {
+            Box(Modifier.fillMaxSize().padding(pad), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+            return@Scaffold
+        }
+
+        val drill = state.drill
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(pad),
             contentPadding = PaddingValues(20.dp),
@@ -38,47 +37,68 @@ fun PronunciationScreen() {
         ) {
             item {
                 Text("Pronunciación", style = MaterialTheme.typography.headlineMedium)
-                Text(
-                    "Escucha la pronunciación nativa. Escribe cualquier frase o usa las sugeridas.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                if (state.source == "top_error") {
+                    Text(
+                        "Trabajando tu fonema más débil",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
+
+            if (drill == null) {
+                item { Text("No hay ejercicio disponible.") }
+                return@LazyColumn
+            }
+
             item {
-                OutlinedTextField(
-                    value = custom,
-                    onValueChange = { custom = it },
-                    label = { Text("Escribe una frase para escuchar") },
-                    modifier = Modifier.fillMaxWidth(),
-                    trailingIcon = {
-                        IconButton(onClick = { vm.listen(context, custom) }) {
-                            if (state.playing == custom && custom.isNotBlank())
-                                CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                            else Text("▶")
+                Card(
+                    Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                ) {
+                    Column(Modifier.padding(20.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                drill.symbol,
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(drill.label, style = MaterialTheme.typography.titleMedium)
                         }
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            drill.tipEs,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
+                }
+            }
+
+            item {
+                Text(
+                    "Practica estas frases",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
-            item {
-                Text("Frases útiles", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
-            }
-            items(SUGGESTED) { (en, es) ->
-                PhraseCard(en, es, playing = state.playing == en) { vm.listen(context, en) }
+
+            items(drill.phrases) { phrase ->
+                PhraseCard(phrase, playing = state.playing == phrase) { vm.listen(context, phrase) }
             }
         }
     }
 }
 
 @Composable
-private fun PhraseCard(en: String, es: String, playing: Boolean, onPlay: () -> Unit) {
+private fun PhraseCard(phrase: String, playing: Boolean, onPlay: () -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(Modifier.weight(1f)) {
-                Text(en, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
-                Text(es, style = MaterialTheme.typography.bodySmall)
-            }
+            Text(phrase, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            Spacer(Modifier.width(12.dp))
             FilledIconButton(onClick = onPlay) {
                 if (playing) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                 else Text("▶")
