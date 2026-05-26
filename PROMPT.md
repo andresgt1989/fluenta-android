@@ -123,3 +123,85 @@ costo IA (LLM+TTS+STT) → cachear TTS agresivo (ya hecho en /api/tts), modelos 
 chit-chat. Unit economics: cost/lesson <$0.50, LTV/CAC >3:1.
 MÉTRICAS MVP "listo": 20 beta completan onboarding, D7 ≥35%, latencia voz round-trip <8s,
 1 conversión a pago. Bloqueador externo: Business Verification de Meta + templates approved.
+
+═══════════════════════════════════════════════════════════════════════
+ENDPOINTS BACKEND — SNAPSHOT VERIFICADO (2026-05-26, curl-tested)
+═══════════════════════════════════════════════════════════════════════
+
+AUTH (público)
+  POST /api/auth/phone-request  { phone }            → OTP por WhatsApp
+  POST /api/auth/phone-verify   { phone, code }       → { token, isNewUser }
+  POST /api/auth/logout                               (auth)
+
+USER (auth)
+  GET  /api/user/profile           → id, l1, l2, level, levelDemonstrated,
+                                     levelSystem, goalTrack, plan, streakDays,
+                                     streakFreezeAvailable, totalXp, currentState,
+                                     affectiveState
+  GET  /api/user/progress          → streakDays, totalXp, completedLessons,
+                                     l1, l2, level, levelSystem
+  GET  /api/user/errors            → tablero SRS real (id, error_type,
+                                     error_category, original, corrected,
+                                     priority, review_count, next_review_at,
+                                     mastered_at, first_seen_at) ordenado por
+                                     urgencia (FSRS)
+  GET  /api/user/skills            → radar 4 subhabilidades + wpm + taskSuccessRate
+  GET  /api/user/coach-message     → mensaje cálido en l1 desde memoria real +
+                                     affectiveState computado (cache 1×/día)
+  POST /api/user/streak-freeze/claim → consume escudo de racha
+
+CURRICULUM (auth)
+  GET  /api/curriculum/map         → unidades + lecciones para l1/l2 con
+                                     estado completed por lección
+  GET  /api/languages              → catálogo 113 pares (CEFR/HSK/JLPT)
+  POST /api/languages/select { l2 }→ cambia idioma activo
+
+LESSONS (auth)
+  GET  /api/lessons/next           → siguiente lección cronológica incompleta
+  GET  /api/lessons/recommended    → SELECCIÓN INTELIGENTE: elige tipo por
+                                     error top SRS (phoneme→pronunciation,
+                                     collocation→translation, fluency→free_chat,
+                                     etc.) y devuelve la primera lección de
+                                     ese tipo. Si no hay, fallback cronológico.
+
+DIAGNÓSTICO CAT (auth) — adaptativo A1→C1, 6 preguntas binary-search
+  POST /api/diagnostic/start                          → { sessionId, question }
+  POST /api/diagnostic/answer { sessionId, answerIndex }
+       → { question } o { done:true, level, confidence, correctCount }
+       Persiste levelDemonstrated en el perfil.
+
+PRONUNCIACIÓN (auth) — wedge ELSA, 10 fonemas curados
+  GET  /api/pronunciation/drill[?phoneme=key]
+       → fonema, IPA, tip en l1, 5 frases. Sin param → elige tu peor fonema.
+  GET  /api/pronunciation/drills                      → catálogo completo
+
+AUDIO (auth)
+  GET  /api/tts?text=...           → audio/mpeg via ElevenLabs, cache Redis
+                                     30d. BLOQUEADO en producción hasta poner
+                                     ELEVENLABS_API_KEY + ELEVENLABS_VOICE_ID
+                                     en /opt/alturya-incubator/.env
+
+STRIPE (auth)
+  GET  /api/stripe/portal          → URL del Customer Portal
+  GET  /api/stripe/checkout?plan=basic|pro → URL de checkout
+
+TEACHER WAITLIST
+  POST /api/teachers/apply (público) { name, email, teachesL1, teachesL2, ... }
+       → ok. Dedupe por email, cooldown 24h.
+  GET  /api/teachers/waitlist/stats (público) → total + por idioma
+  GET  /admin/teachers (basic auth admin) → lista completa
+
+WORKERS PROACTIVOS (WhatsApp)
+  daily-lesson  → lección diaria a la hora preferida, saludo adaptado al
+                  affectiveState + selección inteligente de lección por error top
+  streak-alert  → alerta cuando la racha está a punto de romperse
+  weekly-report → resumen del progreso semanal
+  error-review  → notificación de elementos SRS due
+  policy-check  → auditoría de cumplimiento de prompts Meta
+  refresh-metrics → refresca vistas materializadas de métricas
+  purge-old-audio → limpieza de audios temporales
+
+MOTOR AFECTIVO (services/affective.ts)
+  computeAffectiveState(user) → new / motivated / steady / returning / at_risk
+  Wireado en: tutor (roleplay) + 4 builders de lección (freechat, pronunciación,
+  listening, translation) + coach-message + daily-lesson worker.
