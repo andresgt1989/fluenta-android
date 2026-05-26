@@ -22,6 +22,9 @@ interface ApiService {
     @GET("api/user/errors")
     suspend fun getErrors(): ErrorsResponse
 
+    @GET("api/user/skills")
+    suspend fun getSkills(): SkillsResponse
+
     @GET("api/curriculum/map")
     suspend fun getCurriculumMap(): CurriculumMapResponse
 

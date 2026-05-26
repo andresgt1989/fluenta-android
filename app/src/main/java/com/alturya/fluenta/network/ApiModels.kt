@@ -66,13 +66,35 @@ data class LanguagePair(
 data class LanguagesResponse(val pairs: List<LanguagePair>)
 
 data class ErrorItem(
+    val id: String?,
+    @SerializedName("error_type") val errorType: String?,
     @SerializedName("error_category") val errorCategory: String?,
     val original: String?,
     val corrected: String?,
-    val frequency: Int?
+    val priority: String?,
+    @SerializedName("review_count") val reviewCount: Int?,
+    @SerializedName("next_review_at") val nextReviewAt: String?,
+    @SerializedName("mastered_at") val masteredAt: String?,
+    @SerializedName("first_seen_at") val firstSeenAt: String?
 )
 
 data class ErrorsResponse(val errors: List<ErrorItem>)
+
+data class Skill(
+    val key: String,
+    val label: String,
+    val score: Int?,
+    val open: Int,
+    val mastered: Int,
+    val total: Int
+)
+
+data class SkillsResponse(
+    val skills: List<Skill>,
+    val wpm: Int,
+    val taskSuccessRate: Int,
+    val totalOutputWords: Int
+)
 
 data class NextLesson(
     val id: String?,

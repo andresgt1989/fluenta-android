@@ -11,6 +11,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alturya.fluenta.network.ErrorItem
+import com.alturya.fluenta.util.levelLabel
+import com.alturya.fluenta.util.levelSystemName
 
 @Composable
 fun ProgressScreen() {
@@ -22,14 +24,27 @@ fun ProgressScreen() {
         return
     }
 
+    val p = state.profile
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        item { Text("Tu progreso", style = MaterialTheme.typography.headlineMedium) }
+
         item {
-            Text("Tu progreso", style = MaterialTheme.typography.headlineMedium)
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(20.dp)) {
+                    Text("Nivel actual", style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        "${levelLabel(p?.level, p?.levelSystem)} · ${levelSystemName(p?.levelSystem)}",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
+
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatCard("🔥", "${state.progress?.streakDays ?: 0}", "Racha", Modifier.weight(1f))
@@ -37,21 +52,52 @@ fun ProgressScreen() {
                 StatCard("✓", "${state.progress?.completedLessons ?: 0}", "Lecciones", Modifier.weight(1f))
             }
         }
+
+        // Subskills radar
         item {
+            Text("Tus habilidades", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 8.dp))
+        }
+        val hasSkillData = state.skills.any { (it.total) > 0 } || state.taskSuccessRate > 0
+        if (hasSkillData) {
+            item {
+                Card(Modifier.fillMaxWidth()) {
+                    Column {
+                        SkillsRadar(state.skills)
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            MiniMetric("${state.wpm}", "palabras/min")
+                            MiniMetric("${state.taskSuccessRate}%", "éxito tareas")
+                        }
+                    }
+                }
+            }
+        } else {
+            item {
+                Card(Modifier.fillMaxWidth()) {
+                    Text(
+                        "Tu radar de habilidades aparecerá aquí cuando completes lecciones. " +
+                            "Mide gramática, vocabulario, pronunciación y fluidez.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(20.dp)
+                    )
+                }
+            }
+        }
+
+        // SRS review board
+        item {
+            Text("Repaso (SRS)", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 12.dp))
             Text(
-                "Tablero de errores",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(top = 12.dp)
-            )
-            Text(
-                "Lo que más repasar — basado en tus conversaciones.",
+                "Errores a consolidar — repaso espaciado.",
                 style = MaterialTheme.typography.bodySmall
             )
         }
         if (state.errors.isEmpty()) {
             item {
                 Text(
-                    "Aún no hay errores registrados. ¡Sigue practicando!",
+                    "Aún no hay errores registrados. ¡Sigue practicando en WhatsApp!",
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp)
                 )
@@ -78,25 +124,46 @@ private fun StatCard(icon: String, value: String, label: String, modifier: Modif
 }
 
 @Composable
+private fun MiniMetric(value: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(label, style = MaterialTheme.typography.labelSmall)
+    }
+}
+
+@Composable
 private fun ErrorRow(err: ErrorItem) {
+    val mastered = err.masteredAt != null
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
-            err.errorCategory?.let {
-                Text(it.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                err.errorType?.let {
+                    AssistChip(onClick = {}, label = { Text(skillLabel(it)) })
+                    Spacer(Modifier.width(8.dp))
+                }
+                Spacer(Modifier.weight(1f))
+                if (mastered) {
+                    Text("Dominado ✓", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                } else {
+                    Text("Por repasar", style = MaterialTheme.typography.labelSmall)
+                }
             }
-            Spacer(Modifier.height(4.dp))
-            Row {
-                Text("❌ ", style = MaterialTheme.typography.bodyMedium)
-                Text(err.original ?: "", style = MaterialTheme.typography.bodyMedium)
-            }
-            Row {
-                Text("✅ ", style = MaterialTheme.typography.bodyMedium)
-                Text(err.corrected ?: "", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-            }
-            err.frequency?.let {
+            Spacer(Modifier.height(8.dp))
+            Row { Text("❌ "); Text(err.original ?: "", style = MaterialTheme.typography.bodyMedium) }
+            Row { Text("✅ "); Text(err.corrected ?: "", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium) }
+            val reviews = err.reviewCount ?: 0
+            if (reviews > 0) {
                 Spacer(Modifier.height(4.dp))
-                Text("Repetido $it ${if (it == 1) "vez" else "veces"}", style = MaterialTheme.typography.labelSmall)
+                Text("Repasado $reviews ${if (reviews == 1) "vez" else "veces"}", style = MaterialTheme.typography.labelSmall)
             }
         }
     }
+}
+
+private fun skillLabel(type: String): String = when (type) {
+    "grammar" -> "Gramática"
+    "vocab" -> "Vocabulario"
+    "pronunciation" -> "Pronunciación"
+    "fluency" -> "Fluidez"
+    else -> type
 }
