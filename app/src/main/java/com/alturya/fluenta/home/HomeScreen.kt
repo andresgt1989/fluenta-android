@@ -45,13 +45,19 @@ fun HomeScreen(onSeeMap: () -> Unit = {}, onPronunciation: () -> Unit = {}) {
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary)
             ) {
-                Row(Modifier.padding(16.dp)) {
-                    Text("🎓 ", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        msg,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSecondary
-                    )
+                Column(Modifier.padding(16.dp)) {
+                    Row {
+                        Text("🎓 ", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            msg,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSecondary
+                        )
+                    }
+                    state.affectiveState?.let { st ->
+                        Spacer(Modifier.height(8.dp))
+                        Text(affectiveLabel(st), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondary)
+                    }
                 }
             }
         }
@@ -100,6 +106,15 @@ fun HomeScreen(onSeeMap: () -> Unit = {}, onPronunciation: () -> Unit = {}) {
             modifier = Modifier.fillMaxWidth()
         ) { Text("Ver mi mapa de lecciones") }
     }
+}
+
+private fun affectiveLabel(state: String): String = when (state) {
+    "new" -> "Empezando ✨"
+    "motivated" -> "En racha 🔥"
+    "returning" -> "De regreso 👋"
+    "at_risk" -> "Te extrañamos — vamos suave hoy"
+    "steady" -> "Constante 🌱"
+    else -> ""
 }
 
 @Composable

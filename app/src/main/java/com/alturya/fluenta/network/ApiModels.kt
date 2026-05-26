@@ -106,7 +106,11 @@ data class NextLesson(
 
 data class NextLessonResponse(val next: NextLesson?, val message: String?)
 
-data class CoachMessageResponse(val message: String?, val cached: Boolean?)
+data class CoachMessageResponse(
+    val message: String?,
+    val affectiveState: String?,
+    val cached: Boolean?
+)
 
 data class StripeUrlResponse(val url: String?)
 data class SelectLanguageBody(val l2: String)
