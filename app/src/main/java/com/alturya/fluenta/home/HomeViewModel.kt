@@ -16,7 +16,9 @@ data class HomeState(
     val progress: UserProgress? = null,
     val nextLesson: NextLesson? = null,
     val coachMessage: String? = null,
-    val affectiveState: String? = null
+    val affectiveState: String? = null,
+    // Business WhatsApp URL from the server (includes the correct business phone number).
+    val practiceWaUrl: String? = null,
 )
 
 class HomeViewModel : ViewModel() {
@@ -33,13 +35,15 @@ class HomeViewModel : ViewModel() {
             val progress = try { ApiClient.api.getProgress() } catch (_: Exception) { null }
             val next = try { ApiClient.api.getNextLesson().next } catch (_: Exception) { null }
             val coach = try { ApiClient.api.getCoachMessage() } catch (_: Exception) { null }
+            val waUrl = try { ApiClient.api.getWhatsAppHandoff(intent = "practice").url } catch (_: Exception) { null }
             _state.value = HomeState(
                 loading = false,
                 profile = profile,
                 progress = progress,
                 nextLesson = next,
                 coachMessage = coach?.message,
-                affectiveState = coach?.affectiveState
+                affectiveState = coach?.affectiveState,
+                practiceWaUrl = waUrl,
             )
         }
     }

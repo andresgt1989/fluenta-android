@@ -11,10 +11,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.LanguagePair
 import com.alturya.fluenta.util.flag
 import com.alturya.fluenta.util.langName
 import com.alturya.fluenta.util.levelSystemName
+
+/**
+ * 30 pares MVP world-ready (sección 6 de FICHA_TECNICA_FLUENTA.md).
+ * Aparecen primero, destacados, con el resto del catálogo abajo en "más idiomas".
+ */
+private val PRIORITY_PAIRS: Set<Pair<String, String>> = setOf(
+    "es" to "en", "pt" to "en", "en" to "es",
+    "en" to "fr", "en" to "de", "en" to "it", "en" to "pt",
+    "en" to "ja", "en" to "ko", "en" to "zh",
+    "en" to "ar", "en" to "ru", "en" to "pl", "en" to "sv", "en" to "nl", "en" to "tr",
+    "es" to "fr", "es" to "it", "es" to "pt", "es" to "de",
+    "fr" to "en", "de" to "en", "it" to "en",
+    "ar" to "en", "hi" to "en", "zh" to "en", "ja" to "en", "ko" to "en",
+    "ru" to "en", "tr" to "en",
+    // Árabe en ambas direcciones (desde y hacia idiomas mayores)
+    "ar" to "es", "ar" to "fr", "ar" to "de", "ar" to "it", "ar" to "pt",
+    "es" to "ar", "fr" to "ar", "de" to "ar", "it" to "ar", "pt" to "ar",
+)
 
 @Composable
 fun LanguageSelectorScreen(onChanged: () -> Unit = {}) {
@@ -29,7 +48,7 @@ fun LanguageSelectorScreen(onChanged: () -> Unit = {}) {
     Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { pad ->
         Column(Modifier.fillMaxSize().padding(pad)) {
             Text(
-                "Elige tu idioma",
+                I18nStore.t("lang.chooseTitle", "Elige tu idioma"),
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(20.dp)
             )
@@ -37,21 +56,61 @@ fun LanguageSelectorScreen(onChanged: () -> Unit = {}) {
             if (state.loading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             } else {
-                val byL1 = state.pairs.groupBy { it.l1 }
+                // Priority MVP pairs first (sección 6 de FICHA_TECNICA_FLUENTA.md),
+                // luego "more languages" con el resto del catálogo.
+                val (priority, rest) = state.pairs.partition {
+                    (it.l1 to it.l2) in PRIORITY_PAIRS
+                }
+                val priorityByL1 = priority.groupBy { it.l1 }
+                val restByL1 = rest.groupBy { it.l1 }
+
                 LazyColumn(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    byL1.forEach { (l1, pairs) ->
+                    if (priority.isNotEmpty()) {
                         item {
                             Text(
-                                "Desde ${langName(l1)}",
-                                style = MaterialTheme.typography.titleMedium,
+                                I18nStore.t("lang.recommended", "Recomendados para ti"),
+                                style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
+                                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
                             )
                         }
-                        items(pairs) { pair -> PairRow(pair, state.selecting == pair.l2) { vm.select(pair.l2, onChanged) } }
+                        priorityByL1.forEach { (l1, pairs) ->
+                            item {
+                                Text(
+                                    "${I18nStore.t("lang.from", "Desde")} ${langName(l1)}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
+                                )
+                            }
+                            items(pairs) { pair -> PairRow(pair, state.selecting == pair.l2) { vm.select(pair.l2, onChanged) } }
+                        }
+                    }
+                    if (rest.isNotEmpty()) {
+                        item {
+                            Spacer(Modifier.height(16.dp))
+                            HorizontalDivider()
+                            Text(
+                                I18nStore.t("lang.moreLanguages", "Más idiomas"),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                            )
+                        }
+                        restByL1.forEach { (l1, pairs) ->
+                            item {
+                                Text(
+                                    "${I18nStore.t("lang.from", "Desde")} ${langName(l1)}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
+                                )
+                            }
+                            items(pairs) { pair -> PairRow(pair, state.selecting == pair.l2) { vm.select(pair.l2, onChanged) } }
+                        }
                     }
                 }
             }
@@ -75,7 +134,7 @@ private fun PairRow(pair: LanguagePair, selecting: Boolean, onClick: () -> Unit)
                 Text(
                     buildString {
                         append(levelSystemName(pair.levelSystem))
-                        if (pair.curriculumSeeded == true) append(" · con currículo")
+                        if (pair.curriculumSeeded == true) append(" · ${I18nStore.t("lang.curriculumReady", "con currículo")}")
                     },
                     style = MaterialTheme.typography.bodySmall
                 )

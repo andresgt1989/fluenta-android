@@ -18,7 +18,7 @@ import com.alturya.fluenta.network.CurriculumUnit
 import com.alturya.fluenta.network.Lesson
 
 @Composable
-fun CurriculumMapScreen() {
+fun CurriculumMapScreen(onStartLesson: (String) -> Unit = {}) {
     val vm: CurriculumViewModel = viewModel()
     val state by vm.state.collectAsState()
 
@@ -42,7 +42,9 @@ fun CurriculumMapScreen() {
             ) {
                 state.units.forEach { unit ->
                     item { UnitHeader(unit) }
-                    items(unit.lessons) { lesson -> LessonNode(lesson) }
+                    items(unit.lessons) { lesson ->
+                        LessonNode(lesson, onClick = { onStartLesson(lesson.id) })
+                    }
                 }
             }
         }
@@ -81,14 +83,15 @@ private fun UnitHeader(unit: CurriculumUnit) {
 }
 
 @Composable
-private fun LessonNode(lesson: Lesson) {
+private fun LessonNode(lesson: Lesson, onClick: () -> Unit = {}) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = if (lesson.completed)
                 MaterialTheme.colorScheme.primaryContainer
             else MaterialTheme.colorScheme.surfaceVariant
-        )
+        ),
+        onClick = onClick,
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),

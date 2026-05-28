@@ -54,6 +54,7 @@ fun FluentaTheme(
     MaterialTheme(
         colorScheme = if (darkTheme) DarkColors else LightColors,
         typography = Typography,
+        shapes = AppShapes,
         content = content
     )
 }

@@ -10,6 +10,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alturya.fluenta.data.I18nStore
 
 @Composable
 fun LoginScreen(onSuccess: () -> Unit) {
@@ -35,7 +36,7 @@ fun LoginScreen(onSuccess: () -> Unit) {
         OutlinedTextField(
             value = phone,
             onValueChange = { phone = it },
-            label = { Text("Teléfono (ej: +5491123456789)") },
+            label = { Text(I18nStore.t("login.phoneLabel", "Teléfono (ej: +5491123456789)")) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             modifier = Modifier.fillMaxWidth(),
             enabled = state !is LoginState.OtpSent && state !is LoginState.Loading
@@ -46,7 +47,7 @@ fun LoginScreen(onSuccess: () -> Unit) {
             OutlinedTextField(
                 value = code,
                 onValueChange = { code = it },
-                label = { Text("Código de WhatsApp") },
+                label = { Text(I18nStore.t("login.codeLabel", "Código de WhatsApp")) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -60,12 +61,12 @@ fun LoginScreen(onSuccess: () -> Unit) {
             Button(
                 onClick = { vm.requestOtp(phone) },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("Enviar código por WhatsApp") }
+            ) { Text(I18nStore.t("login.sendCode", "Enviar código por WhatsApp")) }
         } else {
             Button(
                 onClick = { vm.verifyOtp(context, phone, code) },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("Verificar") }
+            ) { Text(I18nStore.t("login.verify", "Verificar")) }
         }
 
         if (state is LoginState.Error) {

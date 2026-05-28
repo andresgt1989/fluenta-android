@@ -5,8 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alturya.fluenta.data.TokenStore
 import com.alturya.fluenta.network.ApiClient
+import com.alturya.fluenta.network.FcmRegisterBody
 import com.alturya.fluenta.network.OtpRequestBody
 import com.alturya.fluenta.network.OtpVerifyBody
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -44,6 +46,13 @@ class LoginViewModel : ViewModel() {
                 if (res.token != null) {
                     TokenStore.save(context, res.token, phone)
                     ApiClient.setToken(res.token)
+                    // Register any FCM token that was generated before login.
+                    val fcmToken = TokenStore.getFcmToken(context).firstOrNull()
+                    if (fcmToken != null) {
+                        try {
+                            ApiClient.api.registerFcmToken(FcmRegisterBody(fcmToken))
+                        } catch (_: Exception) { /* non-critical */ }
+                    }
                     _state.value = LoginState.Success
                 } else {
                     _state.value = LoginState.Error("Código incorrecto")

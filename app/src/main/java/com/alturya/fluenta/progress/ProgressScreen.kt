@@ -32,6 +32,9 @@ fun ProgressScreen() {
     ) {
         item { Text("Tu progreso", style = MaterialTheme.typography.headlineMedium) }
 
+        // Weekly league leaderboard (retention mechanic) — backend ranks Sundays.
+        item { LeagueCard() }
+
         item {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(20.dp)) {

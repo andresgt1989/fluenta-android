@@ -12,6 +12,7 @@ private val Context.dataStore by preferencesDataStore(name = "fluenta_prefs")
 object TokenStore {
     private val TOKEN_KEY = stringPreferencesKey("auth_token")
     private val PHONE_KEY = stringPreferencesKey("phone")
+    private val FCM_KEY = stringPreferencesKey("fcm_token")
 
     fun getToken(context: Context): Flow<String?> =
         context.dataStore.data.map { it[TOKEN_KEY] }
@@ -19,11 +20,18 @@ object TokenStore {
     fun getPhone(context: Context): Flow<String?> =
         context.dataStore.data.map { it[PHONE_KEY] }
 
+    fun getFcmToken(context: Context): Flow<String?> =
+        context.dataStore.data.map { it[FCM_KEY] }
+
     suspend fun save(context: Context, token: String, phone: String) {
         context.dataStore.edit {
             it[TOKEN_KEY] = token
             it[PHONE_KEY] = phone
         }
+    }
+
+    suspend fun saveFcmToken(context: Context, fcmToken: String) {
+        context.dataStore.edit { it[FCM_KEY] = fcmToken }
     }
 
     suspend fun clear(context: Context) {

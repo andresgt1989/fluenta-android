@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "696786333270",
+    "project_id": "fluenta-e2f14",
+    "storage_bucket": "fluenta-e2f14.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:696786333270:android:a97eb93571f43a2eb8d5f7",
+        "android_client_info": {
+          "package_name": "com.alturya.fluenta"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCq34B7txg5U9wghMoBQ4aPjsLcbFobaTo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

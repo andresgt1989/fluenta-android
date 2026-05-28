@@ -149,3 +149,113 @@ data class DiagnosticAnswerResponse(
 data class StripeUrlResponse(val url: String?)
 data class SelectLanguageBody(val l2: String)
 data class SelectLanguageResponse(val ok: Boolean, val l1: String?, val l2: String?, val levelSystem: String?)
+
+// ── LessonPlayer ──────────────────────────────────────────────────────────
+data class LessonHeader(val id: String, val title: String, val type: String)
+
+data class PlayableExercise(
+    val index: Int,
+    val kind: String,
+    // translate_l1_to_l2 / translate_l2_to_l1
+    val prompt: String? = null,
+    val hint: String? = null,
+    // multiple_choice
+    val options: List<String>? = null,
+    // match_pairs
+    val left: List<String>? = null,
+    val right: List<String>? = null,
+)
+
+data class LessonPlayResponse(
+    val lesson: LessonHeader,
+    val introMessage: String?,
+    val exercises: List<PlayableExercise>,
+)
+
+data class SubmissionAnswerBody(
+    @SerializedName("exerciseIndex") val exerciseIndex: Int,
+    val value: String,
+)
+
+data class LessonSubmitBody(
+    val answers: List<SubmissionAnswerBody>,
+    @SerializedName("timeSpentSeconds") val timeSpentSeconds: Int? = null,
+)
+
+data class ExerciseResult(
+    val exerciseIndex: Int,
+    val correct: Boolean,
+    val expected: String,
+    val given: String,
+    val feedback: String?,
+)
+
+data class LessonSubmitResponse(
+    val correctCount: Int,
+    val total: Int,
+    val scorePct: Int,
+    val passed: Boolean,
+    val xpEarned: Int,
+    val results: List<ExerciseResult>,
+    val newStreakDays: Int?,
+)
+
+data class HandoffResponse(val intent: String, val message: String, val url: String?)
+
+// ── Verbs of the day ──────────────────────────────────────────────────────
+data class VerbVariants(
+    val present: List<String>,
+    val past: List<String>,
+    val future: List<String>,
+    val conditional: List<String>,
+    val gerund: String,
+    @SerializedName("past_participle") val pastParticiple: String,
+)
+
+data class DailyVerbCard(
+    val id: String,
+    val base: String,
+    val translation: String,
+    val variants: VerbVariants,
+    val example: String,
+    val isReview: Boolean,
+    val alreadyMastered: Boolean,
+)
+
+data class VerbStats(val total: Int, val mastered: Int, val exposed: Int)
+
+data class VerbsTodayResponse(
+    val verbs: List<DailyVerbCard>,
+    val stats: VerbStats,
+    val target: Int,
+    val achievedToday: Int,
+)
+
+data class VerbAnswerBody(val correct: Boolean)
+data class VerbAnswerResponse(val ok: Boolean, val mastered: Boolean)
+
+data class FcmRegisterBody(val fcmToken: String, val platform: String = "android")
+data class FcmRegisterResponse(val ok: Boolean)
+
+// ── Weekly league ─────────────────────────────────────────────────────────
+data class LeagueRow(val rank: Int, val label: String, val weeklyXp: Int, val isMe: Boolean)
+
+data class LeagueResponse(
+    val week: String,
+    val tier: String,
+    val tierIndex: Int,
+    val tiers: List<String>,
+    val myRank: Int?,
+    val myWeeklyXp: Int,
+    val board: List<LeagueRow>,
+    val promotionCutoff: Int,
+    val demotionCutoff: Int?,
+)
+
+// ── i18n UI strings (Capa 1 — Detección L1 + 30 pares) ───────────────────
+// Backend serves localized UI strings per interface lang from /api/i18n/ui?lang=xx.
+// Cached on-device 24h via I18nStore; backend caches 30d in Redis.
+data class UiStringsResponse(
+    val lang: String,
+    val strings: Map<String, String>?,
+)
