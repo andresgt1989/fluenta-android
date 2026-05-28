@@ -29,6 +29,7 @@ data class LessonPlayerState(
     val answers: Map<Int, String> = emptyMap(),
     val checking: Boolean = false,               // calling /check for instant feedback
     val feedback: ExerciseCheckResponse? = null, // shown after "Comprobar", before "Continuar"
+    val hearts: Int = 3,                         // vidas: -1 por fallo; a 0 termina la lección
     val startedAtMs: Long = 0L,
     val submitting: Boolean = false,
     val result: LessonSubmitResponse? = null,
@@ -56,6 +57,10 @@ class LessonPlayerViewModel(savedState: SavedStateHandle) : ViewModel() {
                         introMessage = res.introMessage,
                         exercises = res.exercises,
                         currentIndex = 0,
+                        answers = emptyMap(),
+                        feedback = null,
+                        result = null,
+                        hearts = 3,
                         startedAtMs = System.currentTimeMillis(),
                     )
                 }
@@ -82,7 +87,10 @@ class LessonPlayerViewModel(savedState: SavedStateHandle) : ViewModel() {
         viewModelScope.launch {
             try {
                 val res = ApiClient.api.checkExercise(lessonId, ExerciseCheckBody(idx, value))
-                _state.update { it.copy(checking = false, feedback = res) }
+                _state.update {
+                    val nh = if (!res.correct) (it.hearts - 1).coerceAtLeast(0) else it.hearts
+                    it.copy(checking = false, feedback = res, hearts = nh)
+                }
             } catch (e: Exception) {
                 Log.e("LessonPlayer", "check failed", e)
                 _state.update { it.copy(checking = false) }
@@ -91,10 +99,11 @@ class LessonPlayerViewModel(savedState: SavedStateHandle) : ViewModel() {
         }
     }
 
-    /** "Continuar" after feedback is shown. */
+    /** "Continuar" after feedback is shown. Out of hearts → end the lesson. */
     fun continueAfterFeedback() {
+        val outOfHearts = _state.value.hearts <= 0
         _state.update { it.copy(feedback = null) }
-        next()
+        if (outOfHearts) submit() else next()
     }
 
     fun next() {

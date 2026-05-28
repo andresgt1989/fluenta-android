@@ -10,6 +10,13 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.scale
+import com.alturya.fluenta.audio.Sfx
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -91,7 +98,10 @@ private fun QuizView(state: LessonPlayerState, vm: LessonPlayerViewModel) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Ejercicio ${state.currentIndex + 1} de $total", style = MaterialTheme.typography.labelMedium)
             Spacer(Modifier.weight(1f))
-            state.title?.let { Text(it, style = MaterialTheme.typography.labelMedium) }
+            Text(
+                "❤️".repeat(state.hearts) + "🤍".repeat((3 - state.hearts).coerceAtLeast(0)),
+                style = MaterialTheme.typography.labelMedium,
+            )
         }
         Spacer(Modifier.height(8.dp))
         LinearProgressIndicator(
@@ -143,7 +153,10 @@ private fun FeedbackBar(
     onContinue: () -> Unit,
 ) {
     val haptic = LocalHapticFeedback.current
-    LaunchedEffect(fb) { haptic.performHapticFeedback(HapticFeedbackType.LongPress) }
+    LaunchedEffect(fb) {
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        if (fb.correct) Sfx.correct() else Sfx.wrong()
+    }
     val correct = fb.correct
     val container = if (correct) Color(0xFFD7F5DD) else MaterialTheme.colorScheme.errorContainer
     val accent = if (correct) Color(0xFF15803D) else MaterialTheme.colorScheme.error
@@ -352,7 +365,17 @@ private fun ResultView(
     onDone: () -> Unit,
 ) {
     var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { visible = true }
+    LaunchedEffect(Unit) {
+        visible = true
+        if (result.passed) Sfx.success()
+    }
+    val transition = rememberInfiniteTransition(label = "celebrate")
+    val pulse by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.12f,
+        animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse),
+        label = "pulse",
+    )
 
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
@@ -363,6 +386,7 @@ private fun ResultView(
             Text(
                 if (result.passed) "🎉" else "💪",
                 style = MaterialTheme.typography.displayLarge,
+                modifier = Modifier.scale(if (result.passed) pulse else 1f),
             )
         }
         Spacer(Modifier.height(8.dp))
