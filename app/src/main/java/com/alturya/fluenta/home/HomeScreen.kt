@@ -2,13 +2,22 @@ package com.alturya.fluenta.home
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alturya.fluenta.data.I18nStore
@@ -35,99 +44,212 @@ fun HomeScreen(
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        // ── Header ────────────────────────────────────────────────────────────
         Column {
-            Text(I18nStore.t("home.greeting", "Hola 👋"), style = MaterialTheme.typography.headlineMedium)
             Text(
-                "${flag(p?.l2)} ${I18nStore.t("home.learning", "Aprendiendo")} ${langName(p?.l2)} · ${levelLabel(p?.level, p?.levelSystem)} (${levelSystemName(p?.levelSystem)})",
-                style = MaterialTheme.typography.bodyMedium
+                I18nStore.t("home.greeting", "Hola 👋"),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                "${flag(p?.l2)} ${I18nStore.t("home.learning", "Aprendiendo")} ${langName(p?.l2)} · " +
+                    "${levelLabel(p?.level, p?.levelSystem)} (${levelSystemName(p?.levelSystem)})",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
+        // ── Streak hero + stats ───────────────────────────────────────────────
+        StatsHero(
+            streak = state.progress?.streakDays ?: 0,
+            xp = state.progress?.totalXp ?: 0,
+            lessons = state.progress?.completedLessons ?: 0,
+        )
+
+        // ── Coach message ─────────────────────────────────────────────────────
         state.coachMessage?.let { msg ->
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary)
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                ),
             ) {
                 Column(Modifier.padding(16.dp)) {
-                    Row {
-                        Text("🎓 ", style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            msg,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSecondary
-                        )
-                    }
+                    Text(
+                        "🎓 $msg",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
                     state.affectiveState?.let { st ->
-                        Spacer(Modifier.height(8.dp))
-                        Text(affectiveLabel(st), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondary)
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            affectiveLabel(st),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
                     }
                 }
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            MiniStat("🔥", "${state.progress?.streakDays ?: 0}", I18nStore.t("home.streak", "Racha"), Modifier.weight(1f))
-            MiniStat("⭐", "${state.progress?.totalXp ?: 0}", I18nStore.t("home.xp", "XP"), Modifier.weight(1f))
-            MiniStat("✓", "${state.progress?.completedLessons ?: 0}", I18nStore.t("home.lessons", "Lecciones"), Modifier.weight(1f))
-        }
-
+        // ── Dominant CTA: next lesson ─────────────────────────────────────────
         val next = state.nextLesson
         if (next?.title != null && next.id != null) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                ),
                 onClick = { onStartLesson(next.id) },
             ) {
                 Column(Modifier.padding(20.dp)) {
-                    Text(I18nStore.t("home.nextLesson", "Siguiente lección"), style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        I18nStore.t("home.nextLesson", "Siguiente lección"),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
+                    )
                     Spacer(Modifier.height(4.dp))
-                    Text(next.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        next.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
                     next.unitTitle?.let {
-                        Text(it, style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
+                        )
                     }
-                    Spacer(Modifier.height(8.dp))
-                    Text(I18nStore.t("home.tapToStart", "▶ Toca para empezar"), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(16.dp))
+                    Surface(
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        shape = MaterialTheme.shapes.large,
+                    ) {
+                        Text(
+                            I18nStore.t("home.startLesson", "▶ Empezar lección"),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+                        )
+                    }
                 }
             }
         }
 
-        Spacer(Modifier.weight(1f))
-
-        // Primary CTA: start the next lesson in-app (Duolingo-grade), with WhatsApp as the
-        // refuerzo/coach button. Lesson plays in-app, then user goes back to WhatsApp to apply.
-        if (next?.id != null) {
-            Button(
-                onClick = { onStartLesson(next.id) },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text(I18nStore.t("home.startLesson", "▶ Empezar lección")) }
+        // ── Secondary actions grid ────────────────────────────────────────────
+        Text(
+            I18nStore.t("home.morePractice", "Más práctica"),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            ActionCard("🔊", I18nStore.t("home.pronunciationShort", "Pronunciación"), onClick = onPronunciation)
+            ActionCard("🎮", I18nStore.t("home.gameShort", "Juego"), onClick = onPlayMatch)
         }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            ActionCard("🗺", I18nStore.t("home.mapShort", "Mi mapa"), onClick = onSeeMap)
+            ActionCard(
+                "💬",
+                I18nStore.t("home.whatsappShort", "WhatsApp"),
+                enabled = state.practiceWaUrl != null,
+                onClick = {
+                    state.practiceWaUrl?.let { url ->
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    }
+                },
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+    }
+}
 
-        OutlinedButton(
-            onClick = {
-                val url = state.practiceWaUrl ?: return@OutlinedButton
-                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-            },
-            enabled = state.practiceWaUrl != null,
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(I18nStore.t("home.practiceWhatsapp", "💬 Continuar en WhatsApp")) }
+@Composable
+private fun StatsHero(streak: Int, xp: Int, lessons: Int) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Animated flame for the streak — gentle pulse.
+            val transition = rememberInfiniteTransition(label = "flame")
+            val flameScale by transition.animateFloat(
+                initialValue = 1f,
+                targetValue = 1.18f,
+                animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse),
+                label = "flameScale",
+            )
+            HeroStat(
+                icon = "🔥",
+                value = "$streak",
+                label = I18nStore.t("home.streak", "Racha"),
+                iconScale = if (streak > 0) flameScale else 1f,
+            )
+            HeroStat("⭐", "$xp", I18nStore.t("home.xp", "XP"))
+            HeroStat("✓", "$lessons", I18nStore.t("home.lessons", "Lecciones"))
+        }
+    }
+}
 
-        OutlinedButton(
-            onClick = onPronunciation,
-            modifier = Modifier.fillMaxWidth()
-        ) { Text(I18nStore.t("home.practicePronunciation", "Practicar pronunciación 🔊")) }
+@Composable
+private fun HeroStat(icon: String, value: String, label: String, iconScale: Float = 1f) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(icon, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.scale(iconScale))
+        Spacer(Modifier.height(2.dp))
+        Text(
+            value,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+        )
+    }
+}
 
-        OutlinedButton(
-            onClick = onPlayMatch,
-            modifier = Modifier.fillMaxWidth()
-        ) { Text(I18nStore.t("home.matchGame", "Juego: emparejar vocabulario 🎮")) }
-
-        OutlinedButton(
-            onClick = onSeeMap,
-            modifier = Modifier.fillMaxWidth()
-        ) { Text(I18nStore.t("home.lessonMap", "Ver mi mapa de lecciones")) }
+@Composable
+private fun RowScope.ActionCard(
+    icon: String,
+    label: String,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+) {
+    Card(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.weight(1f).height(92.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(icon, style = MaterialTheme.typography.headlineSmall)
+            Spacer(Modifier.height(6.dp))
+            Text(
+                label,
+                style = MaterialTheme.typography.labelLarge,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
@@ -138,18 +260,4 @@ private fun affectiveLabel(state: String): String = when (state) {
     "at_risk" -> I18nStore.t("affective.atRisk", "Te extrañamos — vamos suave hoy")
     "steady" -> I18nStore.t("affective.steady", "Constante 🌱")
     else -> ""
-}
-
-@Composable
-private fun MiniStat(icon: String, value: String, label: String, modifier: Modifier = Modifier) {
-    Card(modifier = modifier) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(icon)
-            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text(label, style = MaterialTheme.typography.labelSmall)
-        }
-    }
 }
