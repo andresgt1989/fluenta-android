@@ -110,20 +110,66 @@ private fun QuizView(state: LessonPlayerState, vm: LessonPlayerViewModel) {
         ) { _ ->
             when (ex.kind) {
                 "translate_l1_to_l2", "translate_l2_to_l1" -> TranslateExercise(ex, onSubmit = { v ->
-                    vm.recordAnswer(v); vm.next()
+                    vm.checkAnswer(v)
                 })
                 "multiple_choice" -> MultipleChoiceExercise(ex, onSubmit = { v ->
-                    vm.recordAnswer(v); vm.next()
+                    vm.checkAnswer(v)
                 })
                 "match_pairs" -> MatchPairsExercise(ex, onSubmit = { v ->
-                    vm.recordAnswer(v); vm.next()
+                    vm.checkAnswer(v)
                 })
                 else -> Text("Tipo no soportado: ${ex.kind}", style = MaterialTheme.typography.bodyMedium)
             }
         }
 
         Spacer(Modifier.weight(1f))
-        TextButton(onClick = vm::skip) { Text("Saltar este") }
+        val fb = state.feedback
+        if (fb != null) {
+            FeedbackBar(
+                fb = fb,
+                showExpected = ex.kind != "match_pairs",
+                onContinue = vm::continueAfterFeedback,
+            )
+        } else {
+            TextButton(onClick = vm::skip, enabled = !state.checking) { Text("Saltar este") }
+        }
+    }
+}
+
+@Composable
+private fun FeedbackBar(
+    fb: com.alturya.fluenta.network.ExerciseCheckResponse,
+    showExpected: Boolean,
+    onContinue: () -> Unit,
+) {
+    val haptic = LocalHapticFeedback.current
+    LaunchedEffect(fb) { haptic.performHapticFeedback(HapticFeedbackType.LongPress) }
+    val correct = fb.correct
+    val container = if (correct) Color(0xFFD7F5DD) else MaterialTheme.colorScheme.errorContainer
+    val accent = if (correct) Color(0xFF15803D) else MaterialTheme.colorScheme.error
+    Surface(color = container, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(20.dp)) {
+            Text(
+                if (correct) "¡Correcto! 🎉" else "Casi…",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = accent,
+            )
+            if (!correct && showExpected) {
+                Spacer(Modifier.height(4.dp))
+                Text("Respuesta: ${fb.expected}", style = MaterialTheme.typography.bodyMedium)
+            }
+            fb.feedback?.let {
+                Spacer(Modifier.height(4.dp))
+                Text("💡 $it", style = MaterialTheme.typography.bodySmall)
+            }
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = onContinue,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = accent),
+            ) { Text("Continuar") }
+        }
     }
 }
 

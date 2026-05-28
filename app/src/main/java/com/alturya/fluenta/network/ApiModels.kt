@@ -172,6 +172,11 @@ data class LessonPlayResponse(
     val exercises: List<PlayableExercise>,
 )
 
+// Instant per-exercise feedback (Duolingo-style). Server grades one exercise,
+// no XP/progress side effects — /submit remains authoritative at the end.
+data class ExerciseCheckBody(val exerciseIndex: Int, val value: String)
+data class ExerciseCheckResponse(val correct: Boolean, val expected: String, val feedback: String?)
+
 data class SubmissionAnswerBody(
     @SerializedName("exerciseIndex") val exerciseIndex: Int,
     val value: String,

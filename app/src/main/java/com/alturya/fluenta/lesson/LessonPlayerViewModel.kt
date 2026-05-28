@@ -5,6 +5,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alturya.fluenta.network.ApiClient
+import com.alturya.fluenta.network.ExerciseCheckBody
+import com.alturya.fluenta.network.ExerciseCheckResponse
 import com.alturya.fluenta.network.LessonPlayResponse
 import com.alturya.fluenta.network.LessonSubmitBody
 import com.alturya.fluenta.network.LessonSubmitResponse
@@ -25,7 +27,8 @@ data class LessonPlayerState(
     val exercises: List<PlayableExercise> = emptyList(),
     val currentIndex: Int = 0,
     val answers: Map<Int, String> = emptyMap(),
-    val lastSubmittedResult: Boolean? = null,   // visual feedback for current exercise
+    val checking: Boolean = false,               // calling /check for instant feedback
+    val feedback: ExerciseCheckResponse? = null, // shown after "Comprobar", before "Continuar"
     val startedAtMs: Long = 0L,
     val submitting: Boolean = false,
     val result: LessonSubmitResponse? = null,
@@ -69,16 +72,42 @@ class LessonPlayerViewModel(savedState: SavedStateHandle) : ViewModel() {
         _state.update { it.copy(answers = it.answers + (idx to value)) }
     }
 
+    /** "Comprobar": record the answer and ask the server if it's right, showing
+     *  instant green/red feedback. On network error, fail open and just advance. */
+    fun checkAnswer(value: String) {
+        val s = _state.value
+        if (s.checking || s.feedback != null) return
+        val idx = s.currentIndex
+        _state.update { it.copy(answers = it.answers + (idx to value), checking = true) }
+        viewModelScope.launch {
+            try {
+                val res = ApiClient.api.checkExercise(lessonId, ExerciseCheckBody(idx, value))
+                _state.update { it.copy(checking = false, feedback = res) }
+            } catch (e: Exception) {
+                Log.e("LessonPlayer", "check failed", e)
+                _state.update { it.copy(checking = false) }
+                next()
+            }
+        }
+    }
+
+    /** "Continuar" after feedback is shown. */
+    fun continueAfterFeedback() {
+        _state.update { it.copy(feedback = null) }
+        next()
+    }
+
     fun next() {
         val s = _state.value
         if (s.currentIndex >= s.exercises.size - 1) {
             submit()
         } else {
-            _state.update { it.copy(currentIndex = it.currentIndex + 1, lastSubmittedResult = null) }
+            _state.update { it.copy(currentIndex = it.currentIndex + 1, feedback = null) }
         }
     }
 
     fun skip() {
+        _state.update { it.copy(feedback = null) }
         recordAnswer("")
         next()
     }

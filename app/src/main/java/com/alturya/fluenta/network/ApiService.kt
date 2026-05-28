@@ -72,6 +72,9 @@ interface ApiService {
     @GET("api/lessons/{id}/play")
     suspend fun getLessonPlay(@Path("id") id: String): LessonPlayResponse
 
+    @POST("api/lessons/{id}/check")
+    suspend fun checkExercise(@Path("id") id: String, @Body body: ExerciseCheckBody): ExerciseCheckResponse
+
     @POST("api/lessons/{id}/submit")
     suspend fun submitLesson(@Path("id") id: String, @Body body: LessonSubmitBody): LessonSubmitResponse
 
