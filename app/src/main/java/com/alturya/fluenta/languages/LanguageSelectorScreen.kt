@@ -1,7 +1,7 @@
 package com.alturya.fluenta.languages
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
@@ -121,25 +121,56 @@ fun LanguageSelectorScreen(onChanged: () -> Unit = {}) {
 @Composable
 private fun PairRow(pair: LanguagePair, selecting: Boolean, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(flag(pair.l2), style = MaterialTheme.typography.headlineSmall)
-            Spacer(Modifier.width(16.dp))
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.size(44.dp),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(flag(pair.l2), style = MaterialTheme.typography.headlineSmall)
+                }
+            }
+            Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(langName(pair.l2), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
                 Text(
-                    buildString {
-                        append(levelSystemName(pair.levelSystem))
-                        if (pair.curriculumSeeded == true) append(" · ${I18nStore.t("lang.curriculumReady", "con currículo")}")
-                    },
-                    style = MaterialTheme.typography.bodySmall
+                    langName(pair.l2),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Spacer(Modifier.height(2.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        levelSystemName(pair.levelSystem),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (pair.curriculumSeeded == true) {
+                        Text(
+                            "  ·  ${I18nStore.t("lang.curriculumReady", "con currículo")}",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+            }
+            if (selecting) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            } else {
+                Text(
+                    "›",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            if (selecting) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
         }
     }
 }
