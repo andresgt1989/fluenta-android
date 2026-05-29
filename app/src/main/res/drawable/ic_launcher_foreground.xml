@@ -1,27 +1,78 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Marca Fluenta: burbuja de conversación blanca con 3 puntos (idiomas / chat / WhatsApp).
-     Contenido dentro de la zona segura del adaptive icon (centro de 108x108). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Cola de la burbuja -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M40,64 L40,80 L54,66 Z" />
-    <!-- Cuerpo de la burbuja (rectángulo redondeado) -->
+        android:fillColor="#FF0E8C80"
+        android:pathData="M54 69.72a3.06 6.8 0 1 0 0 13.6 3.06 6.8 0 1 0 0-13.6"/>
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M40,32 H68 A12,12 0 0 1 80,44 V56 A12,12 0 0 1 68,68 H40 A12,12 0 0 1 28,56 V44 A12,12 0 0 1 40,32 Z" />
-    <!-- 3 puntos (indicador de conversación) en verde de marca -->
+        android:fillColor="#FF1BB6A6"
+        android:pathData="M47.13 71.78a6.12 2.72 72 1 0 3.78 11.64 6.12 2.72 72 1 0-3.78-11.64"/>
     <path
-        android:fillColor="#166534"
-        android:pathData="M40,50 m-3.5,0 a3.5,3.5 0 1 0 7,0 a3.5,3.5 0 1 0 -7,0 Z" />
+        android:fillColor="#FF1BB6A6"
+        android:pathData="M60.87 71.78a2.72 6.12 18 1 0-3.78 11.64 2.72 6.12 18 1 0 3.78-11.64"/>
     <path
-        android:fillColor="#166534"
-        android:pathData="M54,50 m-3.5,0 a3.5,3.5 0 1 0 7,0 a3.5,3.5 0 1 0 -7,0 Z" />
+        android:fillColor="#FF0E8C80"
+        android:pathData="M36.56 45.94A4.76 10.2 10 1 0 33 66.04a4.76 10.2 10 1 0 3.55-20.1"/>
     <path
-        android:fillColor="#166534"
-        android:pathData="M68,50 m-3.5,0 a3.5,3.5 0 1 0 7,0 a3.5,3.5 0 1 0 -7,0 Z" />
+        android:fillColor="#FF0E8C80"
+        android:pathData="M71.44 45.94A10.2 4.76 80 1 0 75 66.04a10.2 4.76 80 1 0-3.55-20.1"/>
+    <path
+        android:fillColor="#FFFFC24B"
+        android:pathData="M50.53 26.35a6.46 2.38 74 1 0 3.56 12.42 6.46 2.38 74 1 0-3.56-12.42"/>
+    <path
+        android:fillColor="#FFFF6F5E"
+        android:pathData="M54 24.84a2.38 6.8 0 1 0 0 13.6 2.38 6.8 0 1 0 0-13.6"/>
+    <path
+        android:fillColor="#FF56A8F2"
+        android:pathData="M57.47 26.35a2.38 6.46 16 1 0-3.56 12.42 2.38 6.46 16 1 0 3.56-12.42"/>
+    <path
+        android:fillColor="#FF1BB6A6"
+        android:pathData="M54 36.4a18.7 19.72 0 1 0 0 39.44 18.7 19.72 0 1 0 0-39.44"/>
+    <path
+        android:fillColor="#FFFFF6E9"
+        android:pathData="M54 46.6a11.56 13.6 0 1 0 0 27.2 11.56 13.6 0 1 0 0-27.2"/>
+    <path
+        android:strokeColor="#FFF0A22E"
+        android:strokeWidth="1.53"
+        android:strokeLineCap="round"
+        android:pathData="M49.24 75.84v3.06m0 0l-1.7 1.7m1.7-1.7l1.7 1.7"/>
+    <path
+        android:strokeColor="#FFF0A22E"
+        android:strokeWidth="1.53"
+        android:strokeLineCap="round"
+        android:pathData="M58.76 75.84v3.06m0 0l-1.7 1.7m1.7-1.7l1.7 1.7"/>
+    <path
+        android:fillColor="#FFFF6F5E"
+        android:fillAlpha=".4"
+        android:pathData="M41.76 53.74a3.06 3.06 0 1 0 0 6.12 3.06 3.06 0 1 0 0-6.12"/>
+    <path
+        android:fillColor="#FFFF6F5E"
+        android:fillAlpha=".4"
+        android:pathData="M66.24 53.74a3.06 3.06 0 1 0 0 6.12 3.06 3.06 0 1 0 0-6.12"/>
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M47.2 44.22a5.1 5.1 0 1 0 0 10.2 5.1 5.1 0 1 0 0-10.2"/>
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M60.8 44.22a5.1 5.1 0 1 0 0 10.2 5.1 5.1 0 1 0 0-10.2"/>
+    <path
+        android:fillColor="#FF27313F"
+        android:pathData="M48.56 47.62a2.72 2.72 0 1 0 0 5.44 2.72 2.72 0 1 0 0-5.44"/>
+    <path
+        android:fillColor="#FF27313F"
+        android:pathData="M59.44 47.62a2.72 2.72 0 1 0 0 5.44 2.72 2.72 0 1 0 0-5.44"/>
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M47.37 47.55a1.09 1.09 0 1 0 0 2.18 1.09 1.09 0 1 0 0-2.18"/>
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M58.25 47.55a1.09 1.09 0 1 0 0 2.18 1.09 1.09 0 1 0 0-2.18"/>
+    <path
+        android:fillColor="#FFFFC24B"
+        android:pathData="M49.92 55.44q4.08-1.36 8.16 0L54 60.54Z"/>
+    <path
+        android:fillColor="#FFF0A22E"
+        android:pathData="M51.96 58.84q2.04 2.38 4.08 0Z"/>
 </vector>

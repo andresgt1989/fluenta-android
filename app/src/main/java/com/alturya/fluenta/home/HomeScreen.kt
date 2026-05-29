@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -16,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -54,11 +56,19 @@ fun HomeScreen(
     ) {
         // ── Header: saludo + chip de idioma (tap para cambiar) ─────────────────
         Column {
-            Text(
-                I18nStore.t("home.greeting", "Hola 👋"),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Image(
+                    painter = painterResource(com.alturya.fluenta.R.drawable.ic_fluenta_hola),
+                    contentDescription = null,
+                    modifier = Modifier.size(52.dp),
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    I18nStore.t("home.greeting", "Hola 👋"),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
             Spacer(Modifier.height(8.dp))
             Surface(
                 onClick = onChangeLanguage,

@@ -16,6 +16,9 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.draw.scale
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.alturya.fluenta.R
 import com.alturya.fluenta.audio.Sfx
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -466,11 +469,15 @@ private fun ResultView(
     ) {
         Spacer(Modifier.height(20.dp))
         AnimatedVisibility(visible = visible, enter = fadeIn() + scaleIn()) {
-            Text(
-                if (result.passed) "🎉" else "💪",
-                style = MaterialTheme.typography.displayLarge,
-                modifier = Modifier.scale(if (result.passed) pulse else 1f),
-            )
+            if (result.passed) {
+                Image(
+                    painter = painterResource(R.drawable.ic_fluenta_celebra),
+                    contentDescription = null,
+                    modifier = Modifier.size(150.dp).scale(pulse),
+                )
+            } else {
+                Text("💪", style = MaterialTheme.typography.displayLarge)
+            }
         }
         Spacer(Modifier.height(8.dp))
         Text(
