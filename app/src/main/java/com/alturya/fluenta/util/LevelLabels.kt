@@ -1,5 +1,7 @@
 package com.alturya.fluenta.util
 
+import com.alturya.fluenta.data.I18nStore
+
 // The backend stores `level` as a CEFR value (a1..c1) for every pair, plus a
 // `levelSystem` (cefr | hsk | jlpt | topik). For non-CEFR verticals we map the
 // CEFR position onto the target framework's ladder so learners see the label
@@ -34,13 +36,22 @@ fun levelSystemName(levelSystem: String?): String = when ((levelSystem ?: "cefr"
     else -> "CEFR"
 }
 
-fun langName(code: String?): String = when ((code ?: "").lowercase()) {
+// Localized via I18nStore (a Korean user sees "영어" for English). Falls back to the
+// Spanish name (or the uppercased code) when the backend strings aren't loaded.
+fun langName(code: String?): String {
+    val c = (code ?: "").lowercase()
+    return I18nStore.t("langName.$c", langNameFallback(c))
+}
+
+private fun langNameFallback(c: String): String = when (c) {
     "es" -> "Español"; "en" -> "Inglés"; "pt" -> "Portugués"; "fr" -> "Francés"
     "it" -> "Italiano"; "de" -> "Alemán"; "de-ch" -> "Alemán (Suiza)"; "nl" -> "Neerlandés"
     "ru" -> "Ruso"; "uk" -> "Ucraniano"; "pl" -> "Polaco"; "el" -> "Griego"
     "sv" -> "Sueco"; "da" -> "Danés"; "fi" -> "Finés"; "et" -> "Estonio"; "lt" -> "Lituano"
     "ar" -> "Árabe"; "zh" -> "Chino"; "ja" -> "Japonés"; "ko" -> "Coreano"
-    else -> (code ?: "?").uppercase()
+    "fa" -> "Persa"; "hi" -> "Hindi"; "id" -> "Indonesio"; "th" -> "Tailandés"
+    "tr" -> "Turco"; "vi" -> "Vietnamita"; "he" -> "Hebreo"; "ur" -> "Urdu"
+    else -> c.uppercase()
 }
 
 fun flag(code: String?): String = when ((code ?: "").lowercase()) {
@@ -51,5 +62,7 @@ fun flag(code: String?): String = when ((code ?: "").lowercase()) {
     "sv" -> "🇸🇪"; "da" -> "🇩🇰"; "fi" -> "🇫🇮"
     "et" -> "🇪🇪"; "lt" -> "🇱🇹"; "ar" -> "🇸🇦"
     "zh" -> "🇨🇳"; "ja" -> "🇯🇵"; "ko" -> "🇰🇷"
+    "fa" -> "🇮🇷"; "hi" -> "🇮🇳"; "id" -> "🇮🇩"; "th" -> "🇹🇭"
+    "tr" -> "🇹🇷"; "vi" -> "🇻🇳"; "he" -> "🇮🇱"; "ur" -> "🇵🇰"
     else -> "🌐"
 }

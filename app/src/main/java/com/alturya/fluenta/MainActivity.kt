@@ -71,6 +71,12 @@ class MainActivity : ComponentActivity() {
                 val token by TokenStore.getToken(context).collectAsState(initial = null)
                 val deepLinkLesson by pendingLessonId
 
+                // RTL: mirror the whole UI when the interface language is ar/fa/ur/he.
+                val uiLang by I18nStore.currentLangFlow(context).collectAsState(initial = "es")
+                val layoutDir = if (I18nStore.isRtl(uiLang))
+                    androidx.compose.ui.unit.LayoutDirection.Rtl
+                else androidx.compose.ui.unit.LayoutDirection.Ltr
+
                 LaunchedEffect(token) { token?.let { ApiClient.setToken(it) } }
 
                 // Capa 1 — Detección L1 + 30 pares: cargar strings UI en idioma nativo.
@@ -82,6 +88,9 @@ class MainActivity : ComponentActivity() {
                     I18nStore.ensureLoaded(context, deviceLang)
                 }
 
+                androidx.compose.runtime.CompositionLocalProvider(
+                    androidx.compose.ui.platform.LocalLayoutDirection provides layoutDir
+                ) {
                 NavHost(
                     navController = rootNav,
                     startDestination = if (token != null) "main" else "login"
@@ -100,6 +109,7 @@ class MainActivity : ComponentActivity() {
                             onLessonConsumed = { pendingLessonId.value = null },
                         )
                     }
+                }
                 }
             }
         }
@@ -155,7 +165,7 @@ private fun MainScaffold(
                             }
                         },
                         icon = { Text(tab.icon) },
-                        label = { Text(tab.label) }
+                        label = { Text(I18nStore.t("nav.${tab.route}", tab.label)) }
                     )
                 }
             }

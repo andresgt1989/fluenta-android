@@ -46,6 +46,10 @@ object I18nStore {
     fun t(key: String, fallback: String = key): String =
         memCache[key] ?: fallback
 
+    /** Right-to-left interface languages (layout must mirror for these). */
+    private val RTL_LANGS = setOf("ar", "fa", "ur", "he")
+    fun isRtl(lang: String): Boolean = lang.lowercase().take(2) in RTL_LANGS
+
     /**
      * Load strings for `lang` from cache if fresh, otherwise refetch from backend.
      * Always populates memCache, even on network error (with whatever is cached).
