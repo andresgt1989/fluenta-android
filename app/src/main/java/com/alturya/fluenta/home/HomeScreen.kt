@@ -33,6 +33,7 @@ fun HomeScreen(
     onPlayMatch: () -> Unit = {},
     onStartLesson: (String) -> Unit = {},
     onChangeLanguage: () -> Unit = {},
+    onRepaso: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val vm: HomeViewModel = viewModel()
@@ -161,6 +162,35 @@ fun HomeScreen(
                         )
                     }
                 }
+            }
+        }
+
+        // ── Repaso (SRS) — acción diaria primaria de retención ────────────────
+        Card(
+            onClick = onRepaso,
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("🔁", style = MaterialTheme.typography.headlineSmall)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        I18nStore.t("home.reviewTitle", "Repasar tus errores"),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                    Text(
+                        I18nStore.t("home.reviewSubtitle", "Refuerza lo que se te olvida (SRS)"),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                }
+                Text("›", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
             }
         }
 

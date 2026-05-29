@@ -80,6 +80,10 @@ data class ErrorItem(
 
 data class ErrorsResponse(val errors: List<ErrorItem>)
 
+// Repaso SRS: registrar resultado de un repaso
+data class ErrorReviewBody(val remembered: Boolean)
+data class ErrorReviewResponse(val ok: Boolean, val mastered: Boolean, val nextReviewAt: String?)
+
 data class Skill(
     val key: String,
     val label: String,

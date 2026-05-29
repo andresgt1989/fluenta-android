@@ -30,6 +30,9 @@ interface ApiService {
     @GET("api/user/errors")
     suspend fun getErrors(): ErrorsResponse
 
+    @POST("api/user/errors/{id}/review")
+    suspend fun reviewError(@Path("id") id: String, @Body body: ErrorReviewBody): ErrorReviewResponse
+
     @GET("api/user/skills")
     suspend fun getSkills(): SkillsResponse
 

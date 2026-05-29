@@ -32,6 +32,7 @@ import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.profile.ProfileScreen
 import com.alturya.fluenta.progress.ProgressScreen
 import com.alturya.fluenta.pronunciation.PronunciationScreen
+import com.alturya.fluenta.repaso.RepasoScreen
 import com.alturya.fluenta.ui.theme.FluentaTheme
 import com.alturya.fluenta.verbs.VerbsTodayScreen
 
@@ -172,6 +173,7 @@ private fun MainScaffold(
                     onPlayMatch = { nav.navigate("match") { launchSingleTop = true } },
                     onStartLesson = { lessonId -> nav.navigate("lesson/$lessonId") },
                     onChangeLanguage = { nav.navigate("languages") { launchSingleTop = true } },
+                    onRepaso = { nav.navigate("repaso") { launchSingleTop = true } },
                 )
             }
             composable("match") { MatchScreen(onDone = { nav.popBackStack() }) }
@@ -187,6 +189,7 @@ private fun MainScaffold(
             }
             composable("verbs") { VerbsTodayScreen() }
             composable("pronunciation") { PronunciationScreen() }
+            composable("repaso") { RepasoScreen(onDone = { nav.popBackStack() }) }
             composable("progress") { ProgressScreen() }
             composable("profile") {
                 ProfileScreen(
