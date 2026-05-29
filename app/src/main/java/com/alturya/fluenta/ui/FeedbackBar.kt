@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.network.FeedbackBody
 import kotlinx.coroutines.launch
@@ -33,9 +34,9 @@ fun FeedbackBar(surface: String, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (sent) {
-            Text("¡Gracias por tu opinión! 🙌", style = MaterialTheme.typography.bodySmall)
+            Text(I18nStore.t("feedback.thanks", "¡Gracias por tu opinión! 🙌"), style = MaterialTheme.typography.bodySmall)
         } else {
-            Text("¿Te gustó?", style = MaterialTheme.typography.bodySmall)
+            Text(I18nStore.t("feedback.liked", "¿Te gustó?"), style = MaterialTheme.typography.bodySmall)
             Spacer(Modifier.width(8.dp))
             TextButton(onClick = { send(5) }) { Text("👍") }
             TextButton(onClick = { send(1) }) { Text("👎") }

@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.CurriculumUnit
 import com.alturya.fluenta.network.Lesson
 
@@ -58,11 +59,13 @@ private fun EmptyMap(l1: String?, l2: String?) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Aún no hay lecciones para ${(l1 ?: "?").uppercase()} → ${(l2 ?: "?").uppercase()}",
+        Text(I18nStore.t("curriculum.emptyTitle", "Aún no hay lecciones todavía"),
             style = MaterialTheme.typography.titleMedium)
+        Text("${(l1 ?: "?").uppercase()} → ${(l2 ?: "?").uppercase()}",
+            style = MaterialTheme.typography.labelMedium)
         Spacer(Modifier.height(8.dp))
         Text(
-            "Practica en WhatsApp para empezar — tu mapa se irá llenando.",
+            I18nStore.t("curriculum.emptyHint", "Practica en WhatsApp para empezar — tu mapa se irá llenando."),
             style = MaterialTheme.typography.bodyMedium
         )
     }
@@ -72,7 +75,7 @@ private fun EmptyMap(l1: String?, l2: String?) {
 private fun UnitHeader(unit: CurriculumUnit) {
     Column(Modifier.padding(top = 16.dp, bottom = 4.dp)) {
         Text(
-            "Unidad ${unit.number} · ${unit.title}",
+            "${I18nStore.t("curriculum.unit", "Unidad")} ${unit.number} · ${unit.title}",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
@@ -115,7 +118,7 @@ private fun LessonNode(lesson: Lesson, onClick: () -> Unit = {}) {
                 Text(lessonTypeLabel(lesson.type), style = MaterialTheme.typography.bodySmall)
             }
             if (lesson.completed) {
-                Text("Completada", style = MaterialTheme.typography.labelSmall, color = Color(0xFF2E7D32))
+                Text(I18nStore.t("curriculum.completedLesson", "Completada"), style = MaterialTheme.typography.labelSmall, color = Color(0xFF2E7D32))
             }
         }
     }
@@ -131,10 +134,10 @@ private fun lessonIcon(type: String): String = when (type) {
 }
 
 private fun lessonTypeLabel(type: String): String = when (type) {
-    "roleplay" -> "Juego de roles"
-    "translation" -> "Traducción"
-    "free_chat" -> "Conversación libre"
-    "listening" -> "Comprensión auditiva"
-    "pronunciation" -> "Pronunciación"
+    "roleplay" -> I18nStore.t("lessonType.roleplay", "Juego de roles")
+    "translation" -> I18nStore.t("lessonType.translation", "Traducción")
+    "free_chat" -> I18nStore.t("lessonType.free_chat", "Conversación libre")
+    "listening" -> I18nStore.t("lessonType.listening", "Comprensión auditiva")
+    "pronunciation" -> I18nStore.t("lessonType.pronunciation", "Pronunciación")
     else -> type
 }

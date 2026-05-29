@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.util.flag
 import com.alturya.fluenta.util.langName
 import com.alturya.fluenta.util.levelLabel
@@ -40,7 +41,7 @@ fun ProfileScreen(
         modifier = Modifier.fillMaxSize().padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Perfil", style = MaterialTheme.typography.headlineMedium)
+        Text(I18nStore.t("profile.title", "Mi perfil"), style = MaterialTheme.typography.headlineMedium)
 
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(20.dp)) {
@@ -49,29 +50,29 @@ fun ProfileScreen(
                     Text(p?.phone ?: "—", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
                 }
                 Spacer(Modifier.height(8.dp))
-                Text("Aprendiendo: ${flag(p?.l2)} ${langName(p?.l2)}")
-                Text("Desde: ${langName(p?.l1)}")
-                Text("Nivel: ${levelLabel(p?.level, p?.levelSystem)} (${levelSystemName(p?.levelSystem)})")
+                Text("${I18nStore.t("home.learning", "Aprendiendo")}: ${flag(p?.l2)} ${langName(p?.l2)}")
+                Text("${I18nStore.t("lang.from", "Desde")}: ${langName(p?.l1)}")
+                Text("${I18nStore.t("profile.level", "Nivel")}: ${levelLabel(p?.level, p?.levelSystem)} (${levelSystemName(p?.levelSystem)})")
                 Spacer(Modifier.height(8.dp))
                 AssistChip(
                     onClick = {},
-                    label = { Text("Plan: ${(p?.plan ?: "free").uppercase()}") }
+                    label = { Text("${I18nStore.t("profile.plan", "Plan")}: ${(p?.plan ?: "free").uppercase()}") }
                 )
             }
         }
 
         if ((p?.plan ?: "free") == "free") {
-            Text("Mejora tu plan", style = MaterialTheme.typography.titleMedium)
+            Text(I18nStore.t("profile.upgradeTitle", "Mejora tu plan"), style = MaterialTheme.typography.titleMedium)
             Button(
                 onClick = { vm.openCheckout("basic") { open(it) } },
                 modifier = Modifier.fillMaxWidth().height(52.dp)
-            ) { Text("Hazte Pro — $7/mes") }
+            ) { Text(I18nStore.t("profile.goPro", "Hazte Pro — \$9/mes")) }
             OutlinedButton(
                 onClick = { vm.openCheckout("pro") { open(it) } },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("Premium — $19/mes · voz ilimitada") }
+            ) { Text(I18nStore.t("profile.goPremium", "Premium — \$19/mes · voz ilimitada")) }
             Text(
-                "🔒 Pago seguro con Stripe · aceptado en todo el mundo · cancela cuando quieras",
+                I18nStore.t("profile.payNote", "🔒 Pago seguro con Stripe · aceptado en todo el mundo · cancela cuando quieras"),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -79,7 +80,7 @@ fun ProfileScreen(
             Button(
                 onClick = { vm.openPortal { open(it) } },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("Gestionar suscripción") }
+            ) { Text(I18nStore.t("profile.manage", "Administrar suscripción")) }
         }
 
         Divider(Modifier.padding(vertical = 8.dp))
@@ -87,16 +88,16 @@ fun ProfileScreen(
         OutlinedButton(
             onClick = onDiagnostic,
             modifier = Modifier.fillMaxWidth()
-        ) { Text("🎯  Realiza tu test de nivel") }
+        ) { Text(I18nStore.t("profile.levelTest", "🎯 Realiza tu test de nivel")) }
 
         OutlinedButton(
             onClick = onChangeLanguage,
             modifier = Modifier.fillMaxWidth()
-        ) { Text("Cambiar idioma") }
+        ) { Text(I18nStore.t("profile.changeLanguage", "Cambiar idioma")) }
 
         TextButton(
             onClick = { vm.logout(context, onLogout) },
             modifier = Modifier.fillMaxWidth()
-        ) { Text("Cerrar sesión") }
+        ) { Text(I18nStore.t("profile.logout", "Cerrar sesión")) }
     }
 }
