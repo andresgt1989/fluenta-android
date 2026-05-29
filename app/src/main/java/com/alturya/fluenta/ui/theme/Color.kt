@@ -2,19 +2,34 @@ package com.alturya.fluenta.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Fluenta brand — green (matches WhatsApp bot + PWA identity)
-val FluentaGreen = Color(0xFF166534)      // primary
-val FluentaGreenDark = Color(0xFF14532D)  // deep
-val FluentaGreenBright = Color(0xFF22C55E) // accent / success
-val FluentaGreenLight = Color(0xFFDCFCE7)  // container (light)
-val FluentaGreenContainerDark = Color(0xFF052E16)
+// Fluenta brand — TEAL palette (Claude Design kit, 2026-05-29).
+// Matches mascot/icon drawables. Replaces the legacy WhatsApp-green identity.
+val FluentaTeal = Color(0xFF1BB6A6)        // primary
+val FluentaTealDark = Color(0xFF0E8C80)    // deep / pressed
+val FluentaTealLight = Color(0xFF7FDCCF)   // bright accent (on dark)
+val FluentaTealContainer = Color(0xFFD2F2EC) // primary container (light)
+val FluentaTealContainerDark = Color(0xFF06302C)
 
-val FluentaAmber = Color(0xFFF59E0B)       // streak / highlight
-val FluentaInk = Color(0xFF111827)         // text on light
+val FluentaCoral = Color(0xFFFF6F5E)       // secondary / energy
+val FluentaCoralDark = Color(0xFFE8513F)
+val FluentaCoralContainer = Color(0xFFFFE0DB)
+
+val FluentaAmber = Color(0xFFFFC24B)       // tertiary / streak / highlight
+val FluentaAmberDark = Color(0xFFF0A22E)
+
+val FluentaPurple = Color(0xFF8E6FE0)      // support (vocabulary)
+val FluentaSky = Color(0xFF56A8F2)         // support (listening)
+
+// Semantic success — stays GREEN on purpose (universal "correct answer" cue).
+val FluentaSuccess = Color(0xFF22C55E)
+
+val FluentaInk = Color(0xFF27313F)         // text on light
+val FluentaCream = Color(0xFFFFF6E9)       // warm surface accent
 val FluentaMist = Color(0xFFF3F4F6)        // surface variant (light)
 val FluentaSlate = Color(0xFF6B7280)       // muted text
 val FluentaError = Color(0xFFDC2626)
 
-// Dark scheme surfaces
-val FluentaNight = Color(0xFF0B0F0C)
-val FluentaNightSurface = Color(0xFF13201A)
+// Dark scheme surfaces (teal-tinted night)
+val FluentaNight = Color(0xFF0E1A18)
+val FluentaNightSurface = Color(0xFF13201D)
+val FluentaNightSurfaceVariant = Color(0xFF1E2B28)

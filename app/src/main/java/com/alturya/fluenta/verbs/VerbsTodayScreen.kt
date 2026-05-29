@@ -89,7 +89,7 @@ private fun TodayProgressCard(mastered: Int, target: Int) {
     Card(
         Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (mastered >= target) Color(0xFFDCFCE7) else MaterialTheme.colorScheme.surfaceVariant,
+            containerColor = if (mastered >= target) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
         ),
     ) {
         Column(Modifier.padding(16.dp)) {
@@ -120,7 +120,7 @@ private fun VerbCard(verb: DailyVerbCard, marked: Boolean, onPractice: () -> Uni
         onClick = { expanded = !expanded },
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (mastered) Color(0xFFDCFCE7) else MaterialTheme.colorScheme.surface,
+            containerColor = if (mastered) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
         ),
     ) {
         Column(Modifier.padding(16.dp)) {
