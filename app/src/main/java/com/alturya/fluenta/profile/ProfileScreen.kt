@@ -64,12 +64,17 @@ fun ProfileScreen(
             Text("Mejora tu plan", style = MaterialTheme.typography.titleMedium)
             Button(
                 onClick = { vm.openCheckout("basic") { open(it) } },
-                modifier = Modifier.fillMaxWidth()
-            ) { Text("Suscribirme a Basic") }
+                modifier = Modifier.fillMaxWidth().height(52.dp)
+            ) { Text("Hazte Pro — $7/mes") }
             OutlinedButton(
                 onClick = { vm.openCheckout("pro") { open(it) } },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("Suscribirme a Pro") }
+            ) { Text("Premium — $19/mes · voz ilimitada") }
+            Text(
+                "🔒 Pago seguro con Stripe · aceptado en todo el mundo · cancela cuando quieras",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         } else {
             Button(
                 onClick = { vm.openPortal { open(it) } },
