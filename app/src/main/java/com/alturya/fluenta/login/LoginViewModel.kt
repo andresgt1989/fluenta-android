@@ -3,6 +3,7 @@ package com.alturya.fluenta.login
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.data.TokenStore
 import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.network.FcmRegisterBody
@@ -33,7 +34,7 @@ class LoginViewModel : ViewModel() {
                 ApiClient.api.requestOtp(OtpRequestBody(phone))
                 _state.value = LoginState.OtpSent
             } catch (e: Exception) {
-                _state.value = LoginState.Error("No se pudo enviar el código")
+                _state.value = LoginState.Error(I18nStore.t("login.sendError", "No se pudo enviar el código"))
             }
         }
     }
@@ -55,10 +56,10 @@ class LoginViewModel : ViewModel() {
                     }
                     _state.value = LoginState.Success
                 } else {
-                    _state.value = LoginState.Error("Código incorrecto")
+                    _state.value = LoginState.Error(I18nStore.t("login.codeError", "Código incorrecto"))
                 }
             } catch (e: Exception) {
-                _state.value = LoginState.Error("Código incorrecto")
+                _state.value = LoginState.Error(I18nStore.t("login.codeError", "Código incorrecto"))
             }
         }
     }

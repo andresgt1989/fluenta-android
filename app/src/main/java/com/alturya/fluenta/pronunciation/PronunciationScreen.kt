@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alturya.fluenta.data.I18nStore
 
 @Composable
 fun PronunciationScreen() {
@@ -36,10 +37,10 @@ fun PronunciationScreen() {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Text("Pronunciación", style = MaterialTheme.typography.headlineMedium)
+                Text(I18nStore.t("pronunciation.title", "Pronunciación"), style = MaterialTheme.typography.headlineMedium)
                 if (state.source == "top_error") {
                     Text(
-                        "Trabajando tu fonema más débil",
+                        I18nStore.t("pronunciation.workingWeak", "Trabajando tu fonema más débil"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -47,7 +48,7 @@ fun PronunciationScreen() {
             }
 
             if (drill == null) {
-                item { Text("No hay ejercicio disponible.") }
+                item { Text(I18nStore.t("pronunciation.noExercise", "No hay ejercicio disponible.")) }
                 return@LazyColumn
             }
 
@@ -77,7 +78,7 @@ fun PronunciationScreen() {
 
             item {
                 Text(
-                    "Practica estas frases",
+                    I18nStore.t("pronunciation.practicePhrases", "Practica estas frases"),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(top = 8.dp)
                 )

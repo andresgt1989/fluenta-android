@@ -2,6 +2,7 @@ package com.alturya.fluenta.languages
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.network.LanguagePair
 import com.alturya.fluenta.network.SelectLanguageBody
@@ -30,7 +31,7 @@ class LanguagesViewModel : ViewModel() {
                 val res = ApiClient.api.getLanguages()
                 _state.value = LanguagesState(loading = false, pairs = res.pairs)
             } catch (e: Exception) {
-                _state.value = LanguagesState(loading = false, message = "No se pudo cargar el catálogo")
+                _state.value = LanguagesState(loading = false, message = I18nStore.t("languages.loadError", "No se pudo cargar el catálogo"))
             }
         }
     }
@@ -40,10 +41,10 @@ class LanguagesViewModel : ViewModel() {
             _state.value = _state.value.copy(selecting = l2)
             try {
                 ApiClient.api.selectLanguage(SelectLanguageBody(l2))
-                _state.value = _state.value.copy(selecting = null, message = "Idioma cambiado a ${l2.uppercase()}")
+                _state.value = _state.value.copy(selecting = null, message = I18nStore.t("languages.changed", "Idioma cambiado a {lang}").replace("{lang}", l2.uppercase()))
                 onDone()
             } catch (e: Exception) {
-                _state.value = _state.value.copy(selecting = null, message = "No se pudo cambiar el idioma")
+                _state.value = _state.value.copy(selecting = null, message = I18nStore.t("languages.changeError", "No se pudo cambiar el idioma"))
             }
         }
     }

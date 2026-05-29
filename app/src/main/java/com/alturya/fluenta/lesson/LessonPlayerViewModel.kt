@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.network.ExerciseCheckBody
 import com.alturya.fluenta.network.ExerciseCheckResponse
@@ -66,7 +67,7 @@ class LessonPlayerViewModel(savedState: SavedStateHandle) : ViewModel() {
                 }
             } catch (e: Exception) {
                 Log.e("LessonPlayer", "load failed", e)
-                _state.update { it.copy(loading = false, error = "No se pudo cargar la lección. Reintenta.") }
+                _state.update { it.copy(loading = false, error = I18nStore.t("lesson.loadError", "No se pudo cargar la lección. Reintenta.")) }
             }
         }
     }
@@ -138,7 +139,7 @@ class LessonPlayerViewModel(savedState: SavedStateHandle) : ViewModel() {
                 _state.update { it.copy(submitting = false, result = res) }
             } catch (e: Exception) {
                 Log.e("LessonPlayer", "submit failed", e)
-                _state.update { it.copy(submitting = false, error = "Error enviando respuestas. Reintenta.") }
+                _state.update { it.copy(submitting = false, error = I18nStore.t("lesson.submitError", "Error enviando respuestas. Reintenta.")) }
             }
         }
     }

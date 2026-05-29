@@ -2,6 +2,7 @@ package com.alturya.fluenta.diagnostic
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.network.DiagnosticAnswerBody
 import com.alturya.fluenta.network.DiagnosticProgress
@@ -46,7 +47,7 @@ class DiagnosticViewModel : ViewModel() {
                     sessionId = res.sessionId
                 )
             } catch (e: Exception) {
-                _state.value = DiagnosticUiState.Error("No se pudo iniciar el test")
+                _state.value = DiagnosticUiState.Error(I18nStore.t("diagnostic.startError", "No se pudo iniciar el test"))
             }
         }
     }
@@ -83,7 +84,7 @@ class DiagnosticViewModel : ViewModel() {
                     )
                 }
             } catch (e: Exception) {
-                _state.value = DiagnosticUiState.Error("Algo falló — intenta de nuevo")
+                _state.value = DiagnosticUiState.Error(I18nStore.t("common.error", "Algo falló — intenta de nuevo"))
             }
         }
     }

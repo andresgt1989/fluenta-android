@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import com.alturya.fluenta.R
+import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.audio.Sfx
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -85,7 +86,7 @@ fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit) {
                 },
                 onDone = onDone,
             )
-            state.exercises.isEmpty() -> ErrorView("Esta lección aún no tiene ejercicios disponibles.", onRetry = vm::retry, onBack = onDone)
+            state.exercises.isEmpty() -> ErrorView(I18nStore.t("lesson.noExercises", "Esta lección aún no tiene ejercicios disponibles."), onRetry = vm::retry, onBack = onDone)
             else -> QuizView(state, vm)
         }
     }
@@ -99,7 +100,7 @@ private fun QuizView(state: LessonPlayerState, vm: LessonPlayerViewModel) {
 
     Column(Modifier.fillMaxSize().padding(20.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Ejercicio ${state.currentIndex + 1} de $total", style = MaterialTheme.typography.labelMedium)
+            Text(I18nStore.t("lesson.exerciseOf", "Ejercicio {n} de {total}").replace("{n}", "${state.currentIndex + 1}").replace("{total}", "$total"), style = MaterialTheme.typography.labelMedium)
             Spacer(Modifier.weight(1f))
             Text(
                 "❤️".repeat(state.hearts) + "🤍".repeat((3 - state.hearts).coerceAtLeast(0)),
@@ -147,7 +148,7 @@ private fun QuizView(state: LessonPlayerState, vm: LessonPlayerViewModel) {
                 onContinue = vm::continueAfterFeedback,
             )
         } else {
-            TextButton(onClick = vm::skip, enabled = !state.checking) { Text("Saltar este") }
+            TextButton(onClick = vm::skip, enabled = !state.checking) { Text(I18nStore.t("lesson.skip", "Saltar este")) }
         }
     }
 }
@@ -169,14 +170,14 @@ private fun FeedbackBar(
     Surface(color = container, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp)) {
             Text(
-                if (correct) "¡Correcto! 🎉" else "Casi…",
+                if (correct) I18nStore.t("lesson.correct", "¡Correcto! 🎉") else I18nStore.t("lesson.almost", "Casi…"),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = accent,
             )
             if (!correct && showExpected) {
                 Spacer(Modifier.height(4.dp))
-                Text("Respuesta: ${fb.expected}", style = MaterialTheme.typography.bodyMedium)
+                Text("${I18nStore.t("lesson.answerLabel", "Respuesta")}: ${fb.expected}", style = MaterialTheme.typography.bodyMedium)
             }
             fb.feedback?.let {
                 Spacer(Modifier.height(4.dp))
@@ -187,7 +188,7 @@ private fun FeedbackBar(
                 onClick = onContinue,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = accent),
-            ) { Text("Continuar") }
+            ) { Text(I18nStore.t("common.continue", "Continuar")) }
         }
     }
 }
@@ -204,7 +205,7 @@ private fun TranslateExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) 
         ) {
             Column(Modifier.padding(20.dp)) {
                 Text(
-                    "Traduce esto:",
+                    I18nStore.t("lesson.translatePrompt", "Traduce esto:"),
                     style = MaterialTheme.typography.labelMedium,
                 )
                 Spacer(Modifier.height(4.dp))
@@ -223,7 +224,7 @@ private fun TranslateExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) 
         OutlinedTextField(
             value = text,
             onValueChange = { text = it },
-            label = { Text("Tu respuesta") },
+            label = { Text(I18nStore.t("lesson.yourAnswer", "Tu respuesta")) },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = {
@@ -240,7 +241,7 @@ private fun TranslateExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) 
             },
             enabled = text.isNotBlank(),
             modifier = Modifier.fillMaxWidth().height(52.dp),
-        ) { Text("Comprobar") }
+        ) { Text(I18nStore.t("lesson.check", "Comprobar")) }
     }
 }
 
@@ -283,7 +284,7 @@ private fun MultipleChoiceExercise(ex: PlayableExercise, onSubmit: (String) -> U
             onClick = { onSubmit(selected.toString()) },
             enabled = selected >= 0,
             modifier = Modifier.fillMaxWidth().height(52.dp),
-        ) { Text("Comprobar") }
+        ) { Text(I18nStore.t("lesson.check", "Comprobar")) }
     }
 }
 
@@ -304,7 +305,7 @@ private fun MatchPairsExercise(ex: PlayableExercise, onSubmit: (String) -> Unit)
 
     Column {
         Text(
-            "Empareja",
+            I18nStore.t("match.title", "Empareja"),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
         )
@@ -360,7 +361,7 @@ private fun MatchPairsExercise(ex: PlayableExercise, onSubmit: (String) -> Unit)
             },
             enabled = matched.size == left.size && left.isNotEmpty(),
             modifier = Modifier.fillMaxWidth().height(52.dp),
-        ) { Text("Comprobar") }
+        ) { Text(I18nStore.t("lesson.check", "Comprobar")) }
     }
 }
 
@@ -423,7 +424,7 @@ private fun WordOrderExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) 
             onClick = { onSubmit(selected.joinToString(" ") { tokens[it] }) },
             enabled = selected.isNotEmpty(),
             modifier = Modifier.fillMaxWidth().height(52.dp),
-        ) { Text("Comprobar") }
+        ) { Text(I18nStore.t("lesson.check", "Comprobar")) }
     }
 }
 

@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.DiagnosticQuestion
 import com.alturya.fluenta.ui.FeedbackBar
 import com.alturya.fluenta.util.levelLabel
@@ -241,6 +242,6 @@ private fun ErrorPanel(message: String, onRetry: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         Text(message, style = MaterialTheme.typography.bodyLarge)
         Spacer(Modifier.height(24.dp))
-        OutlinedButton(onClick = onRetry) { Text("Reintentar") }
+        OutlinedButton(onClick = onRetry) { Text(I18nStore.t("common.retry", "Reintentar")) }
     }
 }
