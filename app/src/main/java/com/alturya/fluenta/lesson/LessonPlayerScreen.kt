@@ -135,6 +135,9 @@ private fun QuizView(state: LessonPlayerState, vm: LessonPlayerViewModel) {
                 "word_order" -> WordOrderExercise(ex, onSubmit = { v ->
                     vm.checkAnswer(v)
                 })
+                "fill_blank" -> FillBlankExercise(ex, onSubmit = { v ->
+                    vm.checkAnswer(v)
+                })
                 else -> Text("Tipo no soportado: ${ex.kind}", style = MaterialTheme.typography.bodyMedium)
             }
         }
@@ -206,6 +209,58 @@ private fun TranslateExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) 
             Column(Modifier.padding(20.dp)) {
                 Text(
                     I18nStore.t("lesson.translatePrompt", "Traduce esto:"),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    ex.prompt ?: "",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                )
+                ex.hint?.let {
+                    Spacer(Modifier.height(8.dp))
+                    Text("💡 $it", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        OutlinedTextField(
+            value = text,
+            onValueChange = { text = it },
+            label = { Text(I18nStore.t("lesson.yourAnswer", "Tu respuesta")) },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onSubmit(text.trim())
+            }),
+            singleLine = true,
+        )
+        Spacer(Modifier.height(20.dp))
+        Button(
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onSubmit(text.trim())
+            },
+            enabled = text.isNotBlank(),
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+        ) { Text(I18nStore.t("lesson.check", "Comprobar")) }
+    }
+}
+
+@Composable
+private fun FillBlankExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) {
+    var text by rememberSaveable(ex.index) { mutableStateOf("") }
+    val haptic = LocalHapticFeedback.current
+
+    Column {
+        Card(
+            Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        ) {
+            Column(Modifier.padding(20.dp)) {
+                Text(
+                    I18nStore.t("lesson.fillPrompt", "Completa la frase:"),
                     style = MaterialTheme.typography.labelMedium,
                 )
                 Spacer(Modifier.height(4.dp))
