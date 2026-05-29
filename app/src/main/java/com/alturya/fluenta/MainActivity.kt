@@ -171,6 +171,7 @@ private fun MainScaffold(
                     onPronunciation = { nav.navigate("pronunciation") { launchSingleTop = true } },
                     onPlayMatch = { nav.navigate("match") { launchSingleTop = true } },
                     onStartLesson = { lessonId -> nav.navigate("lesson/$lessonId") },
+                    onChangeLanguage = { nav.navigate("languages") { launchSingleTop = true } },
                 )
             }
             composable("match") { MatchScreen(onDone = { nav.popBackStack() }) }

@@ -32,6 +32,7 @@ fun HomeScreen(
     onPronunciation: () -> Unit = {},
     onPlayMatch: () -> Unit = {},
     onStartLesson: (String) -> Unit = {},
+    onChangeLanguage: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val vm: HomeViewModel = viewModel()
@@ -50,19 +51,37 @@ fun HomeScreen(
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // ── Header ────────────────────────────────────────────────────────────
+        // ── Header: saludo + chip de idioma (tap para cambiar) ─────────────────
         Column {
             Text(
                 I18nStore.t("home.greeting", "Hola 👋"),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
             )
-            Text(
-                "${flag(p?.l2)} ${I18nStore.t("home.learning", "Aprendiendo")} ${langName(p?.l2)} · " +
-                    "${levelLabel(p?.level, p?.levelSystem)} (${levelSystemName(p?.levelSystem)})",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Spacer(Modifier.height(8.dp))
+            Surface(
+                onClick = onChangeLanguage,
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surfaceVariant,
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "${flag(p?.l2)} ${langName(p?.l2)} · ${levelLabel(p?.level, p?.levelSystem)}",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "⇄ ${I18nStore.t("home.changeLanguage", "cambiar")}",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
         }
 
         // ── Streak hero + stats ───────────────────────────────────────────────
@@ -110,7 +129,7 @@ fun HomeScreen(
             ) {
                 Column(Modifier.padding(20.dp)) {
                     Text(
-                        I18nStore.t("home.nextLesson", "Siguiente lección"),
+                        I18nStore.t("home.todayTask", "Tu tarea de hoy"),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                     )
@@ -145,29 +164,44 @@ fun HomeScreen(
             }
         }
 
-        // ── Secondary actions grid ────────────────────────────────────────────
-        Text(
-            I18nStore.t("home.morePractice", "Más práctica"),
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 4.dp),
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ActionCard("🔊", I18nStore.t("home.pronunciationShort", "Pronunciación"), onClick = onPronunciation)
-            ActionCard("🎮", I18nStore.t("home.gameShort", "Juego"), onClick = onPlayMatch)
+        // ── Secundario: COLAPSADO por defecto (coach enfocado, no menú) ────────
+        var showMore by remember { mutableStateOf(false) }
+        Surface(
+            onClick = { showMore = !showMore },
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Text(
+                    "${I18nStore.t("home.morePractice", "Más práctica")} ${if (showMore) "▴" else "▾"}",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ActionCard("🗺", I18nStore.t("home.mapShort", "Mi mapa"), onClick = onSeeMap)
-            ActionCard(
-                "💬",
-                I18nStore.t("home.whatsappShort", "WhatsApp"),
-                enabled = state.practiceWaUrl != null,
-                onClick = {
-                    state.practiceWaUrl?.let { url ->
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                    }
-                },
-            )
+        if (showMore) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                ActionCard("🔊", I18nStore.t("home.pronunciationShort", "Pronunciación"), onClick = onPronunciation)
+                ActionCard("🎮", I18nStore.t("home.gameShort", "Juego"), onClick = onPlayMatch)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                ActionCard("🗺", I18nStore.t("home.mapShort", "Mi mapa"), onClick = onSeeMap)
+                ActionCard(
+                    "💬",
+                    I18nStore.t("home.whatsappShort", "WhatsApp"),
+                    enabled = state.practiceWaUrl != null,
+                    onClick = {
+                        state.practiceWaUrl?.let { url ->
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                        }
+                    },
+                )
+            }
         }
         Spacer(Modifier.height(8.dp))
     }
