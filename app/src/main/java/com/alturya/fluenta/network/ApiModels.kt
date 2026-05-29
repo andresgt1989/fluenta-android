@@ -164,6 +164,8 @@ data class PlayableExercise(
     // match_pairs
     val left: List<String>? = null,
     val right: List<String>? = null,
+    // word_order — banco de palabras a ordenar para formar la frase
+    val tokens: List<String>? = null,
 )
 
 data class LessonPlayResponse(

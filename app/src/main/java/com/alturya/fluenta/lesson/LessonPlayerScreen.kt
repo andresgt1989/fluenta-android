@@ -128,6 +128,9 @@ private fun QuizView(state: LessonPlayerState, vm: LessonPlayerViewModel) {
                 "match_pairs" -> MatchPairsExercise(ex, onSubmit = { v ->
                     vm.checkAnswer(v)
                 })
+                "word_order" -> WordOrderExercise(ex, onSubmit = { v ->
+                    vm.checkAnswer(v)
+                })
                 else -> Text("Tipo no soportado: ${ex.kind}", style = MaterialTheme.typography.bodyMedium)
             }
         }
@@ -355,6 +358,86 @@ private fun MatchPairsExercise(ex: PlayableExercise, onSubmit: (String) -> Unit)
             enabled = matched.size == left.size && left.isNotEmpty(),
             modifier = Modifier.fillMaxWidth().height(52.dp),
         ) { Text("Comprobar") }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun WordOrderExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) {
+    val tokens = ex.tokens ?: emptyList()
+    val selected = remember(ex.index) { mutableStateListOf<Int>() }
+    val haptic = LocalHapticFeedback.current
+
+    Column {
+        Card(
+            Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        ) {
+            Column(Modifier.padding(20.dp)) {
+                Text("Ordena las palabras:", style = MaterialTheme.typography.labelMedium)
+                Spacer(Modifier.height(4.dp))
+                Text(ex.prompt ?: "", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        // Fila respuesta (palabras elegidas en orden)
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
+        ) {
+            FlowRow(
+                modifier = Modifier.padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                selected.forEachIndexed { pos, tokenIdx ->
+                    TokenChip(tokens[tokenIdx], filled = true) {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        selected.removeAt(pos)
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        // Banco de palabras disponibles
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            tokens.indices.forEach { idx ->
+                if (idx !in selected) {
+                    TokenChip(tokens[idx], filled = false) {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        selected.add(idx)
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+        Button(
+            onClick = { onSubmit(selected.joinToString(" ") { tokens[it] }) },
+            enabled = selected.isNotEmpty(),
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+        ) { Text("Comprobar") }
+    }
+}
+
+@Composable
+private fun TokenChip(text: String, filled: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.small,
+        color = if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+        tonalElevation = if (filled) 0.dp else 2.dp,
+    ) {
+        Text(
+            text,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (filled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+        )
     }
 }
 
