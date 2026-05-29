@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.network.DailyVerbCard
 import kotlinx.coroutines.launch
@@ -38,7 +39,7 @@ fun VerbsTodayScreen() {
             Text("⚠️", style = MaterialTheme.typography.displaySmall)
             Text(state.error!!, style = MaterialTheme.typography.bodyLarge)
             Spacer(Modifier.height(20.dp))
-            Button(onClick = vm::load) { Text("Reintentar") }
+            Button(onClick = vm::load) { Text(I18nStore.t("common.retry", "Reintentar")) }
         }
         return
     }
@@ -52,7 +53,7 @@ fun VerbsTodayScreen() {
             Column {
                 Text("Verbos del día", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                 Text(
-                    "Mínimo 10 verbos diarios con sus variantes. Domina 3 veces y se marca completo.",
+                    I18nStore.t("verbs.intro", "Mínimo 10 verbos diarios con sus variantes. Domina 3 veces y se marca completo."),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
@@ -135,10 +136,10 @@ private fun VerbCard(verb: DailyVerbCard, marked: Boolean, onPractice: () -> Uni
             }
             if (expanded) {
                 Spacer(Modifier.height(12.dp))
-                VariantRow("Presente", verb.variants.present.joinToString(" · "))
-                VariantRow("Pasado", verb.variants.past.joinToString(" · "))
-                VariantRow("Futuro", verb.variants.future.joinToString(" · "))
-                VariantRow("Condicional", verb.variants.conditional.joinToString(" · "))
+                VariantRow(I18nStore.t("tense.present", "Presente"), verb.variants.present.joinToString(" · "))
+                VariantRow(I18nStore.t("tense.past", "Pasado"), verb.variants.past.joinToString(" · "))
+                VariantRow(I18nStore.t("tense.future", "Futuro"), verb.variants.future.joinToString(" · "))
+                VariantRow(I18nStore.t("tense.conditional", "Condicional"), verb.variants.conditional.joinToString(" · "))
                 VariantRow("-ing", verb.variants.gerund)
                 VariantRow("-ed", verb.variants.pastParticiple)
                 Spacer(Modifier.height(8.dp))
@@ -146,7 +147,7 @@ private fun VerbCard(verb: DailyVerbCard, marked: Boolean, onPractice: () -> Uni
                 Spacer(Modifier.height(12.dp))
                 if (!mastered) {
                     Button(onClick = onPractice, modifier = Modifier.fillMaxWidth()) {
-                        Text("Ya lo sé ✓")
+                        Text(I18nStore.t("verbs.known", "Ya lo sé ✓"))
                     }
                 }
             }

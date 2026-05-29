@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.ui.FeedbackBar
 
 @Composable
@@ -33,7 +34,7 @@ fun MatchScreen(onDone: () -> Unit = {}) {
     Box(Modifier.fillMaxSize().padding(20.dp)) {
         when {
             state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-            state.empty -> CenteredMessage("Completa lecciones para desbloquear este juego de vocabulario. 🎮")
+            state.empty -> CenteredMessage(I18nStore.t("match.locked", "Completa lecciones para desbloquear este juego de vocabulario. 🎮"))
             state.error != null -> CenteredMessage(state.error!!)
             state.won -> WinPanel(state.attempts, state.answerKey.size, onAgain = { vm.load() }, onDone = onDone)
             else -> GameBoard(state, vm)
@@ -44,8 +45,8 @@ fun MatchScreen(onDone: () -> Unit = {}) {
 @Composable
 private fun GameBoard(state: MatchState, vm: MatchViewModel) {
     Column(Modifier.fillMaxSize()) {
-        Text("Empareja", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        Text("Une cada frase con su significado", style = MaterialTheme.typography.bodyMedium)
+        Text(I18nStore.t("match.title", "Empareja"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Text(I18nStore.t("match.subtitle", "Une cada frase con su significado"), style = MaterialTheme.typography.bodyMedium)
         Spacer(Modifier.height(8.dp))
         val progress by animateFloatAsState(
             targetValue = if (state.answerKey.isEmpty()) 0f else state.matched.size.toFloat() / state.answerKey.size,
@@ -124,13 +125,13 @@ private fun WinPanel(attempts: Int, total: Int, onAgain: () -> Unit, onDone: () 
             Text("🏆", style = MaterialTheme.typography.displayLarge)
         }
         Spacer(Modifier.height(16.dp))
-        Text("¡Completado!", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Text(I18nStore.t("match.completed", "¡Completado!"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         Text("Precisión: $accuracy%  ·  $total pares", style = MaterialTheme.typography.bodyLarge)
         Spacer(Modifier.height(32.dp))
-        Button(onClick = onAgain, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text("Jugar de nuevo") }
+        Button(onClick = onAgain, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text(I18nStore.t("match.playAgain", "Jugar de nuevo")) }
         Spacer(Modifier.height(12.dp))
-        OutlinedButton(onClick = onDone, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text("Listo") }
+        OutlinedButton(onClick = onDone, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text(I18nStore.t("match.done", "Listo")) }
         Spacer(Modifier.height(20.dp))
         FeedbackBar(surface = "match")
     }

@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.LeagueRow
 
 private fun tierEmoji(tier: String): String = when (tier) {
@@ -23,11 +24,11 @@ private fun tierEmoji(tier: String): String = when (tier) {
 }
 
 private fun tierName(tier: String): String = when (tier) {
-    "bronze" -> "Liga Bronce"
-    "silver" -> "Liga Plata"
-    "gold" -> "Liga Oro"
-    "diamond" -> "Liga Diamante"
-    else -> "Liga"
+    "bronze" -> I18nStore.t("league.tierBronze", "Liga Bronce")
+    "silver" -> I18nStore.t("league.tierSilver", "Liga Plata")
+    "gold" -> I18nStore.t("league.tierGold", "Liga Oro")
+    "diamond" -> I18nStore.t("league.tierDiamond", "Liga Diamante")
+    else -> I18nStore.t("league.default", "Liga")
 }
 
 @Composable
@@ -45,9 +46,9 @@ fun LeagueCard() {
             }
             val league = state.league
             if (league == null) {
-                Text("Liga semanal", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(I18nStore.t("league.weekly", "Liga semanal"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(
-                    "Completa lecciones esta semana para entrar a la tabla y competir por subir de liga.",
+                    I18nStore.t("league.empty", "Completa lecciones esta semana para entrar a la tabla y competir por subir de liga."),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 return@Column
@@ -59,14 +60,14 @@ fun LeagueCard() {
                 Column(Modifier.weight(1f)) {
                     Text(tierName(league.tier), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     league.myRank?.let {
-                        Text("Tu posición: #$it · ${league.myWeeklyXp} XP", style = MaterialTheme.typography.bodySmall)
+                        Text("${I18nStore.t("league.position", "Tu posición")}: #$it · ${league.myWeeklyXp} XP", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
             Spacer(Modifier.height(12.dp))
 
             if (league.board.isEmpty()) {
-                Text("Aún nadie tiene XP esta semana. ¡Sé el primero!", style = MaterialTheme.typography.bodyMedium)
+                Text(I18nStore.t("league.emptyBoard", "Aún nadie tiene XP esta semana. ¡Sé el primero!"), style = MaterialTheme.typography.bodyMedium)
             } else {
                 league.board.take(10).forEach { row ->
                     LeagueRowItem(row, promotionCutoff = league.promotionCutoff)
@@ -79,7 +80,7 @@ fun LeagueCard() {
 
             Spacer(Modifier.height(8.dp))
             Text(
-                "Top ${league.promotionCutoff} suben de liga el domingo 🔼",
+                I18nStore.t("league.promotion", "Top {n} suben de liga el domingo 🔼").replace("{n}", "${league.promotionCutoff}"),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.outline,
             )
