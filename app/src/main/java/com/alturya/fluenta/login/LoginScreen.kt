@@ -16,7 +16,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alturya.fluenta.data.I18nStore
 
 @Composable
-fun LoginScreen(onSuccess: () -> Unit) {
+fun LoginScreen(onSuccess: () -> Unit, onTryGuest: (() -> Unit)? = null) {
     val context = LocalContext.current
     val vm: LoginViewModel = viewModel()
     val state by vm.state.collectAsState()
@@ -57,7 +57,31 @@ fun LoginScreen(onSuccess: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(36.dp))
+        Spacer(Modifier.height(24.dp))
+
+        // Play-first onboarding: try a lesson before registering
+        if (onTryGuest != null) {
+            Button(
+                onClick = onTryGuest,
+                modifier = Modifier.fillMaxWidth().height(54.dp),
+            ) {
+                Text(
+                    I18nStore.t("login.tryNow", "▶ Probar una lección ahora"),
+                    style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(
+                I18nStore.t("login.orCreateAccount", "— o crea tu cuenta gratis —"),
+                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(12.dp))
+        } else {
+            Spacer(Modifier.height(12.dp))
+        }
 
         OutlinedTextField(
             value = phone,

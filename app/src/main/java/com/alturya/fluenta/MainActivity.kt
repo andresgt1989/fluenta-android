@@ -26,6 +26,7 @@ import androidx.navigation.navArgument
 import com.alturya.fluenta.exercises.MatchScreen
 import com.alturya.fluenta.home.HomeScreen
 import com.alturya.fluenta.languages.LanguageSelectorScreen
+import com.alturya.fluenta.lesson.GuestLessonScreen
 import com.alturya.fluenta.lesson.LessonPlayerScreen
 import com.alturya.fluenta.login.LoginScreen
 import com.alturya.fluenta.network.ApiClient
@@ -96,9 +97,24 @@ class MainActivity : ComponentActivity() {
                     startDestination = if (token != null) "main" else "login"
                 ) {
                     composable("login") {
-                        LoginScreen(onSuccess = {
-                            rootNav.navigate("main") { popUpTo("login") { inclusive = true } }
-                        })
+                        LoginScreen(
+                            onSuccess = {
+                                rootNav.navigate("main") { popUpTo("login") { inclusive = true } }
+                            },
+                            onTryGuest = {
+                                rootNav.navigate("guest_lesson")
+                            },
+                        )
+                    }
+                    composable("guest_lesson") {
+                        GuestLessonScreen(
+                            onSignUp = {
+                                rootNav.navigate("login") { popUpTo("guest_lesson") { inclusive = true } }
+                            },
+                            onBack = {
+                                rootNav.popBackStack()
+                            },
+                        )
                     }
                     composable("main") {
                         MainScaffold(

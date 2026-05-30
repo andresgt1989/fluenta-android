@@ -25,6 +25,9 @@ data class UserProgress(
     val streakDays: Int,
     val totalXp: Int,
     val completedLessons: Int,
+    val todayXp: Int = 0,
+    val dailyGoalXp: Int = 100,
+    val dailyGoalPct: Int = 0,
     val l1: String?,
     val l2: String?,
     val level: String?,
@@ -163,13 +166,38 @@ data class PlayableExercise(
     // translate_l1_to_l2 / translate_l2_to_l1
     val prompt: String? = null,
     val hint: String? = null,
-    // multiple_choice
+    // multiple_choice / listen_select
     val options: List<String>? = null,
+    // listen_select — L2 text spoken aloud via TTS
+    val audioText: String? = null,
     // match_pairs
     val left: List<String>? = null,
     val right: List<String>? = null,
     // word_order — banco de palabras a ordenar para formar la frase
     val tokens: List<String>? = null,
+)
+
+// Guest lesson (no auth) — play-first onboarding
+data class GuestPostLessonCta(val title: String, val body: String, val ctaLabel: String)
+data class GuestLessonResponse(
+    val guest: Boolean,
+    val lesson: LessonHeader,
+    val l1: String,
+    val l2: String,
+    val introMessage: String?,
+    val exercises: List<PlayableExercise>,
+    val postLessonCta: GuestPostLessonCta?,
+)
+
+// Pronunciation assessment (speak_repeat)
+data class WordResult(val word: String, val transcript: String, val ok: Boolean)
+data class PronunciationAssessResponse(
+    val transcript: String,
+    val expected: String,
+    val score: Int,
+    val wordResults: List<WordResult>,
+    val feedback: String,
+    val xpEarned: Int,
 )
 
 data class LessonPlayResponse(

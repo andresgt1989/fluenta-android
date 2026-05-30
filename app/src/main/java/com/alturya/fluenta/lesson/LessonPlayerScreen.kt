@@ -138,6 +138,9 @@ private fun QuizView(state: LessonPlayerState, vm: LessonPlayerViewModel) {
                 "fill_blank" -> FillBlankExercise(ex, onSubmit = { v ->
                     vm.checkAnswer(v)
                 })
+                "listen_select" -> ListenSelectExercise(ex, onSubmit = { v ->
+                    vm.checkAnswer(v)
+                })
                 else -> Text("Tipo no soportado: ${ex.kind}", style = MaterialTheme.typography.bodyMedium)
             }
         }
@@ -415,6 +418,89 @@ private fun MatchPairsExercise(ex: PlayableExercise, onSubmit: (String) -> Unit)
                 onSubmit(arr.toString())
             },
             enabled = matched.size == left.size && left.isNotEmpty(),
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+        ) { Text(I18nStore.t("lesson.check", "Comprobar")) }
+    }
+}
+
+@Composable
+private fun ListenSelectExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) {
+    val options = ex.options ?: emptyList()
+    var selected by rememberSaveable(ex.index) { mutableStateOf(-1) }
+    var playing by remember(ex.index) { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    // Auto-play TTS when exercise loads
+    LaunchedEffect(ex.index) {
+        ex.audioText?.let { text ->
+            playing = true
+            TtsPlayer.play(context, text)
+            playing = false
+        }
+    }
+
+    Column {
+        // Audio play card
+        Card(
+            Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+            onClick = {
+                ex.audioText?.let { text ->
+                    scope.launch {
+                        playing = true
+                        TtsPlayer.play(context, text)
+                        playing = false
+                    }
+                }
+            },
+        ) {
+            Row(
+                modifier = Modifier.padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Spacer(Modifier.weight(1f))
+                if (playing) {
+                    CircularProgressIndicator(Modifier.size(36.dp), strokeWidth = 3.dp)
+                } else {
+                    Text("🔊", style = MaterialTheme.typography.displaySmall)
+                }
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    I18nStore.t("listen.tapToHear", "Toca para escuchar"),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Spacer(Modifier.weight(1f))
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            I18nStore.t("listen.selectMeaning", "¿Qué significa lo que escuchas?"),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(12.dp))
+        options.forEachIndexed { idx, opt ->
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (selected == idx) MaterialTheme.colorScheme.tertiaryContainer
+                    else MaterialTheme.colorScheme.surfaceVariant,
+                ),
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    selected = idx
+                },
+            ) {
+                Text(opt, modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyLarge)
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+        Button(
+            onClick = { onSubmit(selected.toString()) },
+            enabled = selected >= 0,
             modifier = Modifier.fillMaxWidth().height(52.dp),
         ) { Text(I18nStore.t("lesson.check", "Comprobar")) }
     }

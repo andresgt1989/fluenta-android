@@ -7,11 +7,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alturya.fluenta.data.I18nStore
+import com.alturya.fluenta.network.WordResult
 
 @Composable
 fun PronunciationScreen() {
@@ -85,24 +88,129 @@ fun PronunciationScreen() {
             }
 
             items(drill.phrases) { phrase ->
-                PhraseCard(phrase, playing = state.playing == phrase) { vm.listen(context, phrase) }
+                SpeakRepeatCard(
+                    phrase = phrase,
+                    l2 = "en",  // drill is ES→EN focused; TODO: make dynamic from user profile
+                    playing = state.playing == phrase,
+                    recording = state.recording == phrase,
+                    assessing = state.assessing == phrase,
+                    assessResult = state.assessResults[phrase],
+                    onPlay = { vm.listen(context, phrase) },
+                    onStartRecord = { vm.startRecording(context, phrase) },
+                    onStopRecord = { vm.stopAndAssess("en") },
+                )
             }
         }
     }
 }
 
 @Composable
-private fun PhraseCard(phrase: String, playing: Boolean, onPlay: () -> Unit) {
+private fun SpeakRepeatCard(
+    phrase: String,
+    l2: String,
+    playing: Boolean,
+    recording: Boolean,
+    assessing: Boolean,
+    assessResult: AssessResult?,
+    onPlay: () -> Unit,
+    onStartRecord: () -> Unit,
+    onStopRecord: () -> Unit,
+) {
     Card(Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(phrase, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-            Spacer(Modifier.width(12.dp))
-            FilledIconButton(onClick = onPlay) {
-                if (playing) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                else Text("▶")
+        Column(Modifier.padding(16.dp)) {
+            // Phrase text
+            Text(phrase, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+            Spacer(Modifier.height(12.dp))
+
+            // Action buttons row
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Listen button
+                FilledTonalButton(
+                    onClick = onPlay,
+                    enabled = !recording && !assessing,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    if (playing) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                    else Text("🔊 ${I18nStore.t("pron.listen", "Escuchar")}")
+                }
+
+                // Record / Stop button
+                Button(
+                    onClick = if (recording) onStopRecord else onStartRecord,
+                    enabled = !playing && !assessing,
+                    modifier = Modifier.weight(1f),
+                    colors = if (recording)
+                        ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    else ButtonDefaults.buttonColors(),
+                ) {
+                    when {
+                        assessing -> {
+                            CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary)
+                            Spacer(Modifier.width(6.dp))
+                            Text(I18nStore.t("pron.analyzing", "Analizando…"))
+                        }
+                        recording -> Text("⏹ ${I18nStore.t("pron.stop", "Parar")}")
+                        else -> Text("🎙 ${I18nStore.t("pron.record", "Grabar")}")
+                    }
+                }
+            }
+
+            // Assessment result
+            if (assessResult != null) {
+                Spacer(Modifier.height(12.dp))
+                ScoreBar(assessResult)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScoreBar(result: AssessResult) {
+    val scoreColor = when {
+        result.score >= 90 -> Color(0xFF15803D)
+        result.score >= 70 -> Color(0xFF1BB6A6)
+        result.score >= 40 -> Color(0xFFF0A22E)
+        else -> MaterialTheme.colorScheme.error
+    }
+    Surface(
+        color = scoreColor.copy(alpha = 0.12f),
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "${result.score}%",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = scoreColor,
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(result.feedback, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+            }
+            // Word-by-word result
+            if (result.wordResults.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    result.wordResults.forEach { w ->
+                        Surface(
+                            color = if (w.ok) Color(0xFF22C55E).copy(alpha = 0.18f)
+                            else MaterialTheme.colorScheme.error.copy(alpha = 0.18f),
+                            shape = MaterialTheme.shapes.extraSmall,
+                        ) {
+                            Text(
+                                w.word,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (w.ok) Color(0xFF15803D) else MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
+                }
             }
         }
     }

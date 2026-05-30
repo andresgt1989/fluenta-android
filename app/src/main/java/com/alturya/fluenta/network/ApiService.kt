@@ -1,10 +1,14 @@
 package com.alturya.fluenta.network
 
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 import retrofit2.http.Streaming
@@ -101,4 +105,20 @@ interface ApiService {
 
     @GET("api/i18n/ui")
     suspend fun getUiStrings(@Query("lang") lang: String): UiStringsResponse
+
+    // No-auth guest lesson for play-first onboarding
+    @GET("api/guest/lesson")
+    suspend fun getGuestLesson(
+        @Query("l1") l1: String = "en",
+        @Query("l2") l2: String = "es",
+    ): GuestLessonResponse
+
+    // Pronunciation speak_repeat assessment
+    @Multipart
+    @POST("api/pronunciation/assess")
+    suspend fun assessPronunciation(
+        @Part audio: MultipartBody.Part,
+        @Part("text") text: RequestBody,
+        @Part("l2") l2: RequestBody,
+    ): PronunciationAssessResponse
 }

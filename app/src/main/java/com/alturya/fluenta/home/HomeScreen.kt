@@ -102,6 +102,16 @@ fun HomeScreen(
             lessons = state.progress?.completedLessons ?: 0,
         )
 
+        // ── Meta diaria (daily goal ring) ─────────────────────────────────────
+        val prog = state.progress
+        if (prog != null && prog.dailyGoalXp > 0) {
+            DailyGoalBar(
+                todayXp = prog.todayXp,
+                goalXp = prog.dailyGoalXp,
+                pct = prog.dailyGoalPct,
+            )
+        }
+
         // ── Coach message ─────────────────────────────────────────────────────
         state.coachMessage?.let { msg ->
             Card(
@@ -322,6 +332,42 @@ private fun RowScope.ActionCard(
                 style = MaterialTheme.typography.labelLarge,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DailyGoalBar(todayXp: Int, goalXp: Int, pct: Int) {
+    val fraction = (pct / 100f).coerceIn(0f, 1f)
+    val done = pct >= 100
+    Card(
+        Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (done) MaterialTheme.colorScheme.tertiaryContainer
+            else MaterialTheme.colorScheme.surfaceVariant
+        ),
+    ) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (done) "🎯 ${I18nStore.t("home.goalDone", "¡Meta de hoy completada!")}"
+                    else "🎯 ${I18nStore.t("home.dailyGoal", "Meta de hoy")}",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    "$todayXp / $goalXp XP",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            LinearProgressIndicator(
+                progress = { fraction },
+                modifier = Modifier.fillMaxWidth().height(10.dp),
+                trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
             )
         }
     }

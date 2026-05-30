@@ -34,4 +34,18 @@ object ApiClient {
         .addConverterFactory(GsonConverterFactory.create())
         .build()
         .create(ApiService::class.java)
+
+    // No-auth client for guest endpoints (play-first onboarding)
+    private val noAuthClient = OkHttpClient.Builder()
+        .addInterceptor(HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        })
+        .build()
+
+    val apiNoAuth: ApiService = Retrofit.Builder()
+        .baseUrl(BASE_URL)
+        .client(noAuthClient)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+        .create(ApiService::class.java)
 }
