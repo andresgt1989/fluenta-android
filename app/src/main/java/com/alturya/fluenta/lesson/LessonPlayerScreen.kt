@@ -38,6 +38,7 @@ import androidx.compose.ui.res.painterResource
 import com.alturya.fluenta.R
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.audio.Sfx
+import com.alturya.fluenta.audio.TtsPlayer
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -666,8 +667,6 @@ private fun ListenSelectExercise(ex: PlayableExercise, onSubmit: (String) -> Uni
     Column {
         // Audio play card
         Card(
-            Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
             onClick = {
                 ex.audioText?.let { text ->
                     scope.launch {
@@ -677,6 +676,8 @@ private fun ListenSelectExercise(ex: PlayableExercise, onSubmit: (String) -> Uni
                     }
                 }
             },
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         ) {
             Row(
                 modifier = Modifier.padding(20.dp),

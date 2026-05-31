@@ -3,6 +3,7 @@ package com.alturya.fluenta.profile
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -22,6 +23,7 @@ import com.alturya.fluenta.util.langName
 import com.alturya.fluenta.util.levelLabel
 import com.alturya.fluenta.util.levelSystemName
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProfileScreen(
     onChangeLanguage: () -> Unit = {},
