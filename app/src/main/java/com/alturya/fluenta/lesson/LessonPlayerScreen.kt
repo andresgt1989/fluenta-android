@@ -4,6 +4,12 @@ import android.content.Intent
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.rotate
+import kotlin.math.sin
+import kotlin.math.cos
+import kotlin.random.Random
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -808,6 +814,7 @@ private fun ResultView(
     onContinueOnWhatsApp: () -> Unit,
     onDone: () -> Unit,
 ) {
+    val context = LocalContext.current
     var visible by remember { mutableStateOf(false) }
     val xpScale = remember { Animatable(0f) }
 
@@ -826,6 +833,7 @@ private fun ResultView(
         label = "pulse",
     )
 
+    Box(Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -914,10 +922,104 @@ private fun ResultView(
         }
 
         Spacer(Modifier.height(12.dp))
+
+        // Share to WhatsApp — Sprint 5.1 viral mechanic
+        if (result.passed) {
+            val xpEarned = result.xpEarned
+            val streakDays = result.newStreakDays ?: 0
+            val shareText = if (streakDays > 0)
+                I18nStore.t("result.shareText", "🔥 Racha de $streakDays días en Fluenta · +$xpEarned XP · Aprende inglés por WhatsApp → fluenta.alturya.com")
+                    .replace("$streakDays", "$streakDays").replace("$xpEarned", "$xpEarned")
+            else
+                I18nStore.t("result.shareTextNoStreak", "🎓 Completé una lección en Fluenta · +$xpEarned XP · Aprende inglés por WhatsApp → fluenta.alturya.com")
+                    .replace("$xpEarned", "$xpEarned")
+
+            Button(
+                onClick = {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, shareText)
+                        setPackage("com.whatsapp")
+                    }
+                    runCatching { context.startActivity(intent) }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+            ) {
+                Text("💬 ${I18nStore.t("result.shareWhatsapp", "Compartir en WhatsApp")}", fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+
         OutlinedButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
-            Text("Volver al inicio")
+            Text(I18nStore.t("common.backHome", "Volver al inicio"))
         }
         Spacer(Modifier.height(20.dp))
+    }  // end Column
+
+    // Confetti overlay — full-screen Canvas above the scroll content, fades out after 2.5s
+    if (result.passed) {
+        ConfettiOverlay()
+    }
+    }  // end Box
+}
+
+private data class Particle(
+    val x: Float,
+    val vy: Float,        // vertical velocity (pixels/frame)
+    val vx: Float,        // horizontal drift
+    val color: Color,
+    val size: Float,
+    val rotSpeed: Float,  // degrees/frame
+    var angle: Float = 0f,
+)
+
+@Composable
+private fun ConfettiOverlay() {
+    val colors = listOf(
+        Color(0xFFFFD700), Color(0xFF25D366), Color(0xFF3B82F6),
+        Color(0xFFEC4899), Color(0xFFF97316), Color(0xFF8B5CF6),
+    )
+    val particles = remember {
+        List(60) {
+            Particle(
+                x = Random.nextFloat(),
+                vy = Random.nextFloat() * 6f + 4f,
+                vx = (Random.nextFloat() - 0.5f) * 3f,
+                color = colors[Random.nextInt(colors.size)],
+                size = Random.nextFloat() * 10f + 6f,
+                rotSpeed = (Random.nextFloat() - 0.5f) * 8f,
+            )
+        }
+    }
+    val time = remember { Animatable(0f) }
+    val alpha by animateFloatAsState(
+        targetValue = if (time.value > 1.8f) 0f else 1f,
+        animationSpec = tween(600),
+        label = "confAlpha",
+    )
+    LaunchedEffect(Unit) {
+        time.animateTo(2.5f, tween(2500))
+    }
+    if (time.value >= 2.5f) return
+
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val h = size.height
+        val w = size.width
+        particles.forEach { p ->
+            val yFrac = (time.value * p.vy * 0.12f) % 1.1f
+            val xFrac = p.x + time.value * p.vx * 0.02f
+            val cx = xFrac * w
+            val cy = yFrac * h + p.size
+            p.angle += p.rotSpeed
+            rotate(p.angle, pivot = Offset(cx, cy)) {
+                drawRect(
+                    color = p.color.copy(alpha = alpha),
+                    topLeft = Offset(cx - p.size / 2, cy - p.size / 2),
+                    size = androidx.compose.ui.geometry.Size(p.size, p.size * 0.5f),
+                )
+            }
+        }
     }
 }
 
