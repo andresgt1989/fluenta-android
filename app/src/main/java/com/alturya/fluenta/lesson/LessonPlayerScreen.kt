@@ -1,7 +1,9 @@
 package com.alturya.fluenta.lesson
 
 import android.content.Intent
+import android.media.MediaRecorder
 import android.net.Uri
+import android.os.Build
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -43,9 +45,16 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.network.PlayableExercise
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 
 @Composable
 fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit) {
@@ -139,6 +148,9 @@ private fun QuizView(state: LessonPlayerState, vm: LessonPlayerViewModel) {
                     vm.checkAnswer(v)
                 })
                 "listen_select" -> ListenSelectExercise(ex, onSubmit = { v ->
+                    vm.checkAnswer(v)
+                })
+                "speak_repeat" -> SpeakRepeatExercise(ex, onSubmit = { v ->
                     vm.checkAnswer(v)
                 })
                 else -> Text("Tipo no soportado: ${ex.kind}", style = MaterialTheme.typography.bodyMedium)
@@ -420,6 +432,169 @@ private fun MatchPairsExercise(ex: PlayableExercise, onSubmit: (String) -> Unit)
             enabled = matched.size == left.size && left.isNotEmpty(),
             modifier = Modifier.fillMaxWidth().height(52.dp),
         ) { Text(I18nStore.t("lesson.check", "Comprobar")) }
+    }
+}
+
+@Composable
+private fun SpeakRepeatExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var recording by remember { mutableStateOf(false) }
+    var assessing by remember { mutableStateOf(false) }
+    var score by remember { mutableStateOf<Int?>(null) }
+    var feedback by remember { mutableStateOf<String?>(null) }
+    var recorder by remember { mutableStateOf<MediaRecorder?>(null) }
+    var recFile by remember { mutableStateOf<File?>(null) }
+
+    val phrase = ex.phrase ?: ex.prompt ?: ""
+    val l2 = "en" // TODO: pass from lesson context
+
+    // Cleanup on exit
+    androidx.compose.runtime.DisposableEffect(ex.index) {
+        onDispose {
+            recorder?.let { runCatching { it.stop(); it.release() } }
+            recorder = null
+            recFile?.delete()
+        }
+    }
+
+    Column {
+        // Phrase card
+        Card(
+            Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        ) {
+            Column(Modifier.padding(20.dp)) {
+                Text(
+                    ex.prompt ?: I18nStore.t("speak.repeatThis", "Repite esta frase:"),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    phrase,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                ex.hint?.let {
+                    Spacer(Modifier.height(8.dp))
+                    Text("💡 $it", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+
+        // Score display if assessed
+        score?.let { s ->
+            val color = when {
+                s >= 90 -> androidx.compose.ui.graphics.Color(0xFF15803D)
+                s >= 70 -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.error
+            }
+            Surface(
+                color = color.copy(alpha = 0.12f),
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "$s%",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = color,
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        feedback ?: "",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+
+        // Record / Stop button
+        Button(
+            onClick = {
+                if (recording) {
+                    // Stop and assess
+                    recording = false
+                    assessing = true
+                    recorder?.let { r -> runCatching { r.stop(); r.release() } }
+                    recorder = null
+                    scope.launch {
+                        try {
+                            val file = recFile ?: return@launch
+                            val result = withContext(Dispatchers.IO) {
+                                val audioPart = MultipartBody.Part.createFormData(
+                                    "audio", file.name,
+                                    file.asRequestBody("audio/mp4".toMediaType())
+                                )
+                                ApiClient.api.assessPronunciation(
+                                    audioPart,
+                                    phrase.toRequestBody("text/plain".toMediaType()),
+                                    l2.toRequestBody("text/plain".toMediaType()),
+                                )
+                            }
+                            score = result.score
+                            feedback = result.feedback
+                            assessing = false
+                            // Auto-submit score as answer
+                            onSubmit(result.score.toString())
+                        } catch (e: Exception) {
+                            assessing = false
+                            score = 0
+                            feedback = "Error al procesar audio. Intenta de nuevo."
+                        } finally {
+                            recFile?.delete()
+                            recFile = null
+                        }
+                    }
+                } else {
+                    // Start recording
+                    val file = File(context.cacheDir, "lesson_rec_${ex.index}.mp4")
+                    recFile = file
+                    val mr = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                        MediaRecorder(context) else @Suppress("DEPRECATION") MediaRecorder()).apply {
+                        setAudioSource(MediaRecorder.AudioSource.MIC)
+                        setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                        setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                        setOutputFile(file.absolutePath)
+                        prepare()
+                        start()
+                    }
+                    recorder = mr
+                    recording = true
+                    score = null
+                    feedback = null
+                }
+            },
+            enabled = !assessing,
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            colors = if (recording)
+                ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            else ButtonDefaults.buttonColors(),
+        ) {
+            when {
+                assessing -> {
+                    CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary)
+                    Spacer(Modifier.width(8.dp))
+                    Text(I18nStore.t("speak.analyzing", "Analizando pronunciación…"))
+                }
+                recording -> Text("⏹ ${I18nStore.t("speak.stopRecording", "Parar y evaluar")}")
+                score != null -> Text("🔄 ${I18nStore.t("speak.tryAgain", "Intentar de nuevo")}")
+                else -> Text("🎙 ${I18nStore.t("speak.startRecording", "Grabar mi voz")}")
+            }
+        }
+
+        if (!recording && !assessing && score == null) {
+            Spacer(Modifier.height(8.dp))
+            TextButton(
+                onClick = { onSubmit("50") }, // skip with mid score
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text(I18nStore.t("lesson.skip", "Saltar este ejercicio")) }
+        }
     }
 }
 

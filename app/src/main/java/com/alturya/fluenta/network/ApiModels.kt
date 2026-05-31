@@ -170,6 +170,8 @@ data class PlayableExercise(
     val options: List<String>? = null,
     // listen_select — L2 text spoken aloud via TTS
     val audioText: String? = null,
+    // speak_repeat — phrase to say aloud + instruction
+    val phrase: String? = null,
     // match_pairs
     val left: List<String>? = null,
     val right: List<String>? = null,
@@ -199,6 +201,16 @@ data class PronunciationAssessResponse(
     val feedback: String,
     val xpEarned: Int,
 )
+
+// Badges / achievements
+data class Badge(
+    val id: String,
+    val icon: String,
+    val title: String,
+    val desc: String,
+    val earned: Boolean,
+)
+data class BadgesResponse(val badges: List<Badge>, val earned: Int, val total: Int)
 
 data class LessonPlayResponse(
     val lesson: LessonHeader,

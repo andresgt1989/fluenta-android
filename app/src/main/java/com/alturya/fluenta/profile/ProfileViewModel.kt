@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alturya.fluenta.data.TokenStore
 import com.alturya.fluenta.network.ApiClient
+import com.alturya.fluenta.network.Badge
 import com.alturya.fluenta.network.UserProfile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,7 +13,10 @@ import kotlinx.coroutines.launch
 
 data class ProfileState(
     val loading: Boolean = true,
-    val profile: UserProfile? = null
+    val profile: UserProfile? = null,
+    val badges: List<Badge> = emptyList(),
+    val badgesEarned: Int = 0,
+    val badgesTotal: Int = 0,
 )
 
 class ProfileViewModel : ViewModel() {
@@ -26,7 +30,14 @@ class ProfileViewModel : ViewModel() {
         viewModelScope.launch {
             _state.value = ProfileState(loading = true)
             val profile = try { ApiClient.api.getProfile() } catch (_: Exception) { null }
-            _state.value = ProfileState(loading = false, profile = profile)
+            val badgesRes = try { ApiClient.api.getBadges() } catch (_: Exception) { null }
+            _state.value = ProfileState(
+                loading = false,
+                profile = profile,
+                badges = badgesRes?.badges ?: emptyList(),
+                badgesEarned = badgesRes?.earned ?: 0,
+                badgesTotal = badgesRes?.total ?: 0,
+            )
         }
     }
 

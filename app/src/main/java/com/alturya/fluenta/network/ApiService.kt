@@ -106,6 +106,9 @@ interface ApiService {
     @GET("api/i18n/ui")
     suspend fun getUiStrings(@Query("lang") lang: String): UiStringsResponse
 
+    @GET("api/user/badges")
+    suspend fun getBadges(): BadgesResponse
+
     // No-auth guest lesson for play-first onboarding
     @GET("api/guest/lesson")
     suspend fun getGuestLesson(

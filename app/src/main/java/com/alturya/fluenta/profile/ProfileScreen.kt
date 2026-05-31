@@ -3,15 +3,20 @@ package com.alturya.fluenta.profile
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alturya.fluenta.data.I18nStore
+import com.alturya.fluenta.network.Badge
 import com.alturya.fluenta.util.flag
 import com.alturya.fluenta.util.langName
 import com.alturya.fluenta.util.levelLabel
@@ -38,7 +43,7 @@ fun ProfileScreen(
 
     val p = state.profile
     Column(
-        modifier = Modifier.fillMaxSize().padding(20.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(I18nStore.t("profile.title", "Mi perfil"), style = MaterialTheme.typography.headlineMedium)
@@ -99,5 +104,53 @@ fun ProfileScreen(
             onClick = { vm.logout(context, onLogout) },
             modifier = Modifier.fillMaxWidth()
         ) { Text(I18nStore.t("profile.logout", "Cerrar sesión")) }
+
+        // ── Badges / logros ───────────────────────────────────────────────────
+        if (state.badges.isNotEmpty()) {
+            Divider(Modifier.padding(vertical = 4.dp))
+            Text(
+                "${I18nStore.t("profile.badges", "Logros")} · ${state.badgesEarned}/${state.badgesTotal}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            androidx.compose.foundation.layout.FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                state.badges.forEach { badge -> BadgeChip(badge) }
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+    }
+}
+
+@Composable
+private fun BadgeChip(badge: Badge) {
+    val earned = badge.earned
+    Surface(
+        color = if (earned) MaterialTheme.colorScheme.tertiaryContainer
+        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        shape = MaterialTheme.shapes.medium,
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).widthIn(min = 72.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                badge.icon,
+                style = MaterialTheme.typography.titleLarge,
+                color = if (earned) Color.Unspecified else Color.Gray,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                badge.title,
+                style = MaterialTheme.typography.labelSmall,
+                textAlign = TextAlign.Center,
+                color = if (earned) MaterialTheme.colorScheme.onTertiaryContainer
+                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                maxLines = 2,
+            )
+        }
     }
 }
