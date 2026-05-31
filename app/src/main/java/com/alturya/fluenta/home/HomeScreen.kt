@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alturya.fluenta.data.I18nStore
+import com.alturya.fluenta.progress.LeagueViewModel
 import com.alturya.fluenta.util.flag
 import com.alturya.fluenta.util.langName
 import com.alturya.fluenta.util.levelLabel
@@ -222,6 +223,9 @@ fun HomeScreen(
             }
         }
 
+        // ── Liga semanal teaser — visible desde Home para enganchar competencia ─
+        LeagueTeaserCard()
+
         // ── Secundario: COLAPSADO por defecto (coach enfocado, no menú) ────────
         var showMore by remember { mutableStateOf(false) }
         Surface(
@@ -376,6 +380,53 @@ private fun DailyGoalBar(todayXp: Int, goalXp: Int, pct: Int) {
                 progress = { fraction },
                 modifier = Modifier.fillMaxWidth().height(10.dp),
                 trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun LeagueTeaserCard() {
+    val vm: LeagueViewModel = viewModel()
+    val state by vm.state.collectAsState()
+    val league = state.league ?: return
+
+    val tierEmoji = when (league.tier) {
+        "bronze" -> "🥉"; "silver" -> "🥈"; "gold" -> "🥇"; "diamond" -> "💎"; else -> "🏅"
+    }
+    val tierLabel = when (league.tier) {
+        "bronze" -> I18nStore.t("league.tierBronze", "Liga Bronce")
+        "silver" -> I18nStore.t("league.tierSilver", "Liga Plata")
+        "gold" -> I18nStore.t("league.tierGold", "Liga Oro")
+        "diamond" -> I18nStore.t("league.tierDiamond", "Liga Diamante")
+        else -> I18nStore.t("league.default", "Liga")
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(tierEmoji, style = MaterialTheme.typography.headlineSmall)
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text(tierLabel, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                league.myRank?.let {
+                    Text(
+                        "#$it · ${league.myWeeklyXp} XP ${I18nStore.t("league.thisWeek", "esta semana")}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            val topN = league.promotionCutoff
+            Text(
+                I18nStore.t("league.topNPromo", "Top $topN sube").replace("$topN", "$topN"),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
             )
         }
     }

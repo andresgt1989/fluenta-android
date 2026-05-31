@@ -1,5 +1,10 @@
 package com.alturya.fluenta.progress
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,6 +36,14 @@ private fun tierName(tier: String): String = when (tier) {
     else -> I18nStore.t("league.default", "Liga")
 }
 
+private fun tierColor(tier: String): Color = when (tier) {
+    "bronze" -> Color(0xFFCD7F32)
+    "silver" -> Color(0xFF94A3B8)
+    "gold" -> Color(0xFFEAB308)
+    "diamond" -> Color(0xFF38BDF8)
+    else -> Color(0xFF6366F1)
+}
+
 @Composable
 fun LeagueCard() {
     val vm: LeagueViewModel = viewModel()
@@ -38,6 +51,19 @@ fun LeagueCard() {
 
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    I18nStore.t("league.weekly", "Liga semanal"),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
+                )
+                if (state.refreshing && state.league != null) {
+                    CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+
             if (state.loading) {
                 Box(Modifier.fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(Modifier.size(28.dp))
@@ -46,7 +72,6 @@ fun LeagueCard() {
             }
             val league = state.league
             if (league == null) {
-                Text(I18nStore.t("league.weekly", "Liga semanal"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(
                     I18nStore.t("league.empty", "Completa lecciones esta semana para entrar a la tabla y competir por subir de liga."),
                     style = MaterialTheme.typography.bodyMedium,
@@ -54,27 +79,80 @@ fun LeagueCard() {
                 return@Column
             }
 
+            // Tier header
+            val tc = tierColor(league.tier)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(tierEmoji(league.tier), style = MaterialTheme.typography.headlineMedium)
-                Spacer(Modifier.width(8.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(tierName(league.tier), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    league.myRank?.let {
-                        Text("${I18nStore.t("league.position", "Tu posición")}: #$it · ${league.myWeeklyXp} XP", style = MaterialTheme.typography.bodySmall)
-                    }
+                Surface(color = tc.copy(alpha = 0.15f), shape = RoundedCornerShape(8.dp)) {
+                    Text(
+                        "${tierEmoji(league.tier)} ${tierName(league.tier)}",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = tc,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    )
+                }
+                Spacer(Modifier.weight(1f))
+                league.myRank?.let {
+                    Text(
+                        "#$it · ${league.myWeeklyXp} XP",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                    )
                 }
             }
+
+            // XP progress bar toward promotion
+            val topXp = league.board.firstOrNull()?.weeklyXp?.takeIf { it > 0 } ?: 1
+            val myXp = league.myWeeklyXp
+            val promotionXp = league.board.getOrNull(league.promotionCutoff - 1)?.weeklyXp ?: topXp
+            val progressFraction = (myXp.toFloat() / promotionXp.coerceAtLeast(1)).coerceIn(0f, 1f)
+            val animatedProgress by animateFloatAsState(progressFraction, tween(800), label = "xpBar")
+
+            Spacer(Modifier.height(10.dp))
+            Column {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(
+                        "🎯 ${I18nStore.t("league.toPromotion", "Para subir de liga")}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        "$myXp / $promotionXp XP",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
+                LinearProgressIndicator(
+                    progress = { animatedProgress },
+                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                    color = tc,
+                    trackColor = tc.copy(alpha = 0.15f),
+                )
+            }
+
             Spacer(Modifier.height(12.dp))
+            HorizontalDivider()
+            Spacer(Modifier.height(8.dp))
 
             if (league.board.isEmpty()) {
                 Text(I18nStore.t("league.emptyBoard", "Aún nadie tiene XP esta semana. ¡Sé el primero!"), style = MaterialTheme.typography.bodyMedium)
             } else {
-                league.board.take(10).forEach { row ->
-                    LeagueRowItem(row, promotionCutoff = league.promotionCutoff)
+                var shown by remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) { shown = true }
+                league.board.take(10).forEachIndexed { idx, row ->
+                    AnimatedVisibility(
+                        visible = shown,
+                        enter = slideInVertically(tween(durationMillis = 200, delayMillis = idx * 40)) { it / 2 } + fadeIn(tween(150, idx * 40)),
+                    ) {
+                        LeagueRowItem(row, promotionCutoff = league.promotionCutoff, tierColor = tc)
+                    }
                 }
                 if (league.myRank != null && league.myRank > 10) {
-                    Divider(Modifier.padding(vertical = 6.dp))
-                    league.board.find { it.isMe }?.let { LeagueRowItem(it, promotionCutoff = league.promotionCutoff) }
+                    HorizontalDivider(Modifier.padding(vertical = 6.dp))
+                    league.board.find { it.isMe }?.let {
+                        LeagueRowItem(it, promotionCutoff = league.promotionCutoff, tierColor = tc)
+                    }
                 }
             }
 
@@ -89,23 +167,35 @@ fun LeagueCard() {
 }
 
 @Composable
-private fun LeagueRowItem(row: LeagueRow, promotionCutoff: Int) {
+private fun LeagueRowItem(row: LeagueRow, promotionCutoff: Int, tierColor: Color) {
     val inPromotion = row.rank <= promotionCutoff
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 3.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(if (row.isMe) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+            .background(
+                when {
+                    row.isMe -> MaterialTheme.colorScheme.primaryContainer
+                    inPromotion -> tierColor.copy(alpha = 0.07f)
+                    else -> Color.Transparent
+                }
+            )
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        val rankText = when (row.rank) {
+            1 -> "🥇"
+            2 -> "🥈"
+            3 -> "🥉"
+            else -> "${row.rank}"
+        }
         Text(
-            "${row.rank}",
+            rankText,
             style = MaterialTheme.typography.titleSmall,
             fontWeight = if (inPromotion) FontWeight.Bold else FontWeight.Normal,
-            color = if (inPromotion) Color(0xFF22C55E) else MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.width(28.dp),
+            color = if (inPromotion) tierColor else MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.width(32.dp),
         )
         Text(
             row.label,
@@ -113,6 +203,15 @@ private fun LeagueRowItem(row: LeagueRow, promotionCutoff: Int) {
             fontWeight = if (row.isMe) FontWeight.Bold else FontWeight.Normal,
             modifier = Modifier.weight(1f),
         )
-        Text("${row.weeklyXp} XP", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+        Text(
+            "${row.weeklyXp} XP",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = if (row.isMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+        )
+        if (inPromotion) {
+            Spacer(Modifier.width(6.dp))
+            Text("🔼", style = MaterialTheme.typography.labelSmall)
+        }
     }
 }

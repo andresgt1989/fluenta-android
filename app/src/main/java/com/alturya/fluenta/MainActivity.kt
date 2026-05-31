@@ -11,6 +11,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.tween
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -190,7 +195,11 @@ private fun MainScaffold(
         NavHost(
             navController = nav,
             startDestination = "home",
-            modifier = Modifier.padding(pad)
+            modifier = Modifier.padding(pad),
+            enterTransition = { slideInHorizontally(tween(280)) { it / 4 } + fadeIn(tween(220)) },
+            exitTransition = { slideOutHorizontally(tween(220)) { -it / 4 } + fadeOut(tween(180)) },
+            popEnterTransition = { slideInHorizontally(tween(280)) { -it / 4 } + fadeIn(tween(220)) },
+            popExitTransition = { slideOutHorizontally(tween(220)) { it / 4 } + fadeOut(tween(180)) },
         ) {
             composable("home") {
                 HomeScreen(
