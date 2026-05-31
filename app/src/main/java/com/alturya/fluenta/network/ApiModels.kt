@@ -28,6 +28,7 @@ data class UserProgress(
     val todayXp: Int = 0,
     val dailyGoalXp: Int = 100,
     val dailyGoalPct: Int = 0,
+    val cardsDueToday: Int = 0,
     val l1: String?,
     val l2: String?,
     val level: String?,

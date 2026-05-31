@@ -9,13 +9,22 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseOutBounce
+import androidx.compose.animation.core.EaseOutElastic
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.draw.scale
 import androidx.compose.foundation.Image
@@ -126,8 +135,8 @@ private fun QuizView(state: LessonPlayerState, vm: LessonPlayerViewModel) {
         AnimatedContent(
             targetState = ex.index,
             transitionSpec = {
-                (slideInHorizontally { it } + fadeIn()) togetherWith
-                    (slideOutHorizontally { -it } + fadeOut())
+                (slideInHorizontally(spring(stiffness = Spring.StiffnessMediumLow)) { it / 2 } + fadeIn(tween(200))) togetherWith
+                    (slideOutHorizontally(tween(180)) { -it / 2 } + fadeOut(tween(150)))
             },
             label = "exercise",
         ) { _ ->
@@ -159,13 +168,20 @@ private fun QuizView(state: LessonPlayerState, vm: LessonPlayerViewModel) {
 
         Spacer(Modifier.weight(1f))
         val fb = state.feedback
-        if (fb != null) {
-            FeedbackBar(
-                fb = fb,
-                showExpected = ex.kind != "match_pairs",
-                onContinue = vm::continueAfterFeedback,
-            )
-        } else {
+        AnimatedVisibility(
+            visible = fb != null,
+            enter = slideInVertically(tween(280)) { it } + fadeIn(tween(200)),
+            exit = slideOutVertically(tween(220)) { it } + fadeOut(tween(150)),
+        ) {
+            if (fb != null) {
+                FeedbackBar(
+                    fb = fb,
+                    showExpected = ex.kind != "match_pairs",
+                    onContinue = vm::continueAfterFeedback,
+                )
+            }
+        }
+        if (fb == null) {
             TextButton(onClick = vm::skip, enabled = !state.checking) { Text(I18nStore.t("lesson.skip", "Saltar este")) }
         }
     }
@@ -178,35 +194,60 @@ private fun FeedbackBar(
     onContinue: () -> Unit,
 ) {
     val haptic = LocalHapticFeedback.current
+    val iconScale = remember { Animatable(0f) }
+
     LaunchedEffect(fb) {
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         if (fb.correct) Sfx.correct() else Sfx.wrong()
+        // Bounce animation for the feedback icon
+        iconScale.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium))
     }
+
     val correct = fb.correct
     val container = if (correct) Color(0xFFD7F5DD) else MaterialTheme.colorScheme.errorContainer
     val accent = if (correct) Color(0xFF15803D) else MaterialTheme.colorScheme.error
+
     Surface(color = container, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp)) {
-            Text(
-                if (correct) I18nStore.t("lesson.correct", "¡Correcto! 🎉") else I18nStore.t("lesson.almost", "Casi…"),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = accent,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (correct) "✅" else "❌",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.scale(iconScale.value),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    if (correct) I18nStore.t("lesson.correct", "¡Correcto!") else I18nStore.t("lesson.almost", "Casi…"),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = accent,
+                )
+            }
             if (!correct && showExpected) {
-                Spacer(Modifier.height(4.dp))
-                Text("${I18nStore.t("lesson.answerLabel", "Respuesta")}: ${fb.expected}", style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(6.dp))
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        "${I18nStore.t("lesson.answerLabel", "Respuesta correcta")}: ${fb.expected}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(10.dp),
+                    )
+                }
             }
             fb.feedback?.let {
-                Spacer(Modifier.height(4.dp))
-                Text("💡 $it", style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(6.dp))
+                Text("💡 $it", style = MaterialTheme.typography.bodySmall, color = accent.copy(alpha = 0.85f))
             }
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(14.dp))
             Button(
                 onClick = onContinue,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = accent),
-            ) { Text(I18nStore.t("common.continue", "Continuar")) }
+            ) { Text(I18nStore.t("common.continue", "Continuar"), fontWeight = FontWeight.Bold) }
         }
     }
 }
@@ -768,9 +809,14 @@ private fun ResultView(
     onDone: () -> Unit,
 ) {
     var visible by remember { mutableStateOf(false) }
+    val xpScale = remember { Animatable(0f) }
+
     LaunchedEffect(Unit) {
         visible = true
-        if (result.passed) Sfx.success()
+        if (result.passed) {
+            Sfx.success()
+            xpScale.animateTo(1f, spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow))
+        }
     }
     val transition = rememberInfiniteTransition(label = "celebrate")
     val pulse by transition.animateFloat(
@@ -804,10 +850,13 @@ private fun ResultView(
         )
         Spacer(Modifier.height(16.dp))
 
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Stat("✓", "${result.correctCount}/${result.total}", "Correctos")
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.scale(if (result.passed) xpScale.value else 1f),
+        ) {
+            Stat("✓", "${result.correctCount}/${result.total}", I18nStore.t("result.correct", "Correctos"))
             Stat("⭐", "+${result.xpEarned}", "XP")
-            result.newStreakDays?.let { Stat("🔥", "$it", "Racha") }
+            result.newStreakDays?.let { Stat("🔥", "$it", I18nStore.t("result.streak", "Racha")) }
         }
 
         Spacer(Modifier.height(24.dp))

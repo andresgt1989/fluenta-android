@@ -11,20 +11,34 @@ import android.os.Looper
  * no rompe nada; la háptica sigue dando feedback.
  */
 object Sfx {
-    fun correct() = play(ToneGenerator.TONE_PROP_ACK, 140)
-    fun wrong() = play(ToneGenerator.TONE_SUP_ERROR, 250)
-    fun success() = play(ToneGenerator.TONE_PROP_BEEP2, 400)
+    // Correct: short satisfying ding
+    fun correct() = play(ToneGenerator.TONE_PROP_BEEP, 120)
+    // Wrong: gentle error tone (not harsh)
+    fun wrong() = play(ToneGenerator.TONE_PROP_NACK, 180)
+    // Lesson complete: celebratory double-beep
+    fun success() {
+        play(ToneGenerator.TONE_PROP_BEEP, 180)
+        Handler(Looper.getMainLooper()).postDelayed({ play(ToneGenerator.TONE_PROP_BEEP2, 280) }, 200)
+    }
+    // Level-up notification
+    fun levelUp() {
+        play(ToneGenerator.TONE_PROP_BEEP, 120)
+        Handler(Looper.getMainLooper()).postDelayed({ play(ToneGenerator.TONE_PROP_BEEP2, 300) }, 150)
+        Handler(Looper.getMainLooper()).postDelayed({ play(ToneGenerator.TONE_PROP_ACK, 400) }, 450)
+    }
+    // Streak alert
+    fun streakAlert() = play(ToneGenerator.TONE_PROP_NACK, 120)
 
     private fun play(tone: Int, durationMs: Int) {
         try {
-            val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 80)
+            val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 75)
             tg.startTone(tone, durationMs)
             Handler(Looper.getMainLooper()).postDelayed(
                 { runCatching { tg.release() } },
-                (durationMs + 120).toLong(),
+                (durationMs + 150).toLong(),
             )
         } catch (_: Exception) {
-            // sonido es opcional; nunca debe tumbar la lección
+            // Sound is optional — haptics still provide feedback
         }
     }
 }

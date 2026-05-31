@@ -186,10 +186,14 @@ fun HomeScreen(
         }
 
         // ── Repaso (SRS) — acción diaria primaria de retención ────────────────
+        val dueCount = state.progress?.cardsDueToday ?: 0
         Card(
             onClick = onRepaso,
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+            colors = CardDefaults.cardColors(
+                containerColor = if (dueCount > 0) MaterialTheme.colorScheme.tertiaryContainer
+                else MaterialTheme.colorScheme.secondaryContainer
+            ),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -199,13 +203,17 @@ fun HomeScreen(
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        I18nStore.t("home.reviewTitle", "Repasar tus errores"),
+                        if (dueCount > 0)
+                            I18nStore.t("home.reviewDue", "Repasar ($dueCount vencen hoy)")
+                                .replace("\$dueCount", "$dueCount")
+                        else I18nStore.t("home.reviewTitle", "Repasar tus errores"),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                     )
                     Text(
-                        I18nStore.t("home.reviewSubtitle", "Refuerza lo que se te olvida (SRS)"),
+                        if (dueCount > 0) I18nStore.t("home.reviewUrgent", "¡No dejes que se olviden! Toca aquí")
+                        else I18nStore.t("home.reviewSubtitle", "Refuerza lo que se te olvida (SRS)"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                     )
