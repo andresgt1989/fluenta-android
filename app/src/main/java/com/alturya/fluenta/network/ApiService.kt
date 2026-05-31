@@ -109,6 +109,12 @@ interface ApiService {
     @GET("api/user/badges")
     suspend fun getBadges(): BadgesResponse
 
+    @GET("api/referral")
+    suspend fun getReferral(): ReferralResponse
+
+    @POST("api/referral/claim")
+    suspend fun claimReferral(@Body body: ReferralClaimBody): ReferralClaimResponse
+
     // No-auth guest lesson for play-first onboarding
     @GET("api/guest/lesson")
     suspend fun getGuestLesson(

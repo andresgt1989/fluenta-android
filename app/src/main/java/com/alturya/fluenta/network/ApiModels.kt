@@ -305,6 +305,18 @@ data class LeagueResponse(
     val demotionCutoff: Int?,
 )
 
+// ── Referral ──────────────────────────────────────────────────────────────
+data class ReferralResponse(
+    val code: String,
+    val shareUrl: String,
+    val shareText: String,
+    val referred: Int,
+    val activated: Int,
+    val rewardDays: Int,
+)
+data class ReferralClaimBody(val code: String)
+data class ReferralClaimResponse(val ok: Boolean, val message: String? = null, val reason: String? = null)
+
 // ── i18n UI strings (Capa 1 — Detección L1 + 30 pares) ───────────────────
 // Backend serves localized UI strings per interface lang from /api/i18n/ui?lang=xx.
 // Cached on-device 24h via I18nStore; backend caches 30d in Redis.

@@ -121,6 +121,10 @@ fun ProfileScreen(
                 state.badges.forEach { badge -> BadgeChip(badge) }
             }
         }
+        // ── Referidos ─────────────────────────────────────────────────────────
+        Divider(Modifier.padding(vertical = 4.dp))
+        ReferralCard()
+
         Spacer(Modifier.height(20.dp))
     }
 }
