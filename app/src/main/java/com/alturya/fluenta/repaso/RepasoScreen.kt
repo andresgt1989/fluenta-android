@@ -5,6 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -125,10 +126,28 @@ fun RepasoScreen(onDone: () -> Unit) {
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         ) {
             Column(Modifier.padding(20.dp)) {
-                current.errorCategory?.let {
-                    Text(it.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(6.dp))
+                // F4.3 — source badge: shows if error came from WhatsApp or lesson
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    current.errorCategory?.let {
+                        Text(it.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.width(8.dp))
+                    }
+                    val isWa = current.source == "wa"
+                    Surface(
+                        color = if (isWa) Color(0xFF25D366).copy(alpha = 0.18f)
+                        else MaterialTheme.colorScheme.primaryContainer,
+                        shape = MaterialTheme.shapes.extraSmall,
+                    ) {
+                        Text(
+                            if (isWa) "💬 WhatsApp" else "📱 App",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isWa) Color(0xFF1A9E50)
+                            else MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
                 }
+                Spacer(Modifier.height(8.dp))
                 Text(
                     I18nStore.t("repaso.yourMistake", "Tu error anterior:"),
                     style = MaterialTheme.typography.labelMedium,

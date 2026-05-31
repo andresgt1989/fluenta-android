@@ -78,7 +78,8 @@ data class ErrorItem(
     @SerializedName("review_count") val reviewCount: Int?,
     @SerializedName("next_review_at") val nextReviewAt: String?,
     @SerializedName("mastered_at") val masteredAt: String?,
-    @SerializedName("first_seen_at") val firstSeenAt: String?
+    @SerializedName("first_seen_at") val firstSeenAt: String?,
+    val source: String? = null,  // "wa" = from WhatsApp conversation, "app" = from lesson player
 )
 
 data class ErrorsResponse(val errors: List<ErrorItem>)

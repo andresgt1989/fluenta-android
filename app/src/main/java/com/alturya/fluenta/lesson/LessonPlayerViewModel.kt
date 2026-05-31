@@ -1,5 +1,6 @@
 package com.alturya.fluenta.lesson
 
+import android.app.Application
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -36,7 +37,7 @@ data class LessonPlayerState(
     val result: LessonSubmitResponse? = null,
 )
 
-class LessonPlayerViewModel(savedState: SavedStateHandle) : ViewModel() {
+class LessonPlayerViewModel(savedState: SavedStateHandle, private val app: Application? = null) : ViewModel() {
     private val lessonId: String = checkNotNull(savedState.get<String>("lessonId")) {
         "lessonId arg required"
     }
@@ -46,28 +47,42 @@ class LessonPlayerViewModel(savedState: SavedStateHandle) : ViewModel() {
 
     init { load() }
 
+    private fun applyLesson(res: LessonPlayResponse) {
+        _state.update {
+            it.copy(
+                loading = false,
+                title = res.lesson.title,
+                introMessage = res.introMessage,
+                exercises = res.exercises,
+                currentIndex = 0,
+                answers = emptyMap(),
+                feedback = null,
+                result = null,
+                hearts = 3,
+                startedAtMs = System.currentTimeMillis(),
+            )
+        }
+    }
+
     private fun load() {
         _state.update { it.copy(loading = true, error = null) }
         viewModelScope.launch {
             try {
                 val res: LessonPlayResponse = ApiClient.api.getLessonPlay(lessonId)
-                _state.update {
-                    it.copy(
-                        loading = false,
-                        title = res.lesson.title,
-                        introMessage = res.introMessage,
-                        exercises = res.exercises,
-                        currentIndex = 0,
-                        answers = emptyMap(),
-                        feedback = null,
-                        result = null,
-                        hearts = 3,
-                        startedAtMs = System.currentTimeMillis(),
-                    )
-                }
+                // Cache for offline use
+                app?.let { LessonCache.save(it, lessonId, res) }
+                applyLesson(res)
             } catch (e: Exception) {
                 Log.e("LessonPlayer", "load failed", e)
-                _state.update { it.copy(loading = false, error = I18nStore.t("lesson.loadError", "No se pudo cargar la lección. Reintenta.")) }
+                // Try offline cache before showing error
+                val cached = app?.let { LessonCache.load(it, lessonId) }
+                if (cached != null) {
+                    applyLesson(cached)
+                    // Subtle banner: lesson loaded from cache
+                    _state.update { it.copy(introMessage = (it.introMessage ?: "") + " [offline]") }
+                } else {
+                    _state.update { it.copy(loading = false, error = I18nStore.t("lesson.loadError", "No se pudo cargar la lección. Reintenta.")) }
+                }
             }
         }
     }
