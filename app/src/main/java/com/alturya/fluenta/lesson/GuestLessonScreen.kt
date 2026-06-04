@@ -1,8 +1,10 @@
 package com.alturya.fluenta.lesson
 
-// Play-first onboarding: a full lesson playable WITHOUT logging in.
-// Calls GET /api/guest/lesson (no auth token). Shows postLessonCta after
-// completion to drive registration. Max 3 lessons per IP/hour (server enforced).
+// Play-first onboarding: a full lesson playable WITHOUT logging in, in the exact
+// language pair the user picked during onboarding. Calls GET /api/guest/lesson
+// (no auth). The guest endpoint does NOT return correct answers, so we do NOT
+// fake a "correct/wrong" verdict — this is an honest guided taste of the product.
+// After it, postLessonCta drives registration. Max 3 lessons per IP/hour (server).
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -17,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alturya.fluenta.data.I18nStore
@@ -36,12 +39,14 @@ data class GuestLessonState(
     val introMessage: String? = null,
     val cta: GuestPostLessonCta? = null,
     val currentIndex: Int = 0,
-    val feedback: Boolean? = null, // true=correct, false=wrong
+    val answered: Boolean = false,
     val done: Boolean = false,
-    val correctCount: Int = 0,
 )
 
-class GuestLessonViewModel : ViewModel() {
+class GuestLessonViewModel(
+    private val l1: String,
+    private val l2: String,
+) : ViewModel() {
     private val _state = MutableStateFlow(GuestLessonState())
     val state = _state.asStateFlow()
 
@@ -50,7 +55,7 @@ class GuestLessonViewModel : ViewModel() {
     private fun loadLesson() {
         viewModelScope.launch {
             try {
-                val res = ApiClient.apiNoAuth.getGuestLesson(l1 = "en", l2 = "es")
+                val res = ApiClient.apiNoAuth.getGuestLesson(l1 = l1, l2 = l2)
                 _state.value = GuestLessonState(
                     loading = false,
                     lesson = res.lesson,
@@ -61,42 +66,38 @@ class GuestLessonViewModel : ViewModel() {
             } catch (e: Exception) {
                 _state.value = GuestLessonState(
                     loading = false,
-                    error = "No se pudo cargar la lección. Verifica tu conexión.",
+                    error = I18nStore.t("guest.loadError", "No se pudo cargar la lección. Verifica tu conexión."),
                 )
             }
         }
     }
 
-    fun submit(value: String) {
-        val s = _state.value
-        val ex = s.exercises.getOrNull(s.currentIndex) ?: return
-        // Local grading for guest (no server round-trip needed — no auth)
-        val correct = when (ex.kind) {
-            "multiple_choice", "listen_select" -> {
-                val picked = value.toIntOrNull() ?: -1
-                picked >= 0 // guest: always accept any selection as "ok" — just show answer
-            }
-            "match_pairs" -> true // guest: accept anything
-            else -> value.isNotBlank()
-        }
-        val newCorrect = if (correct) s.correctCount + 1 else s.correctCount
-        _state.value = s.copy(feedback = correct, correctCount = newCorrect)
+    // No server-side grading for guests (the endpoint doesn't expose answers), so
+    // we simply advance — the value is accepted as the user's attempt.
+    fun submit(@Suppress("UNUSED_PARAMETER") value: String) {
+        _state.value = _state.value.copy(answered = true)
     }
 
     fun continueLesson() {
         val s = _state.value
         val next = s.currentIndex + 1
-        if (next >= s.exercises.size) {
-            _state.value = s.copy(feedback = null, done = true)
-        } else {
-            _state.value = s.copy(feedback = null, currentIndex = next)
-        }
+        _state.value = if (next >= s.exercises.size) s.copy(answered = false, done = true)
+        else s.copy(answered = false, currentIndex = next)
+    }
+
+    class Factory(private val l1: String, private val l2: String) : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T =
+            GuestLessonViewModel(l1, l2) as T
     }
 }
 
 @Composable
-fun GuestLessonScreen(onSignUp: () -> Unit, onBack: () -> Unit) {
-    val vm: GuestLessonViewModel = viewModel()
+fun GuestLessonScreen(l1: String, l2: String, onSignUp: () -> Unit, onBack: () -> Unit) {
+    val vm: GuestLessonViewModel = viewModel(
+        key = "guest_${l1}_$l2",
+        factory = GuestLessonViewModel.Factory(l1, l2),
+    )
     val state by vm.state.collectAsState()
 
     Box(Modifier.fillMaxSize()) {
@@ -114,8 +115,6 @@ fun GuestLessonScreen(onSignUp: () -> Unit, onBack: () -> Unit) {
                 Button(onClick = onBack) { Text(I18nStore.t("common.back", "Volver")) }
             }
             state.done -> GuestResultView(
-                correctCount = state.correctCount,
-                total = state.exercises.size,
                 cta = state.cta,
                 onSignUp = onSignUp,
                 onBack = onBack,
@@ -156,24 +155,19 @@ private fun GuestQuizView(
             Spacer(Modifier.height(12.dp))
         }
 
-        // Reuse the same exercise composables from LessonPlayerScreen
-        // by delegating to a simplified version here for guest mode
         GuestExercise(ex = ex, onSubmit = onSubmit)
 
         Spacer(Modifier.weight(1f))
 
-        if (state.feedback != null) {
-            val correct = state.feedback
+        if (state.answered) {
             Surface(
-                color = if (correct) MaterialTheme.colorScheme.tertiaryContainer
-                else MaterialTheme.colorScheme.errorContainer,
+                color = MaterialTheme.colorScheme.tertiaryContainer,
                 shape = MaterialTheme.shapes.large,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(Modifier.padding(16.dp)) {
                     Text(
-                        if (correct) "✅ ${I18nStore.t("lesson.correct", "¡Correcto!")}"
-                        else "💪 ${I18nStore.t("lesson.keepGoing", "¡Sigue intentando!")}",
+                        "👍 ${I18nStore.t("guest.keepGoing", "¡Bien! Sigamos")}",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                     )
@@ -189,7 +183,6 @@ private fun GuestQuizView(
 
 @Composable
 private fun GuestExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) {
-    // Simplified exercise view for guest mode — no server check, just tap & continue
     var selected by remember(ex.index) { mutableStateOf(-1) }
     var textInput by remember(ex.index) { mutableStateOf("") }
 
@@ -248,8 +241,6 @@ private fun GuestExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) {
 
 @Composable
 private fun GuestResultView(
-    correctCount: Int,
-    total: Int,
     cta: GuestPostLessonCta?,
     onSignUp: () -> Unit,
     onBack: () -> Unit,
@@ -272,9 +263,12 @@ private fun GuestResultView(
             fontWeight = FontWeight.Bold,
         )
         Spacer(Modifier.height(8.dp))
-        Text("$correctCount/$total ${I18nStore.t("guest.correct", "correctas")}",
+        Text(
+            I18nStore.t("guest.tasteSubtitle", "Así se siente aprender con Fluenta."),
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary)
+            color = MaterialTheme.colorScheme.primary,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
         Spacer(Modifier.height(24.dp))
 
         Card(
@@ -295,7 +289,7 @@ private fun GuestResultView(
         }
         Spacer(Modifier.height(12.dp))
         TextButton(onClick = onBack) {
-            Text(I18nStore.t("common.back", "Volver al inicio"))
+            Text(I18nStore.t("common.back", "Volver"))
         }
     }
 }

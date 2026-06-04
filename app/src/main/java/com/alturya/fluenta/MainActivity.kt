@@ -6,9 +6,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.animation.fadeIn
@@ -35,6 +38,8 @@ import com.alturya.fluenta.lesson.GuestLessonScreen
 import com.alturya.fluenta.lesson.LessonPlayerScreen
 import com.alturya.fluenta.login.LoginScreen
 import com.alturya.fluenta.network.ApiClient
+import com.alturya.fluenta.onboarding.OnboardingScreen
+import kotlinx.coroutines.launch
 import com.alturya.fluenta.profile.ProfileScreen
 import com.alturya.fluenta.progress.ProgressScreen
 import com.alturya.fluenta.pronunciation.PronunciationScreen
@@ -74,7 +79,9 @@ class MainActivity : ComponentActivity() {
             FluentaTheme {
                 val context = LocalContext.current
                 val rootNav = rememberNavController()
-                val token by TokenStore.getToken(context).collectAsState(initial = null)
+                val scope = rememberCoroutineScope()
+                val startState by TokenStore.getStartState(context).collectAsState(initial = null)
+                val token = startState?.first
                 val deepLinkLesson by pendingLessonId
 
                 // RTL: mirror the whole UI when the interface language is ar/fa/ur/he.
@@ -94,30 +101,67 @@ class MainActivity : ComponentActivity() {
                     I18nStore.ensureLoaded(context, deviceLang)
                 }
 
+                // First-run routing, decided ONCE from a single atomic prefs read so
+                // there's no token/onboarding race, then frozen (changing a NavHost
+                // startDestination after composition would rebuild the graph).
+                var startDest by remember { mutableStateOf<String?>(null) }
+                LaunchedEffect(startState) {
+                    if (startDest == null && startState != null) {
+                        val (tok, onboardingDone) = startState!!
+                        startDest = when {
+                            tok != null -> "main"
+                            onboardingDone -> "login"
+                            else -> "onboarding"
+                        }
+                    }
+                }
+
                 androidx.compose.runtime.CompositionLocalProvider(
                     androidx.compose.ui.platform.LocalLayoutDirection provides layoutDir
                 ) {
+                val dest = startDest
+                if (dest == null) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                } else {
                 NavHost(
                     navController = rootNav,
-                    startDestination = if (token != null) "main" else "login"
+                    startDestination = dest
                 ) {
+                    composable("onboarding") {
+                        OnboardingScreen(onPicked = { l1, l2 ->
+                            scope.launch { TokenStore.saveOnboardingChoice(context, l1, l2) }
+                            rootNav.navigate("guest_lesson/$l1/$l2")
+                        })
+                    }
                     composable("login") {
                         LoginScreen(
                             onSuccess = {
                                 rootNav.navigate("main") { popUpTo("login") { inclusive = true } }
                             },
                             onTryGuest = {
-                                rootNav.navigate("guest_lesson")
+                                rootNav.navigate("onboarding")
                             },
                         )
                     }
-                    composable("guest_lesson") {
+                    composable(
+                        route = "guest_lesson/{l1}/{l2}",
+                        arguments = listOf(
+                            navArgument("l1") { type = NavType.StringType },
+                            navArgument("l2") { type = NavType.StringType },
+                        ),
+                    ) { entry ->
+                        val gl1 = entry.arguments?.getString("l1") ?: "es"
+                        val gl2 = entry.arguments?.getString("l2") ?: "en"
                         GuestLessonScreen(
+                            l1 = gl1,
+                            l2 = gl2,
                             onSignUp = {
-                                rootNav.navigate("login") { popUpTo("guest_lesson") { inclusive = true } }
+                                rootNav.navigate("login") { popUpTo("onboarding") { inclusive = true } }
                             },
                             onBack = {
-                                rootNav.popBackStack()
+                                rootNav.navigate("login") { popUpTo("onboarding") { inclusive = true } }
                             },
                         )
                     }
@@ -130,6 +174,7 @@ class MainActivity : ComponentActivity() {
                             onLessonConsumed = { pendingLessonId.value = null },
                         )
                     }
+                }
                 }
                 }
             }

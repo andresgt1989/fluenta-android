@@ -9,6 +9,7 @@ import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.network.FcmRegisterBody
 import com.alturya.fluenta.network.OtpRequestBody
 import com.alturya.fluenta.network.OtpVerifyBody
+import com.alturya.fluenta.network.SelectLanguageBody
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -47,6 +48,13 @@ class LoginViewModel : ViewModel() {
                 if (res.token != null) {
                     TokenStore.save(context, res.token, phone)
                     ApiClient.setToken(res.token)
+                    // Apply the language the user picked during play-first onboarding,
+                    // so their fresh account starts on the right pair.
+                    val chosenL2 = TokenStore.getChosenL2(context).firstOrNull()
+                    if (!chosenL2.isNullOrBlank()) {
+                        try { ApiClient.api.selectLanguage(SelectLanguageBody(chosenL2)) }
+                        catch (_: Exception) { /* non-critical: user can change in-app */ }
+                    }
                     // Register any FCM token that was generated before login.
                     val fcmToken = TokenStore.getFcmToken(context).firstOrNull()
                     if (fcmToken != null) {

@@ -495,7 +495,7 @@ private fun SpeakRepeatExercise(ex: PlayableExercise, onSubmit: (String) -> Unit
     var recFile by remember { mutableStateOf<File?>(null) }
 
     val phrase = ex.phrase ?: ex.prompt ?: ""
-    val l2 = "en" // TODO: pass from lesson context
+    val l2 = com.alturya.fluenta.data.Session.l2 ?: "en"
 
     // Cleanup on exit
     androidx.compose.runtime.DisposableEffect(ex.index) {

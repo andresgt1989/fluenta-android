@@ -91,14 +91,14 @@ fun PronunciationScreen() {
             items(drill.phrases) { phrase ->
                 SpeakRepeatCard(
                     phrase = phrase,
-                    l2 = "en",  // drill is ES→EN focused; TODO: make dynamic from user profile
+                    l2 = com.alturya.fluenta.data.Session.l2 ?: "en",
                     playing = state.playing == phrase,
                     recording = state.recording == phrase,
                     assessing = state.assessing == phrase,
                     assessResult = state.assessResults[phrase],
                     onPlay = { vm.listen(context, phrase) },
                     onStartRecord = { vm.startRecording(context, phrase) },
-                    onStopRecord = { vm.stopAndAssess("en") },
+                    onStopRecord = { vm.stopAndAssess(com.alturya.fluenta.data.Session.l2 ?: "en") },
                 )
             }
         }

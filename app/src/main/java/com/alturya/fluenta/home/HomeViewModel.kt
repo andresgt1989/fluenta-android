@@ -32,6 +32,10 @@ class HomeViewModel : ViewModel() {
         viewModelScope.launch {
             _state.value = HomeState(loading = true)
             val profile = try { ApiClient.api.getProfile() } catch (_: Exception) { null }
+            profile?.let {
+                com.alturya.fluenta.data.Session.l1 = it.l1
+                com.alturya.fluenta.data.Session.l2 = it.l2
+            }
             val progress = try { ApiClient.api.getProgress() } catch (_: Exception) { null }
             val next = try { ApiClient.api.getNextLesson().next } catch (_: Exception) { null }
             val coach = try { ApiClient.api.getCoachMessage() } catch (_: Exception) { null }

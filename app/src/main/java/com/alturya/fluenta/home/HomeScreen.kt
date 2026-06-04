@@ -184,6 +184,29 @@ fun HomeScreen(
                     }
                 }
             }
+        } else {
+            // No assigned next lesson yet (fresh account / unseeded pair): never leave
+            // the user without a primary action — send them into their plan.
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
+                onClick = onSeeMap,
+            ) {
+                Column(Modifier.padding(20.dp)) {
+                    Text(
+                        I18nStore.t("home.startHereTitle", "Empieza tu primera lección"),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        I18nStore.t("home.startHereSubtitle", "Abre tu plan y da el primer paso de hoy."),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
+                    )
+                }
+            }
         }
 
         // ── Repaso (SRS) — acción diaria primaria de retención ────────────────
