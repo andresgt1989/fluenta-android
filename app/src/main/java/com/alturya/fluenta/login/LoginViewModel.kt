@@ -44,13 +44,14 @@ class LoginViewModel : ViewModel() {
         viewModelScope.launch {
             _state.value = LoginState.Loading
             try {
-                val res = ApiClient.api.verifyOtp(OtpVerifyBody(phone, code))
+                val deviceL1 = java.util.Locale.getDefault().language.takeIf { it.length == 2 } ?: "es"
+                val chosenL2 = TokenStore.getChosenL2(context).firstOrNull()
+                val res = ApiClient.api.verifyOtp(OtpVerifyBody(phone, code, deviceL1, chosenL2))
                 if (res.token != null) {
                     TokenStore.save(context, res.token, phone)
                     ApiClient.setToken(res.token)
                     // Apply the language the user picked during play-first onboarding,
                     // so their fresh account starts on the right pair.
-                    val chosenL2 = TokenStore.getChosenL2(context).firstOrNull()
                     if (!chosenL2.isNullOrBlank()) {
                         try { ApiClient.api.selectLanguage(SelectLanguageBody(chosenL2)) }
                         catch (_: Exception) { /* non-critical: user can change in-app */ }

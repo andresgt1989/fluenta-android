@@ -3,7 +3,7 @@ package com.alturya.fluenta.network
 import com.google.gson.annotations.SerializedName
 
 data class OtpRequestBody(val phone: String)
-data class OtpVerifyBody(val phone: String, val code: String)
+data class OtpVerifyBody(val phone: String, val code: String, val l1: String? = null, val l2: String? = null)
 data class OtpRequestResponse(val ok: Boolean, val delivered: Boolean?, val message: String?)
 data class OtpVerifyResponse(val ok: Boolean, val token: String?, val isNewUser: Boolean?)
 
