@@ -26,7 +26,9 @@ import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.progress.LeagueViewModel
 import com.alturya.fluenta.util.flag
 import com.alturya.fluenta.util.langName
+import com.alturya.fluenta.util.levelIndex
 import com.alturya.fluenta.util.levelLabel
+import com.alturya.fluenta.util.levelLadderShort
 import com.alturya.fluenta.util.levelSystemName
 
 @Composable
@@ -37,6 +39,7 @@ fun HomeScreen(
     onStartLesson: (String) -> Unit = {},
     onChangeLanguage: () -> Unit = {},
     onRepaso: () -> Unit = {},
+    onLevelTest: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val vm: HomeViewModel = viewModel()
@@ -95,6 +98,9 @@ fun HomeScreen(
                 }
             }
         }
+
+        // ── Viaje de nivel (CEFR/HSK/JLPT) — dónde estás y a dónde vas ─────────
+        LevelJourneyCard(level = p?.level, levelSystem = p?.levelSystem, onLevelTest = onLevelTest)
 
         // ── Streak hero + stats ───────────────────────────────────────────────
         StatsHero(
@@ -462,4 +468,89 @@ private fun affectiveLabel(state: String): String = when (state) {
     "at_risk" -> I18nStore.t("affective.atRisk", "Te extrañamos — vamos suave hoy")
     "steady" -> I18nStore.t("affective.steady", "Constante 🌱")
     else -> ""
+}
+
+// ── Viaje de nivel (ficha §7-BIS): "estás en B1 → meta C1" ────────────────────
+// Sin nivel (test omitido) → nudge para hacer el test. Con nivel → escalera del
+// marco del par (CEFR/JLPT/HSK/TOPIK) con la banda actual resaltada.
+@Composable
+private fun LevelJourneyCard(level: String?, levelSystem: String?, onLevelTest: () -> Unit) {
+    val idx = levelIndex(level)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            if (idx < 0) {
+                Text(
+                    "🎯 ${I18nStore.t("home.discoverLevel", "Descubre tu nivel")}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    I18nStore.t("home.discoverLevelHint", "Haz un test corto y ajustamos las lecciones a tu nivel real."),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(12.dp))
+                Button(onClick = onLevelTest, modifier = Modifier.fillMaxWidth()) {
+                    Text(I18nStore.t("home.takeLevelTest", "Hacer el test de nivel"))
+                }
+            } else {
+                val ladder = levelLadderShort(levelSystem)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "🧭 ${I18nStore.t("home.yourJourney", "Tu camino")}",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        "${I18nStore.t("home.goal", "meta")} ${levelLabel("c1", levelSystem)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    ladder.forEachIndexed { i, lbl ->
+                        val current = i == idx
+                        val done = i < idx
+                        Surface(
+                            shape = MaterialTheme.shapes.medium,
+                            color = when {
+                                current -> MaterialTheme.colorScheme.primary
+                                done -> MaterialTheme.colorScheme.primaryContainer
+                                else -> MaterialTheme.colorScheme.surface
+                            },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text(
+                                lbl,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = if (current) FontWeight.Bold else FontWeight.Normal,
+                                textAlign = TextAlign.Center,
+                                color = when {
+                                    current -> MaterialTheme.colorScheme.onPrimary
+                                    done -> MaterialTheme.colorScheme.onPrimaryContainer
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "${I18nStore.t("home.youAreHere", "Estás en")} ${levelLabel(level, levelSystem)}.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
 }

@@ -36,6 +36,19 @@ fun levelSystemName(levelSystem: String?): String = when ((levelSystem ?: "cefr"
     else -> "CEFR"
 }
 
+// Position of the user's level on the 5-band ladder (0..4); -1 if unknown/null
+// (→ Home shows the "discover your level" nudge instead of the journey).
+fun levelIndex(level: String?): Int = CEFR_ORDER.indexOf((level ?: "").lowercase())
+
+// Short band labels for the Home level-journey pills (no system prefix — the
+// "goal" label carries the framework name).
+fun levelLadderShort(levelSystem: String?): List<String> = when ((levelSystem ?: "cefr").lowercase()) {
+    "jlpt" -> JLPT_LADDER
+    "hsk" -> listOf("1", "2", "3", "4", "5")
+    "topik" -> TOPIK_LADDER
+    else -> CEFR_ORDER.map { it.uppercase() }
+}
+
 // Localized via I18nStore (a Korean user sees "영어" for English). Falls back to the
 // Spanish name (or the uppercased code) when the backend strings aren't loaded.
 fun langName(code: String?): String {

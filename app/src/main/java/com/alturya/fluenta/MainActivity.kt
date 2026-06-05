@@ -265,6 +265,7 @@ private fun MainScaffold(
                     onStartLesson = { lessonId -> nav.navigate("lesson/$lessonId") },
                     onChangeLanguage = { nav.navigate("languages") { launchSingleTop = true } },
                     onRepaso = { nav.navigate("repaso") { launchSingleTop = true } },
+                    onLevelTest = { nav.navigate("diagnostic") { launchSingleTop = true } },
                 )
             }
             composable("match") { MatchScreen(onDone = { nav.popBackStack() }) }
