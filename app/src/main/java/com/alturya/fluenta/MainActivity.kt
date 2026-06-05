@@ -137,13 +137,24 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("login") {
                         LoginScreen(
-                            onSuccess = {
-                                rootNav.navigate("main") { popUpTo("login") { inclusive = true } }
+                            onSuccess = { isNewUser ->
+                                if (isNewUser) {
+                                    // New account → detect CEFR level so the whole curriculum
+                                    // (lessons, coach, path) turns on at the right level.
+                                    rootNav.navigate("level_test") { popUpTo("login") { inclusive = true } }
+                                } else {
+                                    rootNav.navigate("main") { popUpTo("login") { inclusive = true } }
+                                }
                             },
                             onTryGuest = {
                                 rootNav.navigate("onboarding")
                             },
                         )
+                    }
+                    composable("level_test") {
+                        DiagnosticScreen(onDone = {
+                            rootNav.navigate("main") { popUpTo("level_test") { inclusive = true } }
+                        })
                     }
                     composable(
                         route = "guest_lesson/{l1}/{l2}",

@@ -36,7 +36,7 @@ fun DiagnosticScreen(onDone: () -> Unit = {}) {
 
     Box(modifier = Modifier.fillMaxSize().padding(20.dp)) {
         when (val s = state) {
-            DiagnosticUiState.Intro -> IntroPanel(onStart = { vm.start() })
+            DiagnosticUiState.Intro -> IntroPanel(onStart = { vm.start() }, onSkip = onDone)
             DiagnosticUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
@@ -48,7 +48,7 @@ fun DiagnosticScreen(onDone: () -> Unit = {}) {
 }
 
 @Composable
-private fun IntroPanel(onStart: () -> Unit) {
+private fun IntroPanel(onStart: () -> Unit, onSkip: () -> Unit = {}) {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -67,6 +67,10 @@ private fun IntroPanel(onStart: () -> Unit) {
             onClick = onStart,
             modifier = Modifier.fillMaxWidth().height(56.dp)
         ) { Text("Empezar el test", style = MaterialTheme.typography.titleMedium) }
+        Spacer(Modifier.height(12.dp))
+        TextButton(onClick = onSkip) {
+            Text(I18nStore.t("diagnostic.skipForNow", "Hacerlo más tarde"))
+        }
     }
 }
 

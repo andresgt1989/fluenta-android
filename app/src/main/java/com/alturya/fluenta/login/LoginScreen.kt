@@ -16,7 +16,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alturya.fluenta.data.I18nStore
 
 @Composable
-fun LoginScreen(onSuccess: () -> Unit, onTryGuest: (() -> Unit)? = null) {
+fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) {
     val context = LocalContext.current
     val vm: LoginViewModel = viewModel()
     val state by vm.state.collectAsState()
@@ -25,7 +25,7 @@ fun LoginScreen(onSuccess: () -> Unit, onTryGuest: (() -> Unit)? = null) {
     var code by remember { mutableStateOf("") }
 
     LaunchedEffect(state) {
-        if (state is LoginState.Success) onSuccess()
+        if (state is LoginState.Success) onSuccess((state as LoginState.Success).isNewUser)
     }
 
     Column(

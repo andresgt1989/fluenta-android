@@ -19,7 +19,7 @@ sealed class LoginState {
     object Idle : LoginState()
     object Loading : LoginState()
     object OtpSent : LoginState()
-    object Success : LoginState()
+    data class Success(val isNewUser: Boolean) : LoginState()
     data class Error(val message: String) : LoginState()
 }
 
@@ -63,7 +63,7 @@ class LoginViewModel : ViewModel() {
                             ApiClient.api.registerFcmToken(FcmRegisterBody(fcmToken))
                         } catch (_: Exception) { /* non-critical */ }
                     }
-                    _state.value = LoginState.Success
+                    _state.value = LoginState.Success(res.isNewUser == true)
                 } else {
                     _state.value = LoginState.Error(I18nStore.t("login.codeError", "Código incorrecto"))
                 }
