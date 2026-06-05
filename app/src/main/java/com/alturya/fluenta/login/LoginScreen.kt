@@ -142,5 +142,29 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+
+        // OTP delivery fallback: WhatsApp only delivers a plain-text code inside the
+        // 24h service window. If the user never messaged the bot, the code won't
+        // arrive — so nudge them to open WhatsApp first, then re-request the code.
+        if (state is LoginState.OtpSent || state is LoginState.Error) {
+            Spacer(Modifier.height(16.dp))
+            Text(
+                I18nStore.t("login.otpHelp", "¿No te llega el código? Escríbele al bot por WhatsApp y vuelve a tocar \"Enviar\"."),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(onClick = {
+                runCatching {
+                    context.startActivity(
+                        android.content.Intent(
+                            android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse("https://wa.me/593982645527?text=Hola"),
+                        ),
+                    )
+                }
+            }) { Text(I18nStore.t("login.openWhatsapp", "Abrir WhatsApp")) }
+        }
     }
 }
