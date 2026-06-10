@@ -1,5 +1,6 @@
 package com.alturya.fluenta.network
 
+import java.util.concurrent.TimeUnit
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -21,11 +22,18 @@ object ApiClient {
         chain.proceed(req)
     }
 
+    // Lesson/exercise generation is LLM-backed: a cold (uncached) /play or
+    // /guest/lesson takes 15-40s server-side. OkHttp's default 10s read timeout
+    // aborted those calls and surfaced as "No se pudo cargar..." — give LLM
+    // endpoints room to finish instead.
     private val client = OkHttpClient.Builder()
         .addInterceptor(authInterceptor)
         .addInterceptor(HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         })
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(90, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
         .build()
 
     val api: ApiService = Retrofit.Builder()
@@ -40,6 +48,9 @@ object ApiClient {
         .addInterceptor(HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         })
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(90, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
         .build()
 
     val apiNoAuth: ApiService = Retrofit.Builder()

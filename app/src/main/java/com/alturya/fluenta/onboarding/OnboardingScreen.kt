@@ -27,16 +27,73 @@ private val TARGET_LANGS = listOf(
     "en", "es", "pt", "fr", "de", "it", "ja", "zh", "ko", "ar", "ru", "hi", "tr", "nl", "sv", "pl",
 )
 
+// User (native) languages supported as L1 — courses exist from all three.
+private val SOURCE_LANGS = listOf("es", "en", "pt")
+
 @Composable
 fun OnboardingScreen(onPicked: (l1: String, l2: String) -> Unit) {
-    val l1 = remember {
-        java.util.Locale.getDefault().language.takeIf { it.length == 2 } ?: "es"
+    // Device locale is just the DEFAULT — the user confirms/changes their
+    // language explicitly (es/en/pt) instead of being locked to the detection.
+    val detected = remember {
+        java.util.Locale.getDefault().language.takeIf { it in SOURCE_LANGS } ?: "es"
     }
+    var l1 by remember { mutableStateOf(detected) }
     var step by remember { mutableStateOf(0) }
 
     when (step) {
         0 -> WelcomeStep(onStart = { step = 1 })
+        1 -> SourceLanguageStep(selected = l1, onPick = { l1 = it; step = 2 })
         else -> LanguagePickStep(l1 = l1, onPick = { l2 -> onPicked(l1, l2) })
+    }
+}
+
+@Composable
+private fun SourceLanguageStep(selected: String, onPick: (String) -> Unit) {
+    Column(Modifier.fillMaxSize()) {
+        Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 32.dp, bottom = 8.dp)) {
+            Text(
+                I18nStore.t("onboarding.sourceTitle", "¿Qué idioma hablas?"),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                I18nStore.t("onboarding.sourceSubtitle", "Te enseñaremos desde tu idioma."),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        LazyColumn(
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            items(SOURCE_LANGS) { code ->
+                Card(
+                    onClick = { onPick(code) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (code == selected) MaterialTheme.colorScheme.primaryContainer
+                        else MaterialTheme.colorScheme.surfaceVariant,
+                    ),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(flag(code), style = MaterialTheme.typography.headlineSmall)
+                        Spacer(Modifier.width(16.dp))
+                        Text(
+                            langName(code),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (code == selected) Text("✓", style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+        }
     }
 }
 
