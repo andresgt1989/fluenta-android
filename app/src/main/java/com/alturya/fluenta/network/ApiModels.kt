@@ -218,9 +218,17 @@ data class Badge(
 )
 data class BadgesResponse(val badges: List<Badge>, val earned: Int, val total: Int)
 
+data class TeachItem(
+    val l2: String,
+    val l1: String,
+    val transliteration: String? = null,
+    val note: String? = null,
+)
+
 data class LessonPlayResponse(
     val lesson: LessonHeader,
     val introMessage: String?,
+    val teach: List<TeachItem>? = null,
     val exercises: List<PlayableExercise>,
 )
 

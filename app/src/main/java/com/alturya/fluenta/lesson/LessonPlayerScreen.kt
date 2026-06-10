@@ -113,7 +113,62 @@ fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit) {
                 onDone = onDone,
             )
             state.exercises.isEmpty() -> ErrorView(I18nStore.t("lesson.noExercises", "Esta lección aún no tiene ejercicios disponibles."), onRetry = vm::retry, onBack = onDone)
+            !state.teachDone -> TeachView(state.teach, onDone = vm::finishTeach)
             else -> QuizView(state, vm)
+        }
+    }
+}
+
+@Composable
+private fun TeachView(items: List<com.alturya.fluenta.network.TeachItem>, onDone: () -> Unit) {
+    val context = LocalContext.current
+    Column(Modifier.fillMaxSize().padding(20.dp)) {
+        Text(
+            I18nStore.t("lesson.teachTitle", "Vocabulario nuevo"),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            I18nStore.t("lesson.teachSubtitle", "Toca una tarjeta para escucharla. Luego practicamos."),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(16.dp))
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            items(items.size) { i ->
+                val t = items[i]
+                Card(
+                    onClick = { TtsPlayer.play(context, t.l2) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(t.l2, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                            Text("🔊", style = MaterialTheme.typography.titleMedium)
+                        }
+                        t.transliteration?.takeIf { it.isNotBlank() }?.let {
+                            Text(it, style = MaterialTheme.typography.bodyMedium, fontStyle = FontStyle.Italic,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(t.l1, style = MaterialTheme.typography.bodyLarge)
+                        t.note?.takeIf { it.isNotBlank() }?.let {
+                            Spacer(Modifier.height(2.dp))
+                            Text("💡 $it", style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        Button(onClick = onDone, modifier = Modifier.fillMaxWidth().height(54.dp)) {
+            Text(I18nStore.t("lesson.teachStart", "¡Listo, a practicar!"), fontWeight = FontWeight.Bold)
         }
     }
 }

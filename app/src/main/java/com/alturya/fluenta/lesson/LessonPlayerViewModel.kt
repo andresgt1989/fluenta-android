@@ -27,6 +27,8 @@ data class LessonPlayerState(
     val title: String? = null,
     val introMessage: String? = null,
     val exercises: List<PlayableExercise> = emptyList(),
+    val teach: List<com.alturya.fluenta.network.TeachItem> = emptyList(),
+    val teachDone: Boolean = false,   // las tarjetas de vocabulario se vieron
     val currentIndex: Int = 0,
     val answers: Map<Int, String> = emptyMap(),
     val checking: Boolean = false,               // calling /check for instant feedback
@@ -47,6 +49,8 @@ class LessonPlayerViewModel(savedState: SavedStateHandle, private val app: Appli
 
     init { load() }
 
+    fun finishTeach() { _state.update { it.copy(teachDone = true) } }
+
     private fun applyLesson(res: LessonPlayResponse) {
         _state.update {
             it.copy(
@@ -54,6 +58,8 @@ class LessonPlayerViewModel(savedState: SavedStateHandle, private val app: Appli
                 title = res.lesson.title,
                 introMessage = res.introMessage,
                 exercises = res.exercises,
+                teach = res.teach ?: emptyList(),
+                teachDone = (res.teach ?: emptyList()).isEmpty(),
                 currentIndex = 0,
                 answers = emptyMap(),
                 feedback = null,
