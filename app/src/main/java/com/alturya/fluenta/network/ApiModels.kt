@@ -179,6 +179,10 @@ data class PlayableExercise(
     val right: List<String>? = null,
     // word_order — banco de palabras a ordenar para formar la frase
     val tokens: List<String>? = null,
+    // Lectura latina del texto L2 (romaji/pinyin/romanización) para scripts no latinos
+    val transliteration: String? = null,
+    // match_pairs — lecturas latinas alineadas 1:1 con `left`
+    val leftTransliteration: List<String?>? = null,
 )
 
 // Guest lesson (no auth) — play-first onboarding

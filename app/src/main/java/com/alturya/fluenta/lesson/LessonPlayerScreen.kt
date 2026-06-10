@@ -55,6 +55,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -260,6 +261,18 @@ private fun FeedbackBar(
 }
 
 @Composable
+private fun TransliterationText(reading: String?) {
+    if (reading.isNullOrBlank()) return
+    Spacer(Modifier.height(2.dp))
+    Text(
+        reading,
+        style = MaterialTheme.typography.bodyMedium,
+        fontStyle = FontStyle.Italic,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
 private fun TranslateExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) {
     var text by rememberSaveable(ex.index) { mutableStateOf("") }
     val haptic = LocalHapticFeedback.current
@@ -280,6 +293,7 @@ private fun TranslateExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) 
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                 )
+                TransliterationText(ex.transliteration)
                 ex.hint?.let {
                     Spacer(Modifier.height(8.dp))
                     Text("💡 $it", style = MaterialTheme.typography.bodySmall)
@@ -332,6 +346,7 @@ private fun FillBlankExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) 
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                 )
+                TransliterationText(ex.transliteration)
                 ex.hint?.let {
                     Spacer(Modifier.height(8.dp))
                     Text("💡 $it", style = MaterialTheme.typography.bodySmall)
@@ -374,12 +389,14 @@ private fun MultipleChoiceExercise(ex: PlayableExercise, onSubmit: (String) -> U
             Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         ) {
-            Text(
-                ex.prompt ?: "",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(20.dp),
-                fontWeight = FontWeight.Medium,
-            )
+            Column(Modifier.padding(20.dp)) {
+                Text(
+                    ex.prompt ?: "",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Medium,
+                )
+                TransliterationText(ex.transliteration)
+            }
         }
         Spacer(Modifier.height(16.dp))
         options.forEachIndexed { idx, opt ->
@@ -430,7 +447,7 @@ private fun MatchPairsExercise(ex: PlayableExercise, onSubmit: (String) -> Unit)
         Spacer(Modifier.height(16.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                left.forEach { l ->
+                left.forEachIndexed { li, l ->
                     val isMatched = matched.any { it.first == l }
                     val isSelected = selectedLeft == l
                     Card(
@@ -444,7 +461,14 @@ private fun MatchPairsExercise(ex: PlayableExercise, onSubmit: (String) -> Unit)
                         ),
                         enabled = !isMatched,
                         onClick = { selectedLeft = if (isSelected) null else l },
-                    ) { Text(l, Modifier.padding(12.dp), style = MaterialTheme.typography.bodyMedium) }
+                    ) {
+                        Column(Modifier.padding(12.dp)) {
+                            Text(l, style = MaterialTheme.typography.bodyMedium)
+                            ex.leftTransliteration?.getOrNull(li)?.takeIf { it.isNotBlank() }?.let {
+                                Text(it, style = MaterialTheme.typography.bodySmall, fontStyle = FontStyle.Italic)
+                            }
+                        }
+                    }
                 }
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -523,6 +547,7 @@ private fun SpeakRepeatExercise(ex: PlayableExercise, onSubmit: (String) -> Unit
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                 )
+                TransliterationText(ex.transliteration)
                 ex.hint?.let {
                     Spacer(Modifier.height(8.dp))
                     Text("💡 $it", style = MaterialTheme.typography.bodySmall)
