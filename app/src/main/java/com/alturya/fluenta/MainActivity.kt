@@ -46,6 +46,18 @@ import com.alturya.fluenta.pronunciation.PronunciationScreen
 import com.alturya.fluenta.repaso.RepasoScreen
 import com.alturya.fluenta.ui.theme.FluentaTheme
 import com.alturya.fluenta.verbs.VerbsTodayScreen
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Replay
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
  * Pulls a lesson UUID out of either of the two deep-link URI shapes we accept:
@@ -200,14 +212,20 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private data class Tab(val route: String, val label: String, val icon: String)
+private data class Tab(
+    val route: String,
+    val labelKey: String,
+    val defaultLabel: String,
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector,
+)
 
 private val TABS = listOf(
-    Tab("home", "Inicio", "🏠"),
-    Tab("verbs", "Verbos", "📚"),
-    Tab("map", "Mapa", "🗺"),
-    Tab("progress", "Progreso", "📊"),
-    Tab("profile", "Perfil", "👤"),
+    Tab("home",     "nav.home",     "Inicio",    Icons.Filled.Home,     Icons.Outlined.Home),
+    Tab("map",      "nav.lessons",  "Lecciones", Icons.Filled.Map,      Icons.Outlined.Map),
+    Tab("repaso",   "nav.review",   "Repasar",   Icons.Filled.Replay,   Icons.Outlined.Replay),
+    Tab("progress", "nav.progress", "Progreso",  Icons.Filled.BarChart, Icons.Outlined.BarChart),
+    Tab("profile",  "nav.profile",  "Perfil",    Icons.Filled.Person,   Icons.Outlined.Person),
 )
 
 @Composable
@@ -241,8 +259,13 @@ private fun MainScaffold(
                                 restoreState = true
                             }
                         },
-                        icon = { Text(tab.icon) },
-                        label = { Text(I18nStore.t("nav.${tab.route}", tab.label)) }
+                        icon = {
+                            Icon(
+                                imageVector = if (currentRoute == tab.route) tab.selectedIcon else tab.unselectedIcon,
+                                contentDescription = tab.defaultLabel,
+                            )
+                        },
+                        label = { Text(I18nStore.t(tab.labelKey, tab.defaultLabel)) }
                     )
                 }
             }
@@ -281,7 +304,14 @@ private fun MainScaffold(
             }
             composable("verbs") { VerbsTodayScreen() }
             composable("pronunciation") { PronunciationScreen() }
-            composable("repaso") { RepasoScreen(onDone = { nav.popBackStack() }) }
+            composable("repaso") {
+                RepasoScreen(onDone = {
+                    nav.navigate("home") {
+                        popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true; restoreState = true
+                    }
+                })
+            }
             composable("progress") { ProgressScreen() }
             composable("profile") {
                 ProfileScreen(

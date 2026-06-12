@@ -122,6 +122,7 @@ fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit) {
 @Composable
 private fun TeachView(items: List<com.alturya.fluenta.network.TeachItem>, onDone: () -> Unit) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize().padding(20.dp)) {
         Text(
             I18nStore.t("lesson.teachTitle", "Vocabulario nuevo"),
@@ -142,7 +143,7 @@ private fun TeachView(items: List<com.alturya.fluenta.network.TeachItem>, onDone
             items(items.size) { i ->
                 val t = items[i]
                 Card(
-                    onClick = { TtsPlayer.play(context, t.l2) },
+                    onClick = { scope.launch { TtsPlayer.play(context, t.l2) } },
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                 ) {
