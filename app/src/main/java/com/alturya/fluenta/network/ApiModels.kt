@@ -336,3 +336,18 @@ data class UiStringsResponse(
     val lang: String,
     val strings: Map<String, String>?,
 )
+
+// ── Conversación de voz abierta (el wedge) ──────────────────────────────────
+data class ConvoStartBody(val lessonId: String? = null, val scenario: String? = null, val goal: String? = null)
+data class ConvoStartResponse(val sessionId: String, val reply: String, val scenario: String?, val goal: String?, val ttsUrl: String?)
+data class ConvoTurnBody(val sessionId: String, val text: String)
+data class ConvoTurnResponse(
+    val reply: String,
+    val correction: String?,
+    val didSucceed: Boolean,
+    val complete: Boolean,
+    val ttsUrl: String?,
+    val turns: Int,
+)
+data class ConvoEndBody(val sessionId: String)
+data class ConvoEndResponse(val spokenPhrases: Int, val xpEarned: Int, val turns: Int)

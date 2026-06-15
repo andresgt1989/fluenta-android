@@ -40,6 +40,7 @@ fun HomeScreen(
     onChangeLanguage: () -> Unit = {},
     onRepaso: () -> Unit = {},
     onLevelTest: () -> Unit = {},
+    onConversation: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val vm: HomeViewModel = viewModel()
@@ -275,6 +276,11 @@ fun HomeScreen(
                 )
             }
         }
+        Button(
+            onClick = onConversation,
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("🗣️  " + I18nStore.t("home.conversation", "Conversar en inglés")) }
+
         if (showMore) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 ActionCard("🔊", I18nStore.t("home.pronunciationShort", "Pronunciación"), onClick = onPronunciation)

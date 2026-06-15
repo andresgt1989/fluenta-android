@@ -33,6 +33,7 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.alturya.fluenta.exercises.MatchScreen
 import com.alturya.fluenta.home.HomeScreen
+import com.alturya.fluenta.conversation.ConversationScreen
 import com.alturya.fluenta.languages.LanguageSelectorScreen
 import com.alturya.fluenta.lesson.GuestLessonScreen
 import com.alturya.fluenta.lesson.LessonPlayerScreen
@@ -289,6 +290,7 @@ private fun MainScaffold(
                     onChangeLanguage = { nav.navigate("languages") { launchSingleTop = true } },
                     onRepaso = { nav.navigate("repaso") { launchSingleTop = true } },
                     onLevelTest = { nav.navigate("diagnostic") { launchSingleTop = true } },
+                    onConversation = { nav.navigate("conversation") { launchSingleTop = true } },
                 )
             }
             composable("match") { MatchScreen(onDone = { nav.popBackStack() }) }
@@ -304,6 +306,7 @@ private fun MainScaffold(
             }
             composable("verbs") { VerbsTodayScreen() }
             composable("pronunciation") { PronunciationScreen() }
+            composable("conversation") { ConversationScreen(onDone = { nav.popBackStack() }) }
             composable("repaso") {
                 RepasoScreen(onDone = {
                     nav.navigate("home") {

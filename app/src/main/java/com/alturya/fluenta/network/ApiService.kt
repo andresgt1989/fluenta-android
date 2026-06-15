@@ -130,4 +130,14 @@ interface ApiService {
         @Part("text") text: RequestBody,
         @Part("l2") l2: RequestBody,
     ): PronunciationAssessResponse
+
+    // Conversación de voz abierta (el wedge)
+    @POST("api/conversation/start")
+    suspend fun convoStart(@Body body: ConvoStartBody): ConvoStartResponse
+
+    @POST("api/conversation/turn")
+    suspend fun convoTurn(@Body body: ConvoTurnBody): ConvoTurnResponse
+
+    @POST("api/conversation/end")
+    suspend fun convoEnd(@Body body: ConvoEndBody): ConvoEndResponse
 }
