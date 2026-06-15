@@ -66,6 +66,15 @@ fun CurriculumMapScreen(
             state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
+            state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("😕", style = MaterialTheme.typography.displaySmall)
+                    Spacer(Modifier.height(8.dp))
+                    Text(state.error!!, style = MaterialTheme.typography.bodyLarge)
+                    Spacer(Modifier.height(16.dp))
+                    Button(onClick = { vm.load() }) { Text(I18nStore.t("common.retry", "Reintentar")) }
+                }
+            }
             state.units.isEmpty() -> EmptyMap(state.l1, state.l2)
             else -> {
                 // Flatten all lessons with their unit info, then render as zigzag path
