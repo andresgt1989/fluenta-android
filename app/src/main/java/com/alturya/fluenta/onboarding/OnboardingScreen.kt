@@ -42,15 +42,23 @@ fun OnboardingScreen(onPicked: (l1: String, l2: String) -> Unit) {
 
     when (step) {
         0 -> WelcomeStep(onStart = { step = 1 })
-        1 -> SourceLanguageStep(selected = l1, onPick = { l1 = it; step = 2 })
-        else -> LanguagePickStep(l1 = l1, onPick = { l2 -> onPicked(l1, l2) })
+        1 -> SourceLanguageStep(selected = l1, onPick = { l1 = it; step = 2 }, onBack = { step = 0 })
+        else -> LanguagePickStep(l1 = l1, onPick = { l2 -> onPicked(l1, l2) }, onBack = { step = 1 })
     }
 }
 
 @Composable
-private fun SourceLanguageStep(selected: String, onPick: (String) -> Unit) {
+private fun BackBar(onBack: () -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(start = 8.dp, top = 8.dp)) {
+        TextButton(onClick = onBack) { Text("‹ ${I18nStore.t("common.back", "Atrás")}") }
+    }
+}
+
+@Composable
+private fun SourceLanguageStep(selected: String, onPick: (String) -> Unit, onBack: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
-        Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 32.dp, bottom = 8.dp)) {
+        BackBar(onBack)
+        Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp)) {
             Text(
                 I18nStore.t("onboarding.sourceTitle", "¿Qué idioma hablas?"),
                 style = MaterialTheme.typography.headlineMedium,
@@ -128,9 +136,9 @@ private fun WelcomeStep(onStart: () -> Unit) {
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(24.dp))
-        Bullet(I18nStore.t("onboarding.bullet1", "Lecciones cortas, hechas para ti"))
-        Bullet(I18nStore.t("onboarding.bullet2", "Practica hablando, no solo memorizando"))
-        Bullet(I18nStore.t("onboarding.bullet3", "Tu coach te sigue por WhatsApp"))
+        Bullet(I18nStore.t("onboarding.bullet1", "Habla en voz alta desde el primer minuto"))
+        Bullet(I18nStore.t("onboarding.bullet2", "Tu tutor de IA te corrige al instante"))
+        Bullet(I18nStore.t("onboarding.bullet3", "Lecciones cortas: 10 minutos al día"))
         Spacer(Modifier.height(36.dp))
         Button(
             onClick = onStart,
@@ -157,10 +165,11 @@ private fun Bullet(text: String) {
 }
 
 @Composable
-private fun LanguagePickStep(l1: String, onPick: (String) -> Unit) {
+private fun LanguagePickStep(l1: String, onPick: (String) -> Unit, onBack: () -> Unit) {
     val targets = remember(l1) { TARGET_LANGS.filter { it != l1 } }
     Column(Modifier.fillMaxSize()) {
-        Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 32.dp, bottom = 8.dp)) {
+        BackBar(onBack)
+        Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp)) {
             Text(
                 I18nStore.t("onboarding.pickTitle", "¿Qué idioma quieres aprender?"),
                 style = MaterialTheme.typography.headlineMedium,
