@@ -32,8 +32,18 @@ class LoginViewModel : ViewModel() {
         viewModelScope.launch {
             _state.value = LoginState.Loading
             try {
-                ApiClient.api.requestOtp(OtpRequestBody(phone))
-                _state.value = LoginState.OtpSent
+                val res = ApiClient.api.requestOtp(OtpRequestBody(phone))
+                // The server can now tell us delivery actually failed (e.g. no open
+                // 24h window for a brand-new user). Don't fake "code sent" — guide
+                // the user to open the bot first so the next attempt can deliver.
+                if (res.delivered == false) {
+                    _state.value = LoginState.Error(I18nStore.t(
+                        "login.otpNotDelivered",
+                        "No pudimos enviarte el código por WhatsApp. Toca \"Abrir WhatsApp\", escríbele al bot y vuelve a tocar \"Enviar\"."
+                    ))
+                } else {
+                    _state.value = LoginState.OtpSent
+                }
             } catch (e: Exception) {
                 _state.value = LoginState.Error(I18nStore.t("login.sendError", "No se pudo enviar el código"))
             }
