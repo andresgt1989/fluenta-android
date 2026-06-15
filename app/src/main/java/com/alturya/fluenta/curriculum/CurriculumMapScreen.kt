@@ -32,7 +32,10 @@ import com.alturya.fluenta.network.Lesson
 private val ZIGZAG = listOf(0.15f, 0.35f, 0.5f, 0.65f, 0.85f, 0.65f, 0.5f, 0.35f, 0.15f, 0.35f)
 
 @Composable
-fun CurriculumMapScreen(onStartLesson: (String) -> Unit = {}) {
+fun CurriculumMapScreen(
+    onStartLesson: (String) -> Unit = {},
+    onConversationLesson: (String) -> Unit = {},
+) {
     val vm: CurriculumViewModel = viewModel()
     val state by vm.state.collectAsState()
     val listState = rememberLazyListState()
@@ -88,7 +91,13 @@ fun CurriculumMapScreen(onStartLesson: (String) -> Unit = {}) {
                                     PathLessonNode(
                                         lesson = item.lesson,
                                         xFraction = xFraction,
-                                        onClick = { onStartLesson(item.lesson.id) },
+                                        onClick = {
+                                            // Una lección de roleplay/free_chat ES conversación,
+                                            // no un quiz: enrutamos al motor de conversación real.
+                                            if (item.lesson.type == "roleplay" || item.lesson.type == "free_chat")
+                                                onConversationLesson(item.lesson.id)
+                                            else onStartLesson(item.lesson.id)
+                                        },
                                     )
                                 }
                             }

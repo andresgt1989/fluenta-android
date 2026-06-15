@@ -13,11 +13,12 @@ import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.network.ConvoEndBody
 import com.alturya.fluenta.network.ConvoStartBody
 import com.alturya.fluenta.network.ConvoTurnBody
+import com.alturya.fluenta.network.GuestConvoStartBody
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class ConvoMessage(val fromPartner: Boolean, val text: String, val correction: String? = null)
+data class ConvoMessage(val fromPartner: Boolean, val text: String, val correction: String? = null, val tip: String? = null)
 
 enum class ConvoPhase { CONNECTING, SPEAKING, YOUR_TURN, LISTENING, THINKING, ENDED, ERROR }
 
@@ -28,6 +29,7 @@ data class ConvoUiState(
     val error: String? = null,
     val spokenPhrases: Int = 0,
     val xpEarned: Int = 0,
+    val suggestion: String = "",   // frase sugerida para que el principiante no se congele
 )
 
 // The voice-conversation wedge. Uses the device SpeechRecognizer (free, on-device)
@@ -42,15 +44,29 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
     // STT language = the language being learned (L2). es→en MVP.
     private val sttLang = "en-US"
 
-    fun start(scenario: String?, goal: String?, lessonId: String?) {
+    // Guest mode: el wedge debe ser jugable SIN cuenta (activación en <60s).
+    private var guest = false
+    private var gl1 = "es"
+    private var gl2 = "en"
+    private var lastScenario: String? = null
+    private var lastGoal: String? = null
+    private var lastLessonId: String? = null
+
+    fun start(scenario: String?, goal: String?, lessonId: String?, guest: Boolean = false, l1: String = "es", l2: String = "en") {
+        this.guest = guest; this.gl1 = l1; this.gl2 = l2
+        this.lastScenario = scenario; this.lastGoal = goal; this.lastLessonId = lessonId
         viewModelScope.launch {
             _state.value = ConvoUiState(phase = ConvoPhase.CONNECTING)
             try {
-                val res = ApiClient.api.convoStart(ConvoStartBody(lessonId, scenario, goal))
+                val res = if (guest)
+                    ApiClient.apiNoAuth.guestConvoStart(GuestConvoStartBody(l1, l2, scenario, goal))
+                else
+                    ApiClient.api.convoStart(ConvoStartBody(lessonId, scenario, goal))
                 sessionId = res.sessionId
                 _state.value = _state.value.copy(
                     phase = ConvoPhase.SPEAKING,
                     messages = listOf(ConvoMessage(true, res.reply)),
+                    suggestion = res.suggestion ?: "",
                 )
                 TtsPlayer.play(getApplication(), res.reply)
                 _state.value = _state.value.copy(phase = ConvoPhase.YOUR_TURN)
@@ -115,14 +131,15 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
                 messages = _state.value.messages + ConvoMessage(false, text),
             )
             try {
-                val res = ApiClient.api.convoTurn(ConvoTurnBody(sid, text))
+                val res = if (guest) ApiClient.apiNoAuth.guestConvoTurn(ConvoTurnBody(sid, text))
+                          else ApiClient.api.convoTurn(ConvoTurnBody(sid, text))
                 val msgs = _state.value.messages.toMutableList()
                 if (!res.correction.isNullOrBlank()) {
                     val li = msgs.indexOfLast { !it.fromPartner }
-                    if (li >= 0) msgs[li] = msgs[li].copy(correction = res.correction)
+                    if (li >= 0) msgs[li] = msgs[li].copy(correction = res.correction, tip = res.tip)
                 }
                 msgs.add(ConvoMessage(true, res.reply))
-                _state.value = _state.value.copy(messages = msgs, phase = ConvoPhase.SPEAKING)
+                _state.value = _state.value.copy(messages = msgs, phase = ConvoPhase.SPEAKING, suggestion = res.suggestion ?: "")
                 TtsPlayer.play(getApplication(), res.reply)
                 if (res.complete) end() else _state.value = _state.value.copy(phase = ConvoPhase.YOUR_TURN)
             } catch (e: Exception) {
@@ -136,7 +153,8 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
         sessionId = null
         viewModelScope.launch {
             try {
-                val res = ApiClient.api.convoEnd(ConvoEndBody(sid))
+                val res = if (guest) ApiClient.apiNoAuth.guestConvoEnd(ConvoEndBody(sid))
+                          else ApiClient.api.convoEnd(ConvoEndBody(sid))
                 _state.value = _state.value.copy(
                     phase = ConvoPhase.ENDED,
                     spokenPhrases = res.spokenPhrases,
@@ -146,6 +164,10 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
                 _state.value = _state.value.copy(phase = ConvoPhase.ENDED)
             }
         }
+    }
+
+    fun retry() {
+        start(lastScenario, lastGoal, lastLessonId, guest, gl1, gl2)
     }
 
     override fun onCleared() {

@@ -145,7 +145,9 @@ class MainActivity : ComponentActivity() {
                     composable("onboarding") {
                         OnboardingScreen(onPicked = { l1, l2 ->
                             scope.launch { TokenStore.saveOnboardingChoice(context, l1, l2) }
-                            rootNav.navigate("guest_lesson/$l1/$l2")
+                            // Cumple la promesa "practica hablando": el wedge de voz ES el
+                            // primer contacto (hablar en <60s, sin cuenta), luego el quiz.
+                            rootNav.navigate("guest_conversation/$l1/$l2")
                         })
                     }
                     composable("login") {
@@ -187,6 +189,22 @@ class MainActivity : ComponentActivity() {
                             onBack = {
                                 rootNav.navigate("login") { popUpTo("onboarding") { inclusive = true } }
                             },
+                        )
+                    }
+                    composable(
+                        route = "guest_conversation/{l1}/{l2}",
+                        arguments = listOf(
+                            navArgument("l1") { type = NavType.StringType },
+                            navArgument("l2") { type = NavType.StringType },
+                        ),
+                    ) { entry ->
+                        val gl1 = entry.arguments?.getString("l1") ?: "es"
+                        val gl2 = entry.arguments?.getString("l2") ?: "en"
+                        ConversationScreen(
+                            guest = true,
+                            l1 = gl1,
+                            l2 = gl2,
+                            onDone = { rootNav.navigate("guest_lesson/$gl1/$gl2") },
                         )
                     }
                     composable("main") {
@@ -291,6 +309,7 @@ private fun MainScaffold(
                     onRepaso = { nav.navigate("repaso") { launchSingleTop = true } },
                     onLevelTest = { nav.navigate("diagnostic") { launchSingleTop = true } },
                     onConversation = { nav.navigate("conversation") { launchSingleTop = true } },
+                    onConversationLesson = { lessonId -> nav.navigate("conversation_lesson/$lessonId") },
                 )
             }
             composable("match") { MatchScreen(onDone = { nav.popBackStack() }) }
@@ -302,11 +321,21 @@ private fun MainScaffold(
                 LessonPlayerScreen(lessonId = lessonId, onDone = { nav.popBackStack() })
             }
             composable("map") {
-                CurriculumMapScreen(onStartLesson = { lessonId -> nav.navigate("lesson/$lessonId") })
+                CurriculumMapScreen(
+                    onStartLesson = { lessonId -> nav.navigate("lesson/$lessonId") },
+                    onConversationLesson = { lessonId -> nav.navigate("conversation_lesson/$lessonId") },
+                )
             }
             composable("verbs") { VerbsTodayScreen() }
             composable("pronunciation") { PronunciationScreen() }
             composable("conversation") { ConversationScreen(onDone = { nav.popBackStack() }) }
+            composable(
+                route = "conversation_lesson/{lessonId}",
+                arguments = listOf(navArgument("lessonId") { type = NavType.StringType }),
+            ) { entry ->
+                val lessonId = entry.arguments?.getString("lessonId") ?: ""
+                ConversationScreen(lessonId = lessonId, onDone = { nav.popBackStack() })
+            }
             composable("repaso") {
                 RepasoScreen(onDone = {
                     nav.navigate("home") {

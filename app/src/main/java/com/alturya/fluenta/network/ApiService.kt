@@ -140,4 +140,14 @@ interface ApiService {
 
     @POST("api/conversation/end")
     suspend fun convoEnd(@Body body: ConvoEndBody): ConvoEndResponse
+
+    // Guest (sin cuenta) — hablar en <60s antes de registrarse
+    @POST("api/guest/conversation/start")
+    suspend fun guestConvoStart(@Body body: GuestConvoStartBody): ConvoStartResponse
+
+    @POST("api/guest/conversation/turn")
+    suspend fun guestConvoTurn(@Body body: ConvoTurnBody): ConvoTurnResponse
+
+    @POST("api/guest/conversation/end")
+    suspend fun guestConvoEnd(@Body body: ConvoEndBody): ConvoEndResponse
 }

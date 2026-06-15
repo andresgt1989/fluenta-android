@@ -41,6 +41,7 @@ fun HomeScreen(
     onRepaso: () -> Unit = {},
     onLevelTest: () -> Unit = {},
     onConversation: () -> Unit = {},
+    onConversationLesson: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
     val vm: HomeViewModel = viewModel()
@@ -154,7 +155,11 @@ fun HomeScreen(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                 ),
-                onClick = { onStartLesson(next.id) },
+                onClick = {
+                    if (next.lessonType == "roleplay" || next.lessonType == "free_chat")
+                        onConversationLesson(next.id)
+                    else onStartLesson(next.id)
+                },
             ) {
                 Column(Modifier.padding(20.dp)) {
                     Text(

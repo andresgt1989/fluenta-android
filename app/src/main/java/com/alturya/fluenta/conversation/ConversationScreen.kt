@@ -32,6 +32,9 @@ fun ConversationScreen(
     scenario: String? = null,
     goal: String? = null,
     lessonId: String? = null,
+    guest: Boolean = false,
+    l1: String = "es",
+    l2: String = "en",
     onDone: () -> Unit,
 ) {
     val vm: ConversationViewModel = viewModel()
@@ -49,7 +52,7 @@ fun ConversationScreen(
 
     LaunchedEffect(Unit) {
         if (!hasMic) permLauncher.launch(Manifest.permission.RECORD_AUDIO)
-        vm.start(scenario, goal, lessonId)
+        vm.start(scenario, goal, lessonId, guest, l1, l2)
     }
 
     Scaffold(
@@ -122,6 +125,25 @@ fun ConversationScreen(
                     state.error?.takeIf { state.phase != ConvoPhase.ERROR }?.let {
                         Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                     }
+                    if (state.phase == ConvoPhase.ERROR) {
+                        Spacer(Modifier.height(12.dp))
+                        Button(onClick = { vm.retry() }) { Text("Reintentar") }
+                    }
+                    // Scaffolding: frase sugerida para que el principiante no se congele.
+                    if (state.suggestion.isNotBlank() &&
+                        (state.phase == ConvoPhase.YOUR_TURN || state.phase == ConvoPhase.SPEAKING)) {
+                        Spacer(Modifier.height(10.dp))
+                        Surface(
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text(
+                                "💡 Puedes decir: \"${state.suggestion}\"",
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                    }
                     Spacer(Modifier.height(16.dp))
 
                     val canTalk = hasMic && (state.phase == ConvoPhase.YOUR_TURN || state.phase == ConvoPhase.LISTENING)
@@ -176,13 +198,21 @@ private fun MessageBubble(msg: ConvoMessage) {
         if (!msg.correction.isNullOrBlank()) {
             Spacer(Modifier.height(3.dp))
             Surface(color = Color(0xFFFFF4E5), shape = RoundedCornerShape(10.dp)) {
-                Text(
-                    "✏️ ${msg.correction}",
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontStyle = FontStyle.Italic,
-                    color = Color(0xFF8A5A00),
-                )
+                Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+                    Text(
+                        "✏️ Mejor: ${msg.correction}",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontStyle = FontStyle.Italic,
+                        color = Color(0xFF8A5A00),
+                    )
+                    if (!msg.tip.isNullOrBlank()) {
+                        Text(
+                            msg.tip!!,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFFB07400),
+                        )
+                    }
+                }
             }
         }
     }
