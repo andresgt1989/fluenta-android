@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class ConvoMessage(val fromPartner: Boolean, val text: String, val translit: String? = null, val correction: String? = null, val tip: String? = null)
+data class ConvoMessage(val fromPartner: Boolean, val text: String, val translit: String? = null, val correction: String? = null, val tip: String? = null, val scriptTip: String? = null)
 
 enum class ConvoPhase { CONNECTING, SPEAKING, YOUR_TURN, LISTENING, THINKING, ENDED, ERROR }
 
@@ -149,7 +149,7 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
                     val li = msgs.indexOfLast { !it.fromPartner }
                     if (li >= 0) msgs[li] = msgs[li].copy(correction = res.correction, tip = res.tip)
                 }
-                msgs.add(ConvoMessage(true, res.reply, translit = res.replyTranslit))
+                msgs.add(ConvoMessage(true, res.reply, translit = res.replyTranslit, scriptTip = res.scriptTip))
                 _state.value = _state.value.copy(
                     messages = msgs,
                     phase = ConvoPhase.SPEAKING,

@@ -40,6 +40,18 @@ interface ApiService {
     @POST("api/events")
     suspend fun postEvent(@Body body: EventBody): Response<ResponseBody>
 
+    @GET("api/script/info")
+    suspend fun getScriptInfo(@Query("l2") l2: String): ScriptInfo
+
+    @POST("api/script/lesson")
+    suspend fun getScriptLesson(@Body body: ScriptLessonBody): ScriptLesson
+
+    @GET("api/script/quiz")
+    suspend fun getScriptQuiz(@Query("l2") l2: String, @Query("scriptKey") scriptKey: String, @Query("n") n: Int = 8): ScriptQuiz
+
+    @POST("api/script/quiz/grade")
+    suspend fun gradeScriptQuiz(@Body body: ScriptQuizGradeBody): ScriptQuizResult
+
     @GET("api/user/profile")
     suspend fun getProfile(): UserProfile
 

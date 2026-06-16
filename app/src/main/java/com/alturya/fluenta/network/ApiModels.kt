@@ -17,6 +17,52 @@ data class AuthConfig(val googleClientId: String?)
 // Analítica de embudo (fire-and-forget). anonId enlaza el funnel guest con la cuenta.
 data class EventBody(val event: String, val anonId: String? = null, val props: Map<String, String>? = null)
 
+// ── Script (sistema de escritura) para idiomas no-latinos ───────────────────
+data class ScriptUnitDto(
+    val key: String,
+    val name: String,
+    val family: String,
+    val rtl: Boolean = false,
+    val tonal: Boolean = false,
+    val gateFirst: Boolean = false,
+    val gateThreshold: Int = 0,
+    val writingSupported: Boolean = false,
+    val method: String? = null,
+    val mastery: Int = 0,
+)
+data class ScriptInfo(
+    val l2: String,
+    val nonLatin: Boolean,
+    val needsScriptFirst: Boolean,
+    val readingScore: Int,
+    val translitMode: String,
+    val scripts: List<ScriptUnitDto> = emptyList(),
+)
+data class ScriptLessonBody(val l2: String, val scriptKey: String? = null, val l1: String? = null)
+data class ScriptItem(
+    val glyph: String,
+    val romanization: String,
+    val meaning: String? = null,
+    val strokeCount: Int? = null,
+    val strokeOrder: String? = null,
+    val mnemonic: String? = null,
+    val example: String? = null,
+)
+data class ScriptLesson(
+    val scriptKey: String,
+    val name: String,
+    val family: String,
+    val rtl: Boolean = false,
+    val tonal: Boolean = false,
+    val writingSupported: Boolean = false,
+    val intro: String,
+    val items: List<ScriptItem> = emptyList(),
+)
+data class ScriptQuizItem(val glyph: String, val options: List<String>)
+data class ScriptQuiz(val quizId: String, val scriptKey: String, val name: String, val items: List<ScriptQuizItem> = emptyList())
+data class ScriptQuizGradeBody(val quizId: String, val answers: List<String>)
+data class ScriptQuizResult(val score: Int, val correct: Int, val total: Int, val scriptKey: String, val mastery: Int)
+
 data class UserProfile(
     val id: String,
     val phone: String,
@@ -368,6 +414,7 @@ data class ConvoTurnResponse(
     val tip: String?,            // nota breve en L1 (la regla)
     val suggestion: String?,     // frase sugerida para seguir (scaffolding)
     val suggestionTranslit: String?,
+    val scriptTip: String?,      // micro-enseñanza del script "a la par" (un carácter)
     val didSucceed: Boolean,
     val complete: Boolean,
     val ttsUrl: String?,

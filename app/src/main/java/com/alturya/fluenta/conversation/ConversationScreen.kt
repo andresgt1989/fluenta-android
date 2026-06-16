@@ -247,5 +247,18 @@ private fun MessageBubble(msg: ConvoMessage) {
                 }
             }
         }
+        // Micro-enseñanza del script "a la par" (un carácter), cuando el alumno
+        // aún no lee bien. Se desvanece sola al subir el dominio (backend).
+        if (!msg.scriptTip.isNullOrBlank()) {
+            Spacer(Modifier.height(3.dp))
+            Surface(color = Color(0xFFEDEBFF), shape = RoundedCornerShape(10.dp)) {
+                Text(
+                    "📖 ${msg.scriptTip}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFF4030A0),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                )
+            }
+        }
     }
 }

@@ -36,6 +36,7 @@ import com.alturya.fluenta.exercises.MatchScreen
 import com.alturya.fluenta.home.HomeScreen
 import com.alturya.fluenta.conversation.ConversationScreen
 import com.alturya.fluenta.languages.LanguageSelectorScreen
+import com.alturya.fluenta.script.ScriptScreen
 import com.alturya.fluenta.lesson.GuestLessonScreen
 import com.alturya.fluenta.lesson.LessonPlayerScreen
 import com.alturya.fluenta.login.LoginScreen
@@ -315,7 +316,14 @@ private fun MainScaffold(
                     onLevelTest = { nav.navigate("diagnostic") { launchSingleTop = true } },
                     onConversation = { nav.navigate("conversation") { launchSingleTop = true } },
                     onConversationLesson = { lessonId -> nav.navigate("conversation_lesson/$lessonId") },
+                    onScript = { l2 -> nav.navigate("script/$l2") { launchSingleTop = true } },
                 )
+            }
+            composable(
+                route = "script/{l2}",
+                arguments = listOf(navArgument("l2") { type = NavType.StringType }),
+            ) { entry ->
+                ScriptScreen(l2 = entry.arguments?.getString("l2") ?: "ja", onDone = { nav.popBackStack() })
             }
             composable("match") { MatchScreen(onDone = { nav.popBackStack() }) }
             composable(

@@ -43,6 +43,7 @@ fun HomeScreen(
     onLevelTest: () -> Unit = {},
     onConversation: () -> Unit = {},
     onConversationLesson: (String) -> Unit = {},
+    onScript: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
     val vm: HomeViewModel = viewModel()
@@ -97,6 +98,39 @@ fun HomeScreen(
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+        }
+
+        // ── GATE de script (no-latinos): aprende el alfabeto ANTES de avanzar ──
+        // Para ja/zh/ko/ar… si el usuario aún no lee el script, ESTE es el paso
+        // dominante (orden pedagógico correcto: script → lectura → conversación).
+        val si = state.scriptInfo
+        if (si != null && si.needsScriptFirst) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiary),
+                onClick = { onScript(si.l2) },
+            ) {
+                Column(Modifier.padding(20.dp)) {
+                    Text(
+                        I18nStore.t("home.scriptGateTitle", "✍️ Primero: aprende a leer y escribir"),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onTertiary,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        I18nStore.t("home.scriptGateSub", "Domina el alfabeto antes de conversar — así de verdad aprendes a leer, no a depender de la transliteración."),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onTertiary.copy(alpha = 0.9f),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "${I18nStore.t("home.reading", "Lectura")}: ${si.readingScore}%",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onTertiary,
                     )
                 }
             }
