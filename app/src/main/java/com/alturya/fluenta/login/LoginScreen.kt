@@ -22,7 +22,10 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
     val state by vm.state.collectAsState()
 
     var phone by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var code by remember { mutableStateOf("") }
+    // Email es el canal primario (no depende de Meta). Teléfono = secundario.
+    var mode by remember { mutableStateOf("email") }
 
     LaunchedEffect(state) {
         if (state is LoginState.Success) onSuccess((state as LoginState.Success).isNewUser)
@@ -52,7 +55,7 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            I18nStore.t("login.tagline", "Aprende idiomas de verdad, con tu coach en WhatsApp"),
+            I18nStore.t("login.tagline", "Habla un idioma nuevo con tu tutor de IA"),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -83,23 +86,45 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
             Spacer(Modifier.height(12.dp))
         }
 
-        OutlinedTextField(
-            value = phone,
-            onValueChange = { phone = it },
-            label = { Text(I18nStore.t("login.phoneLabel", "Teléfono (ej: +5491123456789)")) },
-            singleLine = true,
-            shape = MaterialTheme.shapes.medium,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            modifier = Modifier.fillMaxWidth(),
-            enabled = state !is LoginState.OtpSent && state !is LoginState.Loading,
-        )
+        // Selector de canal: Email (primario) / Teléfono. Solo antes de pedir código.
+        if (state !is LoginState.OtpSent) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ModeButton("📧 Email", mode == "email", { mode = "email"; vm.reset() }, Modifier.weight(1f))
+                ModeButton("📱 Teléfono", mode == "phone", { mode = "phone"; vm.reset() }, Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+
+        if (mode == "email") {
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text(I18nStore.t("login.emailLabel", "Tu email")) },
+                singleLine = true,
+                shape = MaterialTheme.shapes.medium,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                modifier = Modifier.fillMaxWidth(),
+                enabled = state !is LoginState.OtpSent && state !is LoginState.Loading,
+            )
+        } else {
+            OutlinedTextField(
+                value = phone,
+                onValueChange = { phone = it },
+                label = { Text(I18nStore.t("login.phoneLabel", "Teléfono (ej: +5491123456789)")) },
+                singleLine = true,
+                shape = MaterialTheme.shapes.medium,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                modifier = Modifier.fillMaxWidth(),
+                enabled = state !is LoginState.OtpSent && state !is LoginState.Loading,
+            )
+        }
 
         if (state is LoginState.OtpSent || state is LoginState.Error) {
             Spacer(Modifier.height(16.dp))
             OutlinedTextField(
                 value = code,
                 onValueChange = { code = it },
-                label = { Text(I18nStore.t("login.codeLabel", "Código de WhatsApp")) },
+                label = { Text(if (mode == "email") I18nStore.t("login.codeLabelEmail", "Código del email") else I18nStore.t("login.codeLabel", "Código de WhatsApp")) },
                 singleLine = true,
                 shape = MaterialTheme.shapes.medium,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -113,13 +138,18 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
             CircularProgressIndicator()
         } else if (state !is LoginState.OtpSent) {
             Button(
-                onClick = { vm.requestOtp(phone) },
-                enabled = phone.isNotBlank(),
+                onClick = { if (mode == "email") vm.requestEmailOtp(email) else vm.requestOtp(phone) },
+                enabled = if (mode == "email") email.isNotBlank() else phone.isNotBlank(),
                 modifier = Modifier.fillMaxWidth().height(54.dp),
-            ) { Text(I18nStore.t("login.sendCode", "Enviar código por WhatsApp")) }
+            ) {
+                Text(
+                    if (mode == "email") I18nStore.t("login.sendCodeEmail", "Enviar código al email")
+                    else I18nStore.t("login.sendCode", "Enviar código por WhatsApp"),
+                )
+            }
         } else {
             Button(
-                onClick = { vm.verifyOtp(context, phone, code) },
+                onClick = { if (mode == "email") vm.verifyEmailOtp(context, email, code) else vm.verifyOtp(context, phone, code) },
                 enabled = code.isNotBlank(),
                 modifier = Modifier.fillMaxWidth().height(54.dp),
             ) { Text(I18nStore.t("login.verify", "Verificar")) }
@@ -137,16 +167,15 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
 
         Spacer(Modifier.height(16.dp))
         Text(
-            I18nStore.t("login.privacyHint", "Te enviaremos un código por WhatsApp para entrar."),
+            if (mode == "email") I18nStore.t("login.privacyHintEmail", "Te enviaremos un código a tu email para entrar.")
+            else I18nStore.t("login.privacyHint", "Te enviaremos un código por WhatsApp para entrar."),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
 
-        // OTP delivery fallback: WhatsApp only delivers a plain-text code inside the
-        // 24h service window. If the user never messaged the bot, the code won't
-        // arrive — so nudge them to open WhatsApp first, then re-request the code.
-        if (state is LoginState.OtpSent || state is LoginState.Error) {
+        // Solo en modo teléfono: fallback de la ventana de 24h de WhatsApp.
+        if (mode == "phone" && (state is LoginState.OtpSent || state is LoginState.Error)) {
             Spacer(Modifier.height(16.dp))
             Text(
                 I18nStore.t("login.otpHelp", "¿No te llega el código? Escríbele al bot por WhatsApp y vuelve a tocar \"Enviar\"."),
@@ -166,5 +195,14 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
                 }
             }) { Text(I18nStore.t("login.openWhatsapp", "Abrir WhatsApp")) }
         }
+    }
+}
+
+@Composable
+private fun ModeButton(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    if (selected) {
+        Button(onClick = onClick, modifier = modifier) { Text(label) }
+    } else {
+        OutlinedButton(onClick = onClick, modifier = modifier) { Text(label) }
     }
 }

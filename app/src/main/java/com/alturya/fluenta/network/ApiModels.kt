@@ -6,6 +6,9 @@ data class OtpRequestBody(val phone: String)
 data class OtpVerifyBody(val phone: String, val code: String, val l1: String? = null, val l2: String? = null)
 data class OtpRequestResponse(val ok: Boolean, val delivered: Boolean?, val message: String?)
 data class OtpVerifyResponse(val ok: Boolean, val token: String?, val isNewUser: Boolean?)
+// Email login (canal que NO depende de Meta/WhatsApp)
+data class EmailRequestBody(val email: String)
+data class EmailVerifyBody(val email: String, val code: String, val l1: String? = null, val l2: String? = null)
 
 data class UserProfile(
     val id: String,

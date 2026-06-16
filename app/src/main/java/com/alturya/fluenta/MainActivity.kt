@@ -204,7 +204,8 @@ class MainActivity : ComponentActivity() {
                             guest = true,
                             l1 = gl1,
                             l2 = gl2,
-                            onDone = { rootNav.navigate("guest_lesson/$gl1/$gl2") },
+                            // Pico de valor tras hablar inglés → registro (conversión), no el quiz.
+                            onDone = { rootNav.navigate("login") { popUpTo("onboarding") { inclusive = true } } },
                         )
                     }
                     composable("main") {

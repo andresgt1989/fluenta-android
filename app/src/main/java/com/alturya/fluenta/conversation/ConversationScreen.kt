@@ -99,11 +99,26 @@ fun ConversationScreen(
                     shape = RoundedCornerShape(16.dp),
                 ) {
                     Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("¡Conversación completa! 🎉", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Spacer(Modifier.height(6.dp))
-                        Text("Hablaste ${state.spokenPhrases} veces · +${state.xpEarned} XP", style = MaterialTheme.typography.bodyMedium)
-                        Spacer(Modifier.height(12.dp))
-                        Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) { Text("Listo") }
+                        if (guest) {
+                            // Momento "aha": acaba de hablar inglés. PICO DE VALOR → conversión.
+                            Text("¡Acabas de hablar en inglés! 🎉", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                "Dijiste ${state.spokenPhrases} ${if (state.spokenPhrases == 1) "frase" else "frases"}. Crea tu cuenta gratis para guardar tu racha y seguir practicando.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            )
+                            Spacer(Modifier.height(14.dp))
+                            Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
+                                Text("Crear cuenta gratis")
+                            }
+                        } else {
+                            Text("¡Conversación completa! 🎉", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Spacer(Modifier.height(6.dp))
+                            Text("Hablaste ${state.spokenPhrases} veces · +${state.xpEarned} XP", style = MaterialTheme.typography.bodyMedium)
+                            Spacer(Modifier.height(12.dp))
+                            Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) { Text("Listo") }
+                        }
                     }
                 }
             } else {

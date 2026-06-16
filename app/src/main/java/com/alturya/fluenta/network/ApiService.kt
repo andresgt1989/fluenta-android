@@ -25,6 +25,12 @@ interface ApiService {
     @POST("api/auth/phone-verify")
     suspend fun verifyOtp(@Body body: OtpVerifyBody): OtpVerifyResponse
 
+    @POST("api/auth/email-request")
+    suspend fun requestEmailOtp(@Body body: EmailRequestBody): OtpRequestResponse
+
+    @POST("api/auth/email-verify")
+    suspend fun verifyEmailOtp(@Body body: EmailVerifyBody): OtpVerifyResponse
+
     @GET("api/user/profile")
     suspend fun getProfile(): UserProfile
 
