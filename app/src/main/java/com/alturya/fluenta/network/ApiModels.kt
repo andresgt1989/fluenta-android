@@ -10,6 +10,13 @@ data class OtpVerifyResponse(val ok: Boolean, val token: String?, val isNewUser:
 data class EmailRequestBody(val email: String)
 data class EmailVerifyBody(val email: String, val code: String, val l1: String? = null, val l2: String? = null)
 
+// Google Sign-In (un toque, sin Meta, sin OTP). El idToken viene de Credential Manager.
+data class GoogleAuthBody(val idToken: String, val l1: String? = null, val l2: String? = null)
+data class AuthConfig(val googleClientId: String?)
+
+// Analítica de embudo (fire-and-forget). anonId enlaza el funnel guest con la cuenta.
+data class EventBody(val event: String, val anonId: String? = null, val props: Map<String, String>? = null)
+
 data class UserProfile(
     val id: String,
     val phone: String,

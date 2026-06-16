@@ -9,6 +9,7 @@ import android.speech.SpeechRecognizer
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.alturya.fluenta.audio.TtsPlayer
+import com.alturya.fluenta.data.Analytics
 import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.network.ConvoEndBody
 import com.alturya.fluenta.network.ConvoStartBody
@@ -52,6 +53,8 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
     private var lastScenario: String? = null
     private var lastGoal: String? = null
     private var lastLessonId: String? = null
+    // Activación: el primer turno hablado del usuario. Se registra una sola vez.
+    private var firstTurnTracked = false
 
     fun start(scenario: String?, goal: String?, lessonId: String?, guest: Boolean = false, l1: String = "es", l2: String = "en") {
         this.guest = guest; this.gl1 = l1; this.gl2 = l2
@@ -64,6 +67,7 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
                 else
                     ApiClient.api.convoStart(ConvoStartBody(lessonId, scenario, goal))
                 sessionId = res.sessionId
+                Analytics.track(getApplication(), Analytics.WEDGE_START, mapOf("l2" to gl2, "guest" to guest.toString()))
                 _state.value = _state.value.copy(
                     phase = ConvoPhase.SPEAKING,
                     messages = listOf(ConvoMessage(true, res.reply, translit = res.replyTranslit)),
@@ -127,6 +131,11 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun sendTurn(text: String) {
         val sid = sessionId ?: return
+        if (!firstTurnTracked) {
+            firstTurnTracked = true
+            // Activación: el usuario habló de verdad y obtuvo respuesta del tutor.
+            Analytics.track(getApplication(), Analytics.WEDGE_FIRST_TURN, mapOf("l2" to gl2, "guest" to guest.toString()))
+        }
         viewModelScope.launch {
             _state.value = _state.value.copy(
                 phase = ConvoPhase.THINKING,

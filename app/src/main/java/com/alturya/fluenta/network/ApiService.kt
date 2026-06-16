@@ -31,6 +31,15 @@ interface ApiService {
     @POST("api/auth/email-verify")
     suspend fun verifyEmailOtp(@Body body: EmailVerifyBody): OtpVerifyResponse
 
+    @GET("api/auth/config")
+    suspend fun getAuthConfig(): AuthConfig
+
+    @POST("api/auth/google")
+    suspend fun authGoogle(@Body body: GoogleAuthBody): OtpVerifyResponse
+
+    @POST("api/events")
+    suspend fun postEvent(@Body body: EventBody): Response<ResponseBody>
+
     @GET("api/user/profile")
     suspend fun getProfile(): UserProfile
 

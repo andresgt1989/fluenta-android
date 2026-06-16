@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alturya.fluenta.data.Analytics
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.progress.LeagueViewModel
 import com.alturya.fluenta.util.flag
@@ -101,53 +102,9 @@ fun HomeScreen(
             }
         }
 
-        // ── Viaje de nivel (CEFR/HSK/JLPT) — dónde estás y a dónde vas ─────────
-        LevelJourneyCard(level = p?.level, levelSystem = p?.levelSystem, onLevelTest = onLevelTest)
-
-        // ── Streak hero + stats ───────────────────────────────────────────────
-        StatsHero(
-            streak = state.progress?.streakDays ?: 0,
-            xp = state.progress?.totalXp ?: 0,
-            lessons = state.progress?.completedLessons ?: 0,
-        )
-
-        // ── Meta diaria (daily goal ring) ─────────────────────────────────────
-        val prog = state.progress
-        if (prog != null && prog.dailyGoalXp > 0) {
-            DailyGoalBar(
-                todayXp = prog.todayXp,
-                goalXp = prog.dailyGoalXp,
-                pct = prog.dailyGoalPct,
-            )
-        }
-
-        // ── Coach message ─────────────────────────────────────────────────────
-        state.coachMessage?.let { msg ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                ),
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    Text(
-                        "🎓 $msg",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    )
-                    state.affectiveState?.let { st ->
-                        Spacer(Modifier.height(6.dp))
-                        Text(
-                            affectiveLabel(st),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        )
-                    }
-                }
-            }
-        }
-
-        // ── Dominant CTA: next lesson ─────────────────────────────────────────
+        // ── EL siguiente paso (un solo foco, justo bajo el saludo) ────────────
+        // Hick's law: una acción dominante e inequívoca. Todo lo demás (nivel,
+        // stats, ligas, más práctica) es contexto secundario debajo.
         val next = state.nextLesson
         if (next?.title != null && next.id != null) {
             Card(
@@ -156,6 +113,7 @@ fun HomeScreen(
                     containerColor = MaterialTheme.colorScheme.primary,
                 ),
                 onClick = {
+                    Analytics.track(context, Analytics.LESSON_START, mapOf("lessonType" to (next.lessonType ?: "")))
                     if (next.lessonType == "roleplay" || next.lessonType == "free_chat")
                         onConversationLesson(next.id)
                     else onStartLesson(next.id)
@@ -202,7 +160,7 @@ fun HomeScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
-                onClick = onSeeMap,
+                onClick = { Analytics.track(context, Analytics.LESSON_START, mapOf("lessonType" to "map")); onSeeMap() },
             ) {
                 Column(Modifier.padding(20.dp)) {
                     Text(
@@ -217,6 +175,58 @@ fun HomeScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                     )
+                }
+            }
+        }
+
+        // ── Conversar (el wedge) — alternativa de un toque, justo bajo el foco ──
+        OutlinedButton(
+            onClick = { Analytics.track(context, Analytics.CONVERSATION_START); onConversation() },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("🗣️  " + I18nStore.t("home.conversation", "Conversar en inglés")) }
+
+        // ── Viaje de nivel (CEFR/HSK/JLPT) — dónde estás y a dónde vas ─────────
+        LevelJourneyCard(level = p?.level, levelSystem = p?.levelSystem, onLevelTest = onLevelTest)
+
+        // ── Streak hero + stats ───────────────────────────────────────────────
+        StatsHero(
+            streak = state.progress?.streakDays ?: 0,
+            xp = state.progress?.totalXp ?: 0,
+            lessons = state.progress?.completedLessons ?: 0,
+        )
+
+        // ── Meta diaria (daily goal ring) ─────────────────────────────────────
+        val prog = state.progress
+        if (prog != null && prog.dailyGoalXp > 0) {
+            DailyGoalBar(
+                todayXp = prog.todayXp,
+                goalXp = prog.dailyGoalXp,
+                pct = prog.dailyGoalPct,
+            )
+        }
+
+        // ── Coach message ─────────────────────────────────────────────────────
+        state.coachMessage?.let { msg ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                ),
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    Text(
+                        "🎓 $msg",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                    state.affectiveState?.let { st ->
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            affectiveLabel(st),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
+                    }
                 }
             }
         }
@@ -281,11 +291,6 @@ fun HomeScreen(
                 )
             }
         }
-        Button(
-            onClick = onConversation,
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text("🗣️  " + I18nStore.t("home.conversation", "Conversar en inglés")) }
-
         if (showMore) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 ActionCard("🔊", I18nStore.t("home.pronunciationShort", "Pronunciación"), onClick = onPronunciation)

@@ -26,6 +26,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.alturya.fluenta.curriculum.CurriculumMapScreen
+import com.alturya.fluenta.data.Analytics
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.data.TokenStore
 import com.alturya.fluenta.diagnostic.DiagnosticScreen
@@ -104,6 +105,9 @@ class MainActivity : ComponentActivity() {
                 else androidx.compose.ui.unit.LayoutDirection.Ltr
 
                 LaunchedEffect(token) { token?.let { ApiClient.setToken(it) } }
+
+                // Señal de actividad diaria (D1/D7). Una vez por arranque.
+                LaunchedEffect(Unit) { Analytics.track(context, Analytics.APP_OPEN) }
 
                 // Capa 1 — Detección L1 + 30 pares: cargar strings UI en idioma nativo.
                 // Si el usuario tiene perfil cargado, el L1 del perfil manda. Sin perfil:

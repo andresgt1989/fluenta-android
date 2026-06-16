@@ -3,12 +3,14 @@ package com.alturya.fluenta.login
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.alturya.fluenta.data.Analytics
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.data.TokenStore
 import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.network.EmailRequestBody
 import com.alturya.fluenta.network.EmailVerifyBody
 import com.alturya.fluenta.network.FcmRegisterBody
+import com.alturya.fluenta.network.GoogleAuthBody
 import com.alturya.fluenta.network.OtpRequestBody
 import com.alturya.fluenta.network.OtpVerifyBody
 import com.alturya.fluenta.network.SelectLanguageBody
@@ -77,6 +79,7 @@ class LoginViewModel : ViewModel() {
                             ApiClient.api.registerFcmToken(FcmRegisterBody(fcmToken))
                         } catch (_: Exception) { /* non-critical */ }
                     }
+                    Analytics.track(context, Analytics.REGISTER_SUCCESS, mapOf("method" to "phone"))
                     _state.value = LoginState.Success(res.isNewUser == true)
                 } else {
                     _state.value = LoginState.Error(I18nStore.t("login.codeError", "Código incorrecto"))
@@ -126,12 +129,46 @@ class LoginViewModel : ViewModel() {
                         try { ApiClient.api.registerFcmToken(FcmRegisterBody(fcmToken)) }
                         catch (_: Exception) { /* non-critical */ }
                     }
+                    Analytics.track(context, Analytics.REGISTER_SUCCESS, mapOf("method" to "email"))
                     _state.value = LoginState.Success(res.isNewUser == true)
                 } else {
                     _state.value = LoginState.Error(I18nStore.t("login.codeError", "Código incorrecto"))
                 }
             } catch (e: Exception) {
                 _state.value = LoginState.Error(I18nStore.t("login.codeError", "Código incorrecto"))
+            }
+        }
+    }
+
+    // ── Google Sign-In (un toque, sin Meta, sin OTP) ────────────────────────
+    // El idToken lo obtiene la pantalla vía Credential Manager; aquí lo
+    // canjeamos por nuestro token de sesión.
+    fun signInWithGoogle(context: Context, idToken: String) {
+        viewModelScope.launch {
+            _state.value = LoginState.Loading
+            try {
+                val deviceL1 = java.util.Locale.getDefault().language.takeIf { it.length == 2 } ?: "es"
+                val chosenL2 = TokenStore.getChosenL2(context).firstOrNull()
+                val res = ApiClient.apiNoAuth.authGoogle(GoogleAuthBody(idToken, deviceL1, chosenL2))
+                if (res.token != null) {
+                    TokenStore.save(context, res.token, "google")
+                    ApiClient.setToken(res.token)
+                    if (!chosenL2.isNullOrBlank()) {
+                        try { ApiClient.api.selectLanguage(SelectLanguageBody(chosenL2)) }
+                        catch (_: Exception) { /* non-critical */ }
+                    }
+                    val fcmToken = TokenStore.getFcmToken(context).firstOrNull()
+                    if (fcmToken != null) {
+                        try { ApiClient.api.registerFcmToken(FcmRegisterBody(fcmToken)) }
+                        catch (_: Exception) { /* non-critical */ }
+                    }
+                    Analytics.track(context, Analytics.REGISTER_SUCCESS, mapOf("method" to "google"))
+                    _state.value = LoginState.Success(res.isNewUser == true)
+                } else {
+                    _state.value = LoginState.Error(I18nStore.t("login.googleError", "No se pudo iniciar sesión con Google"))
+                }
+            } catch (e: Exception) {
+                _state.value = LoginState.Error(I18nStore.t("login.googleError", "No se pudo iniciar sesión con Google"))
             }
         }
     }
