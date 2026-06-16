@@ -343,13 +343,24 @@ data class UiStringsResponse(
 // ── Conversación de voz abierta (el wedge) ──────────────────────────────────
 data class ConvoStartBody(val lessonId: String? = null, val scenario: String? = null, val goal: String? = null)
 data class GuestConvoStartBody(val l1: String, val l2: String, val scenario: String? = null, val goal: String? = null)
-data class ConvoStartResponse(val sessionId: String, val reply: String, val suggestion: String? = null, val scenario: String?, val goal: String?, val ttsUrl: String?)
+data class ConvoStartResponse(
+    val sessionId: String,
+    val reply: String,
+    val replyTranslit: String? = null,        // lectura latina (scripts no-latinos)
+    val suggestion: String? = null,
+    val suggestionTranslit: String? = null,
+    val scenario: String?,
+    val goal: String?,
+    val ttsUrl: String?,
+)
 data class ConvoTurnBody(val sessionId: String, val text: String)
 data class ConvoTurnResponse(
     val reply: String,
-    val correction: String?,   // recast: la frase del alumno reescrita bien en L2
-    val tip: String?,          // nota breve en L1 (la regla)
-    val suggestion: String?,   // frase sugerida para seguir (scaffolding)
+    val replyTranslit: String?,  // lectura latina del reply (scripts no-latinos)
+    val correction: String?,     // recast: la frase del alumno reescrita bien en L2
+    val tip: String?,            // nota breve en L1 (la regla)
+    val suggestion: String?,     // frase sugerida para seguir (scaffolding)
+    val suggestionTranslit: String?,
     val didSucceed: Boolean,
     val complete: Boolean,
     val ttsUrl: String?,

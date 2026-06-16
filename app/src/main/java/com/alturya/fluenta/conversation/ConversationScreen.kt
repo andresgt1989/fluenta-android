@@ -152,11 +152,19 @@ fun ConversationScreen(
                             color = MaterialTheme.colorScheme.secondaryContainer,
                             shape = RoundedCornerShape(12.dp),
                         ) {
-                            Text(
-                                "💡 Puedes decir: \"${state.suggestion}\"",
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
+                            Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                                Text(
+                                    "💡 Puedes decir: \"${state.suggestion}\"",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                                if (state.suggestionTranslit.isNotBlank()) {
+                                    Text(
+                                        state.suggestionTranslit,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f),
+                                    )
+                                }
+                            }
                         }
                     }
                     Spacer(Modifier.height(16.dp))
@@ -208,6 +216,15 @@ private fun MessageBubble(msg: ConvoMessage) {
                 msg.text,
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                 color = if (msg.fromPartner) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimary,
+            )
+        }
+        // Lectura latina (romaji/pinyin/…) para que se pueda leer un script no-latino.
+        if (!msg.translit.isNullOrBlank()) {
+            Text(
+                msg.translit!!,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
             )
         }
         if (!msg.correction.isNullOrBlank()) {

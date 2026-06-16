@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class ConvoMessage(val fromPartner: Boolean, val text: String, val correction: String? = null, val tip: String? = null)
+data class ConvoMessage(val fromPartner: Boolean, val text: String, val translit: String? = null, val correction: String? = null, val tip: String? = null)
 
 enum class ConvoPhase { CONNECTING, SPEAKING, YOUR_TURN, LISTENING, THINKING, ENDED, ERROR }
 
@@ -30,6 +30,7 @@ data class ConvoUiState(
     val spokenPhrases: Int = 0,
     val xpEarned: Int = 0,
     val suggestion: String = "",   // frase sugerida para que el principiante no se congele
+    val suggestionTranslit: String = "",
 )
 
 // The voice-conversation wedge. Uses the device SpeechRecognizer (free, on-device)
@@ -65,8 +66,9 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
                 sessionId = res.sessionId
                 _state.value = _state.value.copy(
                     phase = ConvoPhase.SPEAKING,
-                    messages = listOf(ConvoMessage(true, res.reply)),
+                    messages = listOf(ConvoMessage(true, res.reply, translit = res.replyTranslit)),
                     suggestion = res.suggestion ?: "",
+                    suggestionTranslit = res.suggestionTranslit ?: "",
                 )
                 TtsPlayer.play(getApplication(), res.reply)
                 _state.value = _state.value.copy(phase = ConvoPhase.YOUR_TURN)
@@ -138,8 +140,13 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
                     val li = msgs.indexOfLast { !it.fromPartner }
                     if (li >= 0) msgs[li] = msgs[li].copy(correction = res.correction, tip = res.tip)
                 }
-                msgs.add(ConvoMessage(true, res.reply))
-                _state.value = _state.value.copy(messages = msgs, phase = ConvoPhase.SPEAKING, suggestion = res.suggestion ?: "")
+                msgs.add(ConvoMessage(true, res.reply, translit = res.replyTranslit))
+                _state.value = _state.value.copy(
+                    messages = msgs,
+                    phase = ConvoPhase.SPEAKING,
+                    suggestion = res.suggestion ?: "",
+                    suggestionTranslit = res.suggestionTranslit ?: "",
+                )
                 TtsPlayer.play(getApplication(), res.reply)
                 if (res.complete) end() else _state.value = _state.value.copy(phase = ConvoPhase.YOUR_TURN)
             } catch (e: Exception) {
