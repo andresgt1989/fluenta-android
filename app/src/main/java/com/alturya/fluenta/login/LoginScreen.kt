@@ -127,21 +127,40 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
             Spacer(Modifier.height(12.dp))
         }
 
-        // Google Sign-In: un toque, sin OTP, sin Meta. Canal primario cuando está configurado.
-        if (googleClientId.isNotBlank() && state !is LoginState.OtpSent) {
+        // Cuenta instantánea: el camino primario, cero fricción. Entra y guarda
+        // progreso sin email ni código. (Después puede vincular email/Google.)
+        if (state !is LoginState.OtpSent) {
             Button(
-                onClick = { launchGoogleSignIn() },
+                onClick = {
+                    Analytics.track(context, Analytics.REGISTER_START, mapOf("method" to "device"))
+                    vm.signInWithDevice(context)
+                },
                 enabled = state !is LoginState.Loading,
                 modifier = Modifier.fillMaxWidth().height(54.dp),
-            ) { Text(I18nStore.t("login.continueGoogle", "Continuar con Google")) }
+            ) {
+                Text(
+                    I18nStore.t("login.startFree", "Empezar gratis"),
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            }
             Spacer(Modifier.height(12.dp))
             Text(
-                I18nStore.t("login.orWithCode", "— o con un código —"),
+                I18nStore.t("login.orSaveProgress", "— o guarda tu progreso con —"),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
+            Spacer(Modifier.height(12.dp))
+        }
+
+        // Google Sign-In: un toque, sin OTP, sin Meta. Canal primario cuando está configurado.
+        if (googleClientId.isNotBlank() && state !is LoginState.OtpSent) {
+            OutlinedButton(
+                onClick = { launchGoogleSignIn() },
+                enabled = state !is LoginState.Loading,
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+            ) { Text(I18nStore.t("login.continueGoogle", "Continuar con Google")) }
             Spacer(Modifier.height(12.dp))
         }
 

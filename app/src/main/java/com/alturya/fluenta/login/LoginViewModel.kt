@@ -7,6 +7,7 @@ import com.alturya.fluenta.data.Analytics
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.data.TokenStore
 import com.alturya.fluenta.network.ApiClient
+import com.alturya.fluenta.network.DeviceAuthBody
 import com.alturya.fluenta.network.EmailRequestBody
 import com.alturya.fluenta.network.EmailVerifyBody
 import com.alturya.fluenta.network.FcmRegisterBody
@@ -136,6 +137,39 @@ class LoginViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 _state.value = LoginState.Error(I18nStore.t("login.codeError", "Código incorrecto"))
+            }
+        }
+    }
+
+    // ── Cuenta instantánea por dispositivo (sin email/Google/Meta) ──────────
+    // Entra de inmediato y guarda progreso. Cero fricción = máxima activación.
+    fun signInWithDevice(context: Context) {
+        viewModelScope.launch {
+            _state.value = LoginState.Loading
+            try {
+                val deviceId = TokenStore.getOrCreateAnonId(context)
+                val deviceL1 = java.util.Locale.getDefault().language.takeIf { it.length == 2 } ?: "es"
+                val chosenL2 = TokenStore.getChosenL2(context).firstOrNull()
+                val res = ApiClient.apiNoAuth.authDevice(DeviceAuthBody(deviceId, deviceL1, chosenL2))
+                if (res.token != null) {
+                    TokenStore.save(context, res.token, "device")
+                    ApiClient.setToken(res.token)
+                    if (!chosenL2.isNullOrBlank()) {
+                        try { ApiClient.api.selectLanguage(SelectLanguageBody(chosenL2)) }
+                        catch (_: Exception) { /* non-critical */ }
+                    }
+                    val fcmToken = TokenStore.getFcmToken(context).firstOrNull()
+                    if (fcmToken != null) {
+                        try { ApiClient.api.registerFcmToken(FcmRegisterBody(fcmToken)) }
+                        catch (_: Exception) { /* non-critical */ }
+                    }
+                    Analytics.track(context, Analytics.REGISTER_SUCCESS, mapOf("method" to "device"))
+                    _state.value = LoginState.Success(res.isNewUser == true)
+                } else {
+                    _state.value = LoginState.Error(I18nStore.t("login.startError", "No se pudo entrar. Revisa tu conexión."))
+                }
+            } catch (e: Exception) {
+                _state.value = LoginState.Error(I18nStore.t("login.startError", "No se pudo entrar. Revisa tu conexión."))
             }
         }
     }

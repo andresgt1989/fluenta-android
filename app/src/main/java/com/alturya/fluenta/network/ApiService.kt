@@ -37,6 +37,9 @@ interface ApiService {
     @POST("api/auth/google")
     suspend fun authGoogle(@Body body: GoogleAuthBody): OtpVerifyResponse
 
+    @POST("api/auth/device")
+    suspend fun authDevice(@Body body: DeviceAuthBody): OtpVerifyResponse
+
     @POST("api/events")
     suspend fun postEvent(@Body body: EventBody): Response<ResponseBody>
 
