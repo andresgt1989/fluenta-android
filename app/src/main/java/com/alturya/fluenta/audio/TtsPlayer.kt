@@ -14,11 +14,11 @@ object TtsPlayer {
 
     private var player: MediaPlayer? = null
 
-    suspend fun play(context: Context, text: String): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun play(context: Context, text: String, l2: String = "en"): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val file = cacheFile(context, text)
+            val file = cacheFile(context, "$l2:$text")
             if (!file.exists() || file.length() == 0L) {
-                val res = ApiClient.api.getTts(text)
+                val res = ApiClient.api.getTts(text, l2)
                 val body = res.body()
                 if (!res.isSuccessful || body == null) {
                     return@withContext Result.failure(Exception("TTS no disponible (${res.code()})"))

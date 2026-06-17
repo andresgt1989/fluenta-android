@@ -74,7 +74,7 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
                     suggestion = res.suggestion ?: "",
                     suggestionTranslit = res.suggestionTranslit ?: "",
                 )
-                TtsPlayer.play(getApplication(), res.reply)
+                TtsPlayer.play(getApplication(), res.reply, gl2)
                 _state.value = _state.value.copy(phase = ConvoPhase.YOUR_TURN)
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
@@ -156,7 +156,7 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
                     suggestion = res.suggestion ?: "",
                     suggestionTranslit = res.suggestionTranslit ?: "",
                 )
-                TtsPlayer.play(getApplication(), res.reply)
+                TtsPlayer.play(getApplication(), res.reply, gl2)
                 if (res.complete) end() else _state.value = _state.value.copy(phase = ConvoPhase.YOUR_TURN)
             } catch (e: Exception) {
                 _state.value = _state.value.copy(phase = ConvoPhase.YOUR_TURN, error = "Error de conexión, intenta de nuevo.")

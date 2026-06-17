@@ -17,7 +17,7 @@ interface ApiService {
 
     @Streaming
     @GET("api/tts")
-    suspend fun getTts(@Query("text") text: String): Response<ResponseBody>
+    suspend fun getTts(@Query("text") text: String, @Query("l2") l2: String = "en"): Response<ResponseBody>
 
     @POST("api/auth/phone-request")
     suspend fun requestOtp(@Body body: OtpRequestBody): OtpRequestResponse

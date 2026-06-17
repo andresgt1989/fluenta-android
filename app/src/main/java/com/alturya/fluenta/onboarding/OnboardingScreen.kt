@@ -130,7 +130,7 @@ private fun WelcomeStep(onStart: () -> Unit) {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            I18nStore.t("onboarding.welcomeTagline", "Aprende un idioma de verdad. 15 minutos al día."),
+            I18nStore.t("onboarding.welcomeTagline", "Aprende un idioma de verdad, hablando desde el primer día."),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

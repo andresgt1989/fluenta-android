@@ -34,6 +34,9 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
     var code by remember { mutableStateOf("") }
     // Email es el canal primario (no depende de Meta). Teléfono = secundario.
     var mode by remember { mutableStateOf("email") }
+    // Las opciones email/teléfono/Google quedan OCULTAS tras un tap, para que la
+    // primera impresión sea limpia: solo "Empezar gratis". (No "pedir correo".)
+    var showSecondary by remember { mutableStateOf(false) }
     // Google Web client ID — lo trae el backend (fuente única). Vacío = Google off.
     var googleClientId by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
@@ -144,18 +147,19 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
                 )
             }
             Spacer(Modifier.height(12.dp))
-            Text(
-                I18nStore.t("login.orSaveProgress", "— o guarda tu progreso con —"),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(12.dp))
+            if (!showSecondary) {
+                TextButton(onClick = { showSecondary = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        I18nStore.t("login.saveProgress", "Guardar mi progreso (email · Google)"),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
 
         // Google Sign-In: un toque, sin OTP, sin Meta. Canal primario cuando está configurado.
-        if (googleClientId.isNotBlank() && state !is LoginState.OtpSent) {
+        if (showSecondary && googleClientId.isNotBlank() && state !is LoginState.OtpSent) {
             OutlinedButton(
                 onClick = { launchGoogleSignIn() },
                 enabled = state !is LoginState.Loading,
@@ -164,8 +168,8 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
             Spacer(Modifier.height(12.dp))
         }
 
-        // Selector de canal: Email (primario) / Teléfono. Solo antes de pedir código.
-        if (state !is LoginState.OtpSent) {
+        // Selector de canal: Email (primario) / Teléfono. Solo tras revelar "guardar progreso".
+        if (showSecondary && state !is LoginState.OtpSent) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ModeButton("📧 Email", mode == "email", { mode = "email"; vm.reset() }, Modifier.weight(1f))
                 ModeButton("📱 Teléfono", mode == "phone", { mode = "phone"; vm.reset() }, Modifier.weight(1f))
@@ -173,7 +177,7 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
             Spacer(Modifier.height(16.dp))
         }
 
-        if (mode == "email") {
+        if (showSecondary && mode == "email") {
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -184,7 +188,7 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
                 modifier = Modifier.fillMaxWidth(),
                 enabled = state !is LoginState.OtpSent && state !is LoginState.Loading,
             )
-        } else {
+        } else if (showSecondary) {
             OutlinedTextField(
                 value = phone,
                 onValueChange = { phone = it },
@@ -214,7 +218,7 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
 
         if (state is LoginState.Loading) {
             CircularProgressIndicator()
-        } else if (state !is LoginState.OtpSent) {
+        } else if (showSecondary && state !is LoginState.OtpSent) {
             Button(
                 onClick = {
                     Analytics.track(context, Analytics.REGISTER_START, mapOf("method" to mode))
@@ -228,7 +232,7 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
                     else I18nStore.t("login.sendCode", "Enviar código por WhatsApp"),
                 )
             }
-        } else {
+        } else if (state is LoginState.OtpSent) {
             Button(
                 onClick = { if (mode == "email") vm.verifyEmailOtp(context, email, code) else vm.verifyOtp(context, phone, code) },
                 enabled = code.isNotBlank(),
@@ -246,14 +250,16 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
             )
         }
 
-        Spacer(Modifier.height(16.dp))
-        Text(
-            if (mode == "email") I18nStore.t("login.privacyHintEmail", "Te enviaremos un código a tu email para entrar.")
-            else I18nStore.t("login.privacyHint", "Te enviaremos un código por WhatsApp para entrar."),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
+        if (showSecondary) {
+            Spacer(Modifier.height(16.dp))
+            Text(
+                if (mode == "email") I18nStore.t("login.privacyHintEmail", "Te enviaremos un código a tu email para entrar.")
+                else I18nStore.t("login.privacyHint", "Te enviaremos un código por WhatsApp para entrar."),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
 
         // Solo en modo teléfono: fallback de la ventana de 24h de WhatsApp.
         if (mode == "phone" && (state is LoginState.OtpSent || state is LoginState.Error)) {

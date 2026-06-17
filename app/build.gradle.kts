@@ -38,6 +38,16 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            all {
+                // Sin el plugin de Roborazzi: pasar el flag de "record" al JVM de test
+                // para que captureRoboImage() ESCRIBA los PNG.
+                it.systemProperty("roborazzi.test.record", "true")
+            }
+        }
+    }
 }
 
 dependencies {
@@ -68,4 +78,10 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     testImplementation("junit:junit:4.13.2")
+    // Screenshot rendering sin emulador (Robolectric + Roborazzi) — para auditar UI.
+    testImplementation("org.robolectric:robolectric:4.16")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.46.1")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.46.1")
+    testImplementation(platform("androidx.compose:compose-bom:2024.08.00"))
+    testImplementation("androidx.compose.ui:ui-test-junit4")
 }
