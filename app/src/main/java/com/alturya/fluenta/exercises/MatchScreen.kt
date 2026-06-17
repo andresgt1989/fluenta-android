@@ -19,9 +19,10 @@ import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.ui.FeedbackBar
 
 @Composable
-fun MatchScreen(onDone: () -> Unit = {}) {
+fun MatchScreen(onDone: () -> Unit = {}, previewState: MatchState? = null) {
     val vm: MatchViewModel = viewModel()
-    val state by vm.state.collectAsState()
+    val vmState by vm.state.collectAsState()
+    val state = previewState ?: vmState
     val haptic = LocalHapticFeedback.current
 
     LaunchedEffect(state.wrongFlash) {

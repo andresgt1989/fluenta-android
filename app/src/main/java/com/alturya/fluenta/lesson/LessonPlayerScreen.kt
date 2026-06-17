@@ -74,7 +74,7 @@ import org.json.JSONObject
 import java.io.File
 
 @Composable
-fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit) {
+fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit, previewState: LessonPlayerState? = null) {
     val vm: LessonPlayerViewModel = viewModel(
         key = "lesson_$lessonId",
         factory = object : androidx.lifecycle.ViewModelProvider.Factory {
@@ -85,7 +85,8 @@ fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit) {
                 ) as T
         }
     )
-    val state by vm.state.collectAsState()
+    val vmState by vm.state.collectAsState()
+    val state = previewState ?: vmState
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 

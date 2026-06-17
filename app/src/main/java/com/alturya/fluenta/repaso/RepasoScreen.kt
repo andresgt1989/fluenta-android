@@ -65,9 +65,10 @@ class RepasoViewModel : ViewModel() {
 }
 
 @Composable
-fun RepasoScreen(onDone: () -> Unit) {
+fun RepasoScreen(onDone: () -> Unit, previewState: RepasoState? = null) {
     val vm: RepasoViewModel = viewModel()
-    val state by vm.state.collectAsState()
+    val vmState by vm.state.collectAsState()
+    val state = previewState ?: vmState
 
     if (state.loading) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }

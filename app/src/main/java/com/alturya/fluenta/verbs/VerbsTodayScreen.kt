@@ -20,9 +20,10 @@ import com.alturya.fluenta.network.DailyVerbCard
 import kotlinx.coroutines.launch
 
 @Composable
-fun VerbsTodayScreen() {
+fun VerbsTodayScreen(previewState: VerbsTodayState? = null) {
     val vm: VerbsTodayViewModel = viewModel()
-    val state by vm.state.collectAsState()
+    val vmState by vm.state.collectAsState()
+    val state = previewState ?: vmState
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -58,7 +59,7 @@ fun VerbsTodayScreen() {
                 )
             }
         }
-        item { TodayProgressCard(state.stats.mastered, state.target) }
+        item { TodayProgressCard(state.achievedToday, state.target) }
         items(state.verbs) { verb ->
             VerbCard(
                 verb = verb,

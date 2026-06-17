@@ -36,9 +36,10 @@ private val PRIORITY_PAIRS: Set<Pair<String, String>> = setOf(
 )
 
 @Composable
-fun LanguageSelectorScreen(onChanged: () -> Unit = {}) {
+fun LanguageSelectorScreen(onChanged: () -> Unit = {}, previewState: LanguagesState? = null) {
     val vm: LanguagesViewModel = viewModel()
-    val state by vm.state.collectAsState()
+    val vmState by vm.state.collectAsState()
+    val state = previewState ?: vmState
     val snackbar = remember { SnackbarHostState() }
 
     LaunchedEffect(state.message) {

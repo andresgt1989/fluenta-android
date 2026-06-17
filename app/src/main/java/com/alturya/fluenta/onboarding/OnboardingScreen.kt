@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -156,10 +158,17 @@ private fun WelcomeStep(onStart: () -> Unit) {
 @Composable
 private fun Bullet(text: String) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("✅ ", style = MaterialTheme.typography.titleMedium)
+        // Icono consistente (no emoji) — más profesional + accesible.
+        androidx.compose.material3.Icon(
+            imageVector = Icons.Default.CheckCircle,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp),
+        )
+        Spacer(Modifier.width(12.dp))
         Text(text, style = MaterialTheme.typography.bodyLarge)
     }
 }

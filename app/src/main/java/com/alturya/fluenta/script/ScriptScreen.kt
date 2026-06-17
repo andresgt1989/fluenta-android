@@ -17,11 +17,12 @@ import com.alturya.fluenta.network.ScriptItem
 // LEER (lección método nativo) + ESCRIBIR (trazo a trazo) + examen de lectura
 // que actualiza el dominio (scriptMastery) y va apagando la transliteración.
 @Composable
-fun ScriptScreen(l2: String, onDone: () -> Unit = {}) {
+fun ScriptScreen(l2: String, onDone: () -> Unit = {}, previewState: ScriptUiState? = null) {
     val vm: ScriptViewModel = viewModel()
-    val state by vm.state.collectAsState()
+    val vmState by vm.state.collectAsState()
+    val state = previewState ?: vmState
 
-    LaunchedEffect(l2) { vm.load(l2) }
+    LaunchedEffect(l2) { if (previewState == null) vm.load(l2) }
 
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
@@ -50,7 +51,7 @@ fun ScriptScreen(l2: String, onDone: () -> Unit = {}) {
                     state.info?.let { info ->
                         ReadingMeter(info.readingScore)
                     }
-                    l.items.forEach { item -> GlyphCard(item) }
+                    l.items.forEach { item -> GlyphCard(item, writingSupported = l.writingSupported) }
                     Spacer(Modifier.height(4.dp))
                     Button(
                         onClick = { vm.startQuiz() },
@@ -139,7 +140,7 @@ private fun ReadingMeter(score: Int) {
 }
 
 @Composable
-private fun GlyphCard(item: ScriptItem) {
+private fun GlyphCard(item: ScriptItem, writingSupported: Boolean = true) {
     var writing by remember { mutableStateOf(false) }
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
@@ -160,11 +161,13 @@ private fun GlyphCard(item: ScriptItem) {
                     }
                 }
             }
-            Spacer(Modifier.height(8.dp))
-            OutlinedButton(onClick = { writing = !writing }) {
-                Text(if (writing) "Ocultar trazos" else "✍️ Escribir")
+            if (writingSupported) {
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(onClick = { writing = !writing }) {
+                    Text(if (writing) "Ocultar trazos" else "✍️ Escribir")
+                }
             }
-            if (writing) {
+            if (writing && writingSupported) {
                 Spacer(Modifier.height(8.dp))
                 StrokeWriter(glyph = item.glyph)
             }

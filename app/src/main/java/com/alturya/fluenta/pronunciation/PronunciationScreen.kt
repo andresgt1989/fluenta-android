@@ -18,10 +18,11 @@ import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.WordResult
 
 @Composable
-fun PronunciationScreen() {
+fun PronunciationScreen(previewState: PronState? = null) {
     val context = LocalContext.current
     val vm: PronunciationViewModel = viewModel()
-    val state by vm.state.collectAsState()
+    val vmState by vm.state.collectAsState()
+    val state = previewState ?: vmState
     val snackbar = remember { SnackbarHostState() }
 
     LaunchedEffect(state.error) { state.error?.let { snackbar.showSnackbar(it) } }

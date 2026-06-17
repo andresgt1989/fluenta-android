@@ -16,9 +16,10 @@ import com.alturya.fluenta.util.levelLabel
 import com.alturya.fluenta.util.levelSystemName
 
 @Composable
-fun ProgressScreen() {
+fun ProgressScreen(previewState: ProgressState? = null) {
     val vm: ProgressViewModel = viewModel()
-    val state by vm.state.collectAsState()
+    val vmState by vm.state.collectAsState()
+    val state = previewState ?: vmState
 
     if (state.loading) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }

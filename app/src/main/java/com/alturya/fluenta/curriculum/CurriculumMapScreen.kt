@@ -35,9 +35,11 @@ private val ZIGZAG = listOf(0.15f, 0.35f, 0.5f, 0.65f, 0.85f, 0.65f, 0.5f, 0.35f
 fun CurriculumMapScreen(
     onStartLesson: (String) -> Unit = {},
     onConversationLesson: (String) -> Unit = {},
+    previewState: CurriculumState? = null,
 ) {
     val vm: CurriculumViewModel = viewModel()
-    val state by vm.state.collectAsState()
+    val vmState by vm.state.collectAsState()
+    val state = previewState ?: vmState
     val listState = rememberLazyListState()
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -209,9 +211,9 @@ private fun PathLessonNode(lesson: Lesson, xFraction: Float, onClick: () -> Unit
             Text(
                 lesson.title,
                 style = MaterialTheme.typography.labelSmall,
-                maxLines = 1,
+                maxLines = 2,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.width(80.dp),
+                modifier = Modifier.width(88.dp),
             )
         }
     }

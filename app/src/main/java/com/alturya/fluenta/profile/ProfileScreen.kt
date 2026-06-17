@@ -28,11 +28,13 @@ import com.alturya.fluenta.util.levelSystemName
 fun ProfileScreen(
     onChangeLanguage: () -> Unit = {},
     onLogout: () -> Unit = {},
-    onDiagnostic: () -> Unit = {}
+    onDiagnostic: () -> Unit = {},
+    previewState: com.alturya.fluenta.profile.ProfileState? = null,
 ) {
     val context = LocalContext.current
     val vm: ProfileViewModel = viewModel()
-    val state by vm.state.collectAsState()
+    val vmState by vm.state.collectAsState()
+    val state = previewState ?: vmState
 
     fun open(url: String) {
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
