@@ -45,10 +45,12 @@ fun HomeScreen(
     onConversation: () -> Unit = {},
     onConversationLesson: (String) -> Unit = {},
     onScript: (String) -> Unit = {},
+    previewState: HomeState? = null,   // solo para screenshots/preview (inyecta estado mock)
 ) {
     val context = LocalContext.current
     val vm: HomeViewModel = viewModel()
-    val state by vm.state.collectAsState()
+    val vmState by vm.state.collectAsState()
+    val state = previewState ?: vmState
     val p = state.profile
 
     if (state.loading) {
