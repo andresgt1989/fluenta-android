@@ -43,6 +43,9 @@ interface ApiService {
     @POST("api/events")
     suspend fun postEvent(@Body body: EventBody): Response<ResponseBody>
 
+    @GET("api/coach/next")
+    suspend fun getCoachNext(): CoachNext
+
     @GET("api/script/info")
     suspend fun getScriptInfo(@Query("l2") l2: String): ScriptInfo
 

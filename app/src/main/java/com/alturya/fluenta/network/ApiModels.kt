@@ -20,6 +20,19 @@ data class AuthConfig(val googleClientId: String?)
 // Analítica de embudo (fire-and-forget). anonId enlaza el funnel guest con la cuenta.
 data class EventBody(val event: String, val anonId: String? = null, val props: Map<String, String>? = null)
 
+// ── Coach orquestador (guía IA proactiva hacia C1) ──────────────────────────
+data class CoachAction(val type: String, val label: String, val reason: String, val deeplink: String)
+data class CoachNext(
+    val message: String,
+    val goal: String? = null,
+    val l2: String? = null,
+    val l2Name: String? = null,
+    val currentLevel: String? = null,
+    val progressPct: Int = 0,
+    val readingScore: Int? = null,
+    val action: CoachAction,
+)
+
 // ── Script (sistema de escritura) para idiomas no-latinos ───────────────────
 data class ScriptUnitDto(
     val key: String,

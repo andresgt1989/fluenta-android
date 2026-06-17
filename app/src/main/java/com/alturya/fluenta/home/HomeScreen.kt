@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alturya.fluenta.data.Analytics
 import com.alturya.fluenta.data.I18nStore
+import com.alturya.fluenta.network.CoachAction
 import com.alturya.fluenta.progress.LeagueViewModel
 import com.alturya.fluenta.util.flag
 import com.alturya.fluenta.util.langName
@@ -103,83 +104,62 @@ fun HomeScreen(
             }
         }
 
-        // ── GATE de script (no-latinos): aprende el alfabeto ANTES de avanzar ──
-        // Para ja/zh/ko/ar… si el usuario aún no lee el script, ESTE es el paso
-        // dominante (orden pedagógico correcto: script → lectura → conversación).
-        val si = state.scriptInfo
-        if (si != null && si.needsScriptFirst) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiary),
-                onClick = { onScript(si.l2) },
-            ) {
-                Column(Modifier.padding(20.dp)) {
-                    Text(
-                        I18nStore.t("home.scriptGateTitle", "✍️ Primero: aprende a leer y escribir"),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onTertiary,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        I18nStore.t("home.scriptGateSub", "Domina el alfabeto antes de conversar — así de verdad aprendes a leer, no a depender de la transliteración."),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onTertiary.copy(alpha = 0.9f),
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        "${I18nStore.t("home.reading", "Lectura")}: ${si.readingScore}%",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onTertiary,
-                    )
+        // ── EL TUTOR IA: protagonista del Home. Mensaje proactivo (en tu idioma)
+        // + progreso a la meta (C1/HSK/JLPT) + LA acción siguiente. El coach
+        // ORQUESTA todo el recorrido (script → test → repaso → lección → conversar),
+        // así que reemplaza el desorden de tarjetas sueltas por UN solo foco.
+        val runCoachAction: (CoachAction) -> Unit = { a ->
+            when (a.type) {
+                "script" -> onScript(state.coach?.l2 ?: p?.l2 ?: "")
+                "placement" -> onLevelTest()
+                "review" -> onRepaso()
+                "conversation" -> { Analytics.track(context, Analytics.CONVERSATION_START); onConversation() }
+                "lesson" -> {
+                    val n = state.nextLesson
+                    if (n?.id != null) {
+                        Analytics.track(context, Analytics.LESSON_START, mapOf("lessonType" to (n.lessonType ?: "")))
+                        if (n.lessonType == "roleplay" || n.lessonType == "free_chat") onConversationLesson(n.id) else onStartLesson(n.id)
+                    } else onSeeMap()
                 }
+                else -> onSeeMap()
             }
         }
-
-        // ── EL siguiente paso (un solo foco, justo bajo el saludo) ────────────
-        // Hick's law: una acción dominante e inequívoca. Todo lo demás (nivel,
-        // stats, ligas, más práctica) es contexto secundario debajo.
-        val next = state.nextLesson
-        if (next?.title != null && next.id != null) {
+        val coach = state.coach
+        if (coach != null) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                ),
-                onClick = {
-                    Analytics.track(context, Analytics.LESSON_START, mapOf("lessonType" to (next.lessonType ?: "")))
-                    if (next.lessonType == "roleplay" || next.lessonType == "free_chat")
-                        onConversationLesson(next.id)
-                    else onStartLesson(next.id)
-                },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
+                onClick = { runCoachAction(coach.action) },
             ) {
                 Column(Modifier.padding(20.dp)) {
                     Text(
-                        I18nStore.t("home.todayTask", "Tu tarea de hoy"),
+                        "🎓 ${I18nStore.t("home.yourTutor", "Tu tutor")}",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                     )
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(6.dp))
                     Text(
-                        next.title,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        coach.message,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
-                    next.unitTitle?.let {
-                        Text(
-                            it,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
-                        )
-                    }
-                    Spacer(Modifier.height(16.dp))
-                    Surface(
+                    Spacer(Modifier.height(14.dp))
+                    Text(
+                        "${I18nStore.t("home.progressTo", "Progreso a")} ${(coach.goal ?: "c1").uppercase()} · ${coach.progressPct}%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    LinearProgressIndicator(
+                        progress = { (coach.progressPct / 100f).coerceIn(0f, 1f) },
+                        modifier = Modifier.fillMaxWidth().height(8.dp),
                         color = MaterialTheme.colorScheme.onPrimary,
-                        shape = MaterialTheme.shapes.large,
-                    ) {
+                        trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f),
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Surface(color = MaterialTheme.colorScheme.onPrimary, shape = MaterialTheme.shapes.large) {
                         Text(
-                            I18nStore.t("home.startLesson", "▶ Empezar lección"),
+                            "▶ ${coach.action.label}",
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
@@ -189,35 +169,22 @@ fun HomeScreen(
                 }
             }
         } else {
-            // No assigned next lesson yet (fresh account / unseeded pair): never leave
-            // the user without a primary action — send them into their plan.
+            // Fallback (sin conexión / coach no disponible): no dejar al usuario sin acción.
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
-                onClick = { Analytics.track(context, Analytics.LESSON_START, mapOf("lessonType" to "map")); onSeeMap() },
+                onClick = onSeeMap,
             ) {
                 Column(Modifier.padding(20.dp)) {
                     Text(
-                        I18nStore.t("home.startHereTitle", "Empieza tu primera lección"),
+                        I18nStore.t("home.startHereTitle", "Empieza tu lección"),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        I18nStore.t("home.startHereSubtitle", "Abre tu plan y da el primer paso de hoy."),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
-                    )
                 }
             }
         }
-
-        // ── Conversar (el wedge) — alternativa de un toque, justo bajo el foco ──
-        OutlinedButton(
-            onClick = { Analytics.track(context, Analytics.CONVERSATION_START); onConversation() },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text("🗣️  " + I18nStore.t("home.conversation", "Conversar en inglés")) }
 
         // ── Viaje de nivel (CEFR/HSK/JLPT) — dónde estás y a dónde vas ─────────
         LevelJourneyCard(level = p?.level, levelSystem = p?.levelSystem, onLevelTest = onLevelTest)

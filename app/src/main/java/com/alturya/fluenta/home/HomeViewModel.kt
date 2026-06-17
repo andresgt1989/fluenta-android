@@ -3,6 +3,7 @@ package com.alturya.fluenta.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alturya.fluenta.network.ApiClient
+import com.alturya.fluenta.network.CoachNext
 import com.alturya.fluenta.network.NextLesson
 import com.alturya.fluenta.network.ScriptInfo
 import com.alturya.fluenta.network.UserProfile
@@ -22,6 +23,8 @@ data class HomeState(
     val practiceWaUrl: String? = null,
     // Script info for non-Latin L2 → drives the "aprende el alfabeto primero" gate.
     val scriptInfo: ScriptInfo? = null,
+    // Coach orquestador: el guía proactivo (mensaje + acción + progreso a C1).
+    val coach: CoachNext? = null,
 )
 
 class HomeViewModel : ViewModel() {
@@ -47,6 +50,8 @@ class HomeViewModel : ViewModel() {
             val scriptInfo = profile?.l2?.let { l2 ->
                 try { ApiClient.api.getScriptInfo(l2).takeIf { it.nonLatin } } catch (_: Exception) { null }
             }
+            // El guía proactivo: qué hacer ahora hacia C1 (orquesta el recorrido).
+            val coachNext = try { ApiClient.api.getCoachNext() } catch (_: Exception) { null }
             _state.value = HomeState(
                 loading = false,
                 profile = profile,
@@ -56,6 +61,7 @@ class HomeViewModel : ViewModel() {
                 affectiveState = coach?.affectiveState,
                 practiceWaUrl = waUrl,
                 scriptInfo = scriptInfo,
+                coach = coachNext,
             )
         }
     }
