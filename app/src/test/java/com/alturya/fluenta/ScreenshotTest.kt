@@ -52,7 +52,19 @@ class ScreenshotTest {
     }
     @Test fun progress() = shot("progress") { ProgressScreen() }
     @Test fun profile() = shot("profile") { ProfileScreen() }
-    @Test fun conversation() = shot("conversation") { ConversationScreen(onDone = {}) }
+    @Test fun conversation() = shot("conversation") {
+        ConversationScreen(onDone = {}, previewState = com.alturya.fluenta.conversation.ConvoUiState(
+            phase = com.alturya.fluenta.conversation.ConvoPhase.YOUR_TURN,
+            messages = listOf(
+                com.alturya.fluenta.conversation.ConvoMessage(true, "Hi! Welcome to the café. What would you like?"),
+                com.alturya.fluenta.conversation.ConvoMessage(false, "I want a coffee please",
+                    correction = "I'd like a coffee, please.",
+                    tip = "Más natural: usa 'I'd like' en vez de 'I want' al pedir algo."),
+                com.alturya.fluenta.conversation.ConvoMessage(true, "Great choice! Small or large?"),
+            ),
+            suggestion = "A large coffee, please.",
+        ))
+    }
     @Test fun pronunciation() = shot("pronunciation") { PronunciationScreen() }
     @Test fun repaso() = shot("repaso") { RepasoScreen(onDone = {}) }
     @Test fun map() = shot("map") { CurriculumMapScreen() }

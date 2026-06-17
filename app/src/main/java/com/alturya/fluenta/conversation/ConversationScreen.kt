@@ -36,9 +36,11 @@ fun ConversationScreen(
     l1: String = "es",
     l2: String = "en",
     onDone: () -> Unit,
+    previewState: ConvoUiState? = null,   // solo para screenshots/preview
 ) {
     val vm: ConversationViewModel = viewModel()
-    val state by vm.state.collectAsState()
+    val vmState by vm.state.collectAsState()
+    val state = previewState ?: vmState
     val context = LocalContext.current
 
     var hasMic by remember {
@@ -51,6 +53,7 @@ fun ConversationScreen(
     }
 
     LaunchedEffect(Unit) {
+        if (previewState != null) return@LaunchedEffect
         if (!hasMic) permLauncher.launch(Manifest.permission.RECORD_AUDIO)
         vm.start(scenario, goal, lessonId, guest, l1, l2)
     }
