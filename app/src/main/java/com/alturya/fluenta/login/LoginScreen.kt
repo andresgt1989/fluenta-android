@@ -25,6 +25,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.alturya.fluenta.data.Analytics
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.ApiClient
+import com.alturya.fluenta.ui.FluentaButton
 import kotlinx.coroutines.launch
 
 @Composable
@@ -112,15 +113,11 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
 
         // Play-first onboarding: try a lesson before registering
         if (onTryGuest != null) {
-            Button(
+            FluentaButton(
+                text = I18nStore.t("login.tryNow", "▶ Probar una lección ahora"),
                 onClick = onTryGuest,
-                modifier = Modifier.fillMaxWidth().height(54.dp),
-            ) {
-                Text(
-                    I18nStore.t("login.tryNow", "▶ Probar una lección ahora"),
-                    style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
-                )
-            }
+                modifier = Modifier.fillMaxWidth(),
+            )
             Spacer(Modifier.height(12.dp))
             Text(
                 I18nStore.t("login.orCreateAccount", "— o crea tu cuenta gratis —"),
@@ -137,19 +134,15 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
         // Cuenta instantánea: el camino primario, cero fricción. Entra y guarda
         // progreso sin email ni código. (Después puede vincular email/Google.)
         if (state !is LoginState.OtpSent) {
-            Button(
+            FluentaButton(
+                text = I18nStore.t("login.startFree", "Empezar gratis"),
                 onClick = {
                     Analytics.track(context, Analytics.REGISTER_START, mapOf("method" to "device"))
                     vm.signInWithDevice(context)
                 },
                 enabled = state !is LoginState.Loading,
-                modifier = Modifier.fillMaxWidth().height(54.dp),
-            ) {
-                Text(
-                    I18nStore.t("login.startFree", "Empezar gratis"),
-                    style = MaterialTheme.typography.labelLarge,
-                )
-            }
+                modifier = Modifier.fillMaxWidth(),
+            )
             Spacer(Modifier.height(12.dp))
             if (!showSecondary) {
                 TextButton(onClick = { showSecondary = true }, modifier = Modifier.fillMaxWidth()) {
