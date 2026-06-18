@@ -416,24 +416,30 @@ private fun FeedbackBar(
                 }
             }
             Spacer(Modifier.height(14.dp))
+            val contStyle = if (correct) com.alturya.fluenta.ui.FluentaButtonStyle.Success
+                            else com.alturya.fluenta.ui.FluentaButtonStyle.Danger
             if (canRetry) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                    OutlinedButton(
+                    com.alturya.fluenta.ui.FluentaButton(
+                        text = I18nStore.t("lesson.retry", "Reintentar"),
                         onClick = onRetry,
-                        modifier = Modifier.weight(1f).height(52.dp),
-                    ) { Text(I18nStore.t("lesson.retry", "Reintentar"), fontWeight = FontWeight.Bold) }
-                    Button(
+                        style = com.alturya.fluenta.ui.FluentaButtonStyle.Neutral,
+                        modifier = Modifier.weight(1f),
+                    )
+                    com.alturya.fluenta.ui.FluentaButton(
+                        text = I18nStore.t("common.continue", "Continuar"),
                         onClick = onContinue,
-                        modifier = Modifier.weight(1f).height(52.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = accent),
-                    ) { Text(I18nStore.t("common.continue", "Continuar"), fontWeight = FontWeight.Bold) }
+                        style = contStyle,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             } else {
-                Button(
+                com.alturya.fluenta.ui.FluentaButton(
+                    text = I18nStore.t("common.continue", "Continuar"),
                     onClick = onContinue,
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = accent),
-                ) { Text(I18nStore.t("common.continue", "Continuar"), fontWeight = FontWeight.Bold) }
+                    style = contStyle,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
     }
@@ -571,14 +577,15 @@ private fun TranslateExercise(
             singleLine = true,
         )
         Spacer(Modifier.height(20.dp))
-        Button(
+        com.alturya.fluenta.ui.FluentaButton(
+            text = I18nStore.t("lesson.check", "Comprobar"),
             onClick = {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 onSubmit(text.trim())
             },
             enabled = text.isNotBlank(),
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-        ) { Text(I18nStore.t("lesson.check", "Comprobar")) }
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
