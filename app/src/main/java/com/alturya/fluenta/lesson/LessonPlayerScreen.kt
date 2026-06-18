@@ -325,13 +325,16 @@ private fun FeedbackBar(
     Surface(color = container, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = if (correct) Icons.Default.CheckCircle else Icons.Default.Cancel,
+                // Mascota con personalidad: celebra al acertar, anima al fallar (estilo Duolingo).
+                Image(
+                    painter = painterResource(
+                        if (correct) com.alturya.fluenta.R.drawable.ic_fluenta_celebra
+                        else com.alturya.fluenta.R.drawable.ic_fluenta_saluda
+                    ),
                     contentDescription = null,
-                    tint = accent,
-                    modifier = Modifier.size(32.dp).scale(iconScale.value),
+                    modifier = Modifier.size(44.dp).scale(iconScale.value),
                 )
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(10.dp))
                 Text(
                     if (correct) I18nStore.t("lesson.correct", "¡Correcto!") else I18nStore.t("lesson.almost", "Casi…"),
                     style = MaterialTheme.typography.titleMedium,
