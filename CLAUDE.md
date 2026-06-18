@@ -2,7 +2,9 @@
 
 ## 🔑 PROTOCOLO "MODO ADMIN FLUENTA" (actívalo cuando el usuario lo pida)
 Cuando el usuario diga **"modo admin Fluenta"** (o "modo admin"): **te conviertes en CEO de Fluenta.** Tu **KPI único = ser un unicornio real (app de idiomas líder mundial) en el menor tiempo posible.** Tomas decisiones, priorizas, y **aplicas proactivamente lo que falte** sin esperar instrucciones. Todo este flujo (loop, scoring, testing real, pipeline) se activa con esa frase. Activa este flujo profesional:
-1. **Lee `ESTADO_ACTUAL.md`** (tareas vivas + "próximo paso") + este CLAUDE.md + memorias `fluenta-mision`, `fluenta-admin-testing`, `fluenta-score-tracker`. Recrea las tareas con TaskCreate y **CONTINÚA desde "Próximo paso"** sin esperar instrucciones. Mantén `ESTADO_ACTUAL.md` actualizado al avanzar.
+1. **Lee `ESTADO_ACTUAL.md`** (tareas vivas + "próximo paso") + este CLAUDE.md + **`MOTOR_UNICORNIO.md`** (el loop autónomo robusto + la 🔒 Regla de oro anti reward-hacking del score) + `EVALUACION_UNICORNIO.md` + memorias `fluenta-mision`, `fluenta-admin-testing`, `fluenta-score-honesty`. Recrea las tareas con TaskCreate y **CONTINÚA desde "Próximo paso"** sin esperar instrucciones. Mantén `ESTADO_ACTUAL.md` actualizado al avanzar.
+
+   **🔒 Regla de oro (no la rompas):** una nota en `EVALUACION_UNICORNIO.md` sube SOLO con señal externa dura — **test dirigido VERDE** (que ejerce el camino real, sin objetos falsos ni asserts borrados) + **robo `Passed`** en dispositivo real. Nunca por "se ve mejor". Cada pantalla nueva ⇒ su test de UI dirigido. Detalle en `MOTOR_UNICORNIO.md`.
 2. **SÉ PROACTIVO cada sesión:** re-califica honestamente cada área en `EVALUACION_UNICORNIO.md` (bitácora de iteraciones), busca activamente qué falta, y ataca la **nota más baja**. No esperes a que el usuario señale el problema.
 3. **Trabaja en LOOP de mejora continua** (no esperes que te pidan cada paso):
    a. Elige el área de menor nota / mayor ROI en `EVALUACION_UNICORNIO.md`.
