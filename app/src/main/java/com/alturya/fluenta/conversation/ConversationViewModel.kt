@@ -92,10 +92,13 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _state.value = ConvoUiState(phase = ConvoPhase.CONNECTING)
             try {
-                val res = if (guest)
-                    ApiClient.apiNoAuth.guestConvoStart(GuestConvoStartBody(l1, l2, scenario, goal))
-                else
-                    ApiClient.api.convoStart(ConvoStartBody(lessonId, scenario, goal))
+                // Timeout para que no se quede "Conectando…" para siempre si el backend tarda.
+                val res = kotlinx.coroutines.withTimeout(20_000) {
+                    if (guest)
+                        ApiClient.apiNoAuth.guestConvoStart(GuestConvoStartBody(l1, l2, scenario, goal))
+                    else
+                        ApiClient.api.convoStart(ConvoStartBody(lessonId, scenario, goal))
+                }
                 sessionId = res.sessionId
                 Analytics.track(getApplication(), Analytics.WEDGE_START, mapOf("l2" to gl2, "guest" to guest.toString()))
                 _state.value = _state.value.copy(

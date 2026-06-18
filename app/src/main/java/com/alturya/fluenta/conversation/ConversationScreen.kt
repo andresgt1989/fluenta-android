@@ -93,6 +93,35 @@ fun ConversationScreen(
             LaunchedEffect(state.messages.size) {
                 if (state.messages.isNotEmpty()) listState.animateScrollToItem(state.messages.size - 1)
             }
+            if (state.phase == ConvoPhase.CONNECTING && state.messages.isEmpty()) {
+                // Estado de carga con personalidad (no pantalla en blanco — bug visto en Test Lab).
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxWidth().padding(32.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    androidx.compose.foundation.Image(
+                        painter = androidx.compose.ui.res.painterResource(com.alturya.fluenta.R.drawable.ic_fluenta_saluda),
+                        contentDescription = null,
+                        modifier = Modifier.size(96.dp),
+                    )
+                    Spacer(Modifier.height(20.dp))
+                    Text(
+                        I18nStore.t("convo.preparing", "Preparando tu conversación…"),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        I18nStore.t("convo.preparingHint", "Tu tutor de IA ya casi está listo para hablar contigo."),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                    Spacer(Modifier.height(24.dp))
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
+            } else {
             LazyColumn(
                 state = listState,
                 modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp),
@@ -108,6 +137,7 @@ fun ConversationScreen(
                         MessageBubble(ConvoMessage(fromPartner = false, text = state.partial))
                     }
                 }
+            }
             }
 
             // Ended summary
