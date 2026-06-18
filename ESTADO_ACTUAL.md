@@ -32,12 +32,18 @@ App de idiomas líder mundial / unicornio. Score honesto hoy: **~43/100** (UX vi
 
 ## Score actual (loop): Global ~48/100 (iteración 2). Áreas más bajas: Contenido 35 (backend), Retención 40, UX 45.
 
+## Hecho también (iter 6-7)
+- ✅ **MOTOR — instrumentation dirigida VERDE en dispositivo real**: `DailyMissionsInstrumentedTest` OUTCOME Passed (3 test cases) en `MediumPhone.arm-34`. Misiones verificadas end-to-end. (Retención 46→50, Tech 76→79.)
+- ✅ **Blaze habilitado** en `fluenta-testlab-2026` (billing `Pago de Firebase` enlazado; estaba en Spark sin billing) → instrumentation/robo corren sin tope de cuota. Pipeline cuota-graceful.
+- ✅ **Paywall CTA 3D** (PR #9). **9 PRs mergeados esta sesión. Score ~53/100.**
+
 ## Próximo paso (continúa por aquí)
-Sigue el ciclo de `MOTOR_UNICORNIO.md` (test dirigido primero → código → verificación en capas → re-score honesto → PR/merge). Por prioridad:
-1. **MOTOR (cierra la brecha de verificación):** elevar el assert dirigido de misiones a **instrumentation en Test Lab (dispositivo real)** — hoy corre en JVM (Robolectric). Ese es el gate que permite subir Retención más allá de 46 con evidencia de dispositivo real. Falta: añadir `androidTestImplementation` (compose-ui-test + espresso runner) + workflow `--type instrumentation`.
-2. **UX 48→** (Login 3D ✅ HECHO iter 4) siguiente: 3D en Paywall/GuestLesson + botones OTP de Login; **FluentaCard** (tarjeta firma); mascota en bienvenida home + estados vacíos; micro-animaciones.
-3. **Retención 46→** liga semanal real (hoy placeholder), notificaciones inteligentes, recompensa de misión con XP server-side.
-Re-calificar tras cada lote en EVALUACION_UNICORNIO.md, **solo con señal externa dura** (🔒 Regla de oro).
+Sigue `MOTOR_UNICORNIO.md` (test dirigido primero → código → verificación en capas → re-score honesto → PR/merge). **Honestidad de CEO:** lo client-side de alto ROI ya está bastante exprimido (sistema 3D, misiones, onboarding+meta, motor de verificación real en dispositivo). Los saltos grandes hacia 100 REAL necesitan DIRECCIÓN del usuario o BACKEND. Por prioridad accionable:
+1. **a11y 40→** (puro client-side): sweep de `contentDescription` en íconos informativos + targets ≥48dp + contraste; verificar con test dirigido (semantics) — bounded y testeable.
+2. **Viralidad 40→** ReferralCard se OCULTA si la API falla (`profile/ReferralCard.kt:49`) → quitar ese punto ciego (retry/caché). Growth loop fuerte = decisión de producto (preguntar).
+3. **Retención 50→** notificaciones locales de racha (client-side, WorkManager) · liga real = backend.
+4. **Escalar al usuario (cuello real del unicornio):** contenido A1→C2 en 20 idiomas · liga real · recompensas server-side.
+Re-calificar **solo con señal externa dura** (🔒 Regla de oro): test dirigido + robo/instrumentation en dispositivo real.
 
 ## Pipeline (se cuida solo)
 CI (`build-apk.yml`) compila + corre `testDebugUnitTest` (bloquea si falla). `testlab.yml` corre Firebase Test Lab (Robo, dispositivo real) en cada PR. Rama de trabajo: `admin/design-system-pipeline` (PR #1). Tests: `app/src/test/.../LevelLabelsTest.kt`.
