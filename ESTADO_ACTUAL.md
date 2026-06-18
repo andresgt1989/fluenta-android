@@ -15,6 +15,7 @@ Score honesto **~50/100**. **PR #1 MERGEADO a master.** Trabajo nuevo en rama `a
 - 🎯 **Onboarding — paso de META** (iter 5): tras elegir idioma pregunta "¿Para qué quieres aprender?" (6 motivaciones, guardado en `MotivationStore`); cierra el gap del scorecard. Test dirigido `onboarding_asks_goal_after_language` VERDE. Onboarding 58→62.
 - ✅ **PRs #2/#3/#4/#5 mergeados** a master (motor + UX Login + re-score + onboarding meta).
 - ⚠️ El robo libre no alcanza pantallas con estado específico (Home shimmer, first-run onboarding) → **instrumentation dirigida es ahora el #1 del motor**.
+- 🛠️ **MOTOR — instrumentation dirigida VERDE en dispositivo real** (iter 6): habilitado Blaze en `fluenta-testlab-2026` (estaba en Spark, billing sin enlazar) → `DailyMissionsInstrumentedTest` corrió **OUTCOME Passed, 3 test cases passed** en teléfono real. Misiones verificadas end-to-end (unit → Robolectric → dispositivo real). **Retención 46→50, Tech 76→79, Global ~53**. Pipeline cuota-graceful + `testlab-instr.sh` on-demand.
 
 **▶️ CONTINUAR POR AQUÍ →** ver "Próximo paso".
 
