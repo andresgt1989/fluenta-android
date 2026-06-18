@@ -93,7 +93,7 @@ import org.json.JSONObject
 import java.io.File
 
 @Composable
-fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit, previewState: LessonPlayerState? = null) {
+fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit, onConversation: () -> Unit = {}, previewState: LessonPlayerState? = null) {
     val vm: LessonPlayerViewModel = viewModel(
         key = "lesson_$lessonId",
         factory = object : androidx.lifecycle.ViewModelProvider.Factory {
@@ -117,19 +117,9 @@ fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit, previewState: Lesso
             state.error != null -> ErrorView(state.error!!, onRetry = vm::retry, onBack = onDone)
             state.result != null -> ResultView(
                 result = state.result!!,
-                onContinueOnWhatsApp = {
-                    scope.launch {
-                        try {
-                            // intent=lesson_done makes the bot apply THIS lesson's vocab/grammar
-                            // in a real-conversation roleplay immediately on landing.
-                            val ho = ApiClient.api.getWhatsAppHandoff(
-                                intent = "lesson_done",
-                                lessonId = lessonId,
-                            )
-                            ho.url?.let { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it))) }
-                        } catch (_: Exception) { /* user can press WhatsApp from elsewhere */ }
-                    }
-                },
+                // Independencia de WhatsApp: "aplica lo aprendido" ahora abre la
+                // Conversación IN-APP (el reemplazo del bot), no WhatsApp.
+                onPracticeConversation = onConversation,
                 onDone = onDone,
             )
             state.exercises.isEmpty() -> ErrorView(I18nStore.t("lesson.noExercises", "Esta lección aún no tiene ejercicios disponibles."), onRetry = vm::retry, onBack = onDone)
@@ -1121,7 +1111,7 @@ private fun TokenChip(text: String, filled: Boolean, onClick: () -> Unit) {
 @Composable
 private fun ResultView(
     result: com.alturya.fluenta.network.LessonSubmitResponse,
-    onContinueOnWhatsApp: () -> Unit,
+    onPracticeConversation: () -> Unit,
     onDone: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -1227,7 +1217,7 @@ private fun ResultView(
 
         Spacer(Modifier.height(24.dp))
 
-        // Coach handoff — back to WhatsApp to apply what was just learned
+        // Aplica lo aprendido en una conversación IN-APP con el tutor de IA.
         Card(
             Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
@@ -1240,14 +1230,15 @@ private fun ResultView(
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Tu coach te espera en WhatsApp para usar esto en una conversación real.",
+                    I18nStore.t("result.practiceBody", "Habla con tu tutor de IA y usa lo que acabas de aprender en una conversación real."),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(12.dp))
-                Button(
-                    onClick = onContinueOnWhatsApp,
+                com.alturya.fluenta.ui.FluentaButton(
+                    text = I18nStore.t("result.practiceConvo", "Practicar conversando →"),
+                    onClick = onPracticeConversation,
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text(I18nStore.t("result.continueWa", "Continuar en WhatsApp →")) }
+                )
             }
         }
 

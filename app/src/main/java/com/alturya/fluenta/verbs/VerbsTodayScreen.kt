@@ -77,23 +77,6 @@ fun VerbsTodayScreen(previewState: VerbsTodayState? = null) {
                 onPractice = { vm.markPracticed(verb.id) },
             )
         }
-        item {
-            Spacer(Modifier.height(8.dp))
-            // Coach handoff: jump back to WhatsApp to practice the whole drill conversationally.
-            com.alturya.fluenta.ui.FluentaButton(
-                text = I18nStore.t("verbs.practiceWa", "Practicar todos en WhatsApp"),
-                onClick = {
-                    scope.launch {
-                        try {
-                            val ho = ApiClient.api.getWhatsAppHandoff(intent = "verbs_today")
-                            ho.url?.let { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it))) }
-                        } catch (_: Exception) { }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                leading = { Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)) },
-            )
-        }
     }
 }
 

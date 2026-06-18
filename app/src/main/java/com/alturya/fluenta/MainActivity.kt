@@ -341,7 +341,11 @@ private fun MainScaffold(
                 arguments = listOf(navArgument("lessonId") { type = NavType.StringType }),
             ) { backStackEntry ->
                 val lessonId = backStackEntry.arguments?.getString("lessonId") ?: ""
-                LessonPlayerScreen(lessonId = lessonId, onDone = { nav.popBackStack() })
+                LessonPlayerScreen(
+                    lessonId = lessonId,
+                    onDone = { nav.popBackStack() },
+                    onConversation = { nav.navigate("conversation") { launchSingleTop = true } },
+                )
             }
             composable("map") {
                 CurriculumMapScreen(

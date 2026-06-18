@@ -518,15 +518,11 @@ fun HomeScreen(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 ActionCard(Icons.Default.Map, I18nStore.t("home.mapShort", "Mi mapa"), onClick = onSeeMap)
+                // Independencia de WhatsApp: conversar es IN-APP con el tutor de IA.
                 ActionCard(
                     Icons.AutoMirrored.Filled.Chat,
-                    I18nStore.t("home.whatsappShort", "WhatsApp"),
-                    enabled = state.practiceWaUrl != null,
-                    onClick = {
-                        state.practiceWaUrl?.let { url ->
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                        }
-                    },
+                    I18nStore.t("home.conversationShort", "Conversar"),
+                    onClick = onConversation,
                 )
             }
         }
