@@ -267,28 +267,25 @@ fun RepasoScreen(onDone: () -> Unit, previewState: RepasoState? = null) {
         // ── Buttons pinned to bottom ───────────────────────────────────────
         Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
         if (!state.revealed) {
-            Button(
+            com.alturya.fluenta.ui.FluentaButton(
+                text = I18nStore.t("repaso.reveal", "Ver corrección"),
                 onClick = vm::reveal,
-                modifier = Modifier.fillMaxWidth().height(54.dp),
-            ) { Text(I18nStore.t("repaso.reveal", "Ver corrección")) }
+                modifier = Modifier.fillMaxWidth(),
+            )
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                OutlinedButton(
+                com.alturya.fluenta.ui.FluentaButton(
+                    text = I18nStore.t("repaso.failed", "Fallé"),
                     onClick = { vm.answer(false) },
-                    modifier = Modifier.weight(1f).height(56.dp),
-                ) {
-                    Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(I18nStore.t("repaso.failed", "Fallé"))
-                }
-                Button(
+                    style = com.alturya.fluenta.ui.FluentaButtonStyle.Neutral,
+                    modifier = Modifier.weight(1f),
+                )
+                com.alturya.fluenta.ui.FluentaButton(
+                    text = I18nStore.t("repaso.remembered", "Lo recordé"),
                     onClick = { vm.answer(true) },
-                    modifier = Modifier.weight(1f).height(56.dp),
-                ) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(I18nStore.t("repaso.remembered", "Lo recordé"))
-                }
+                    style = com.alturya.fluenta.ui.FluentaButtonStyle.Success,
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
         Spacer(Modifier.height(8.dp))

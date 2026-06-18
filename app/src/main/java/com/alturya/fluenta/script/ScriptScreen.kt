@@ -78,10 +78,11 @@ fun ScriptScreen(l2: String, onDone: () -> Unit = {}, previewState: ScriptUiStat
                         }
                     }
                     Spacer(Modifier.height(8.dp))
-                    Button(
+                    com.alturya.fluenta.ui.FluentaButton(
+                        text = I18nStore.t("script.takeExam", "Hacer examen de lectura"),
                         onClick = { vm.startQuiz() },
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                    ) { Text(I18nStore.t("script.takeExam", "Hacer examen de lectura")) }
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                     TextButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
                         Text(I18nStore.t("common.back", "Volver"))
                     }
@@ -110,11 +111,12 @@ fun ScriptScreen(l2: String, onDone: () -> Unit = {}, previewState: ScriptUiStat
                         }
                     }
                 }
-                Button(
+                com.alturya.fluenta.ui.FluentaButton(
+                    text = I18nStore.t("script.grade", "Calificar"),
                     onClick = { vm.submitQuiz() },
                     enabled = (quiz?.items?.size ?: 0) > 0 && state.answers.size == (quiz?.items?.size ?: -1),
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                ) { Text(I18nStore.t("script.grade", "Calificar")) }
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
 
             ScriptPhase.RESULT -> {
@@ -140,9 +142,11 @@ fun ScriptScreen(l2: String, onDone: () -> Unit = {}, previewState: ScriptUiStat
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(8.dp))
-                Button(onClick = { vm.backToLearn() }, modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                    Text(I18nStore.t("script.keepPracticing", "Seguir practicando"))
-                }
+                com.alturya.fluenta.ui.FluentaButton(
+                    text = I18nStore.t("script.keepPracticing", "Seguir practicando"),
+                    onClick = { vm.backToLearn() },
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 TextButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) { Text(I18nStore.t("common.done", "Listo")) }
             }
         }

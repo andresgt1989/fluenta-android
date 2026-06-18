@@ -115,10 +115,11 @@ private fun IntroPanel(onStart: () -> Unit, onSkip: () -> Unit = {}) {
             }
         }
         Spacer(Modifier.height(20.dp))
-        Button(
+        com.alturya.fluenta.ui.FluentaButton(
+            text = I18nStore.t("diagnostic.start", "Empezar el test"),
             onClick = onStart,
-            modifier = Modifier.fillMaxWidth().height(56.dp)
-        ) { Text(I18nStore.t("diagnostic.start", "Empezar el test"), style = MaterialTheme.typography.titleMedium) }
+            modifier = Modifier.fillMaxWidth(),
+        )
         Spacer(Modifier.height(12.dp))
         TextButton(onClick = onSkip) {
             Text(I18nStore.t("diagnostic.skipForNow", "Hacerlo más tarde"))
@@ -378,9 +379,11 @@ private fun ResultPanel(s: DiagnosticUiState.Result, onDone: () -> Unit, onRetak
             }
         }
         Spacer(Modifier.height(24.dp))
-        Button(onClick = onDone, modifier = Modifier.fillMaxWidth().height(56.dp)) {
-            Text(I18nStore.t("common.continue", "Continuar"), style = MaterialTheme.typography.titleMedium)
-        }
+        com.alturya.fluenta.ui.FluentaButton(
+            text = I18nStore.t("common.continue", "Continuar"),
+            onClick = onDone,
+            modifier = Modifier.fillMaxWidth(),
+        )
         if (confPct < 60) {
             Spacer(Modifier.height(8.dp))
             OutlinedButton(

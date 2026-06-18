@@ -37,6 +37,11 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: ${{ runner.os }}-gradle-
 
+      # Red de seguridad: tests unitarios que BLOQUEAN el build si una regresión vuelve.
+      # roborazzi.test.record=true hace que los screenshot tests graben (pasen) en vez de comparar.
+      - name: Run unit tests (safety net)
+        run: ./gradlew testDebugUnitTest -Proborazzi.test.record=true --stacktrace
+
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace
 

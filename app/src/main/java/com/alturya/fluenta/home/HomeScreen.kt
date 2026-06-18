@@ -859,9 +859,11 @@ private fun LevelJourneyCard(level: String?, levelSystem: String?, onLevelTest: 
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(12.dp))
-                Button(onClick = onLevelTest, modifier = Modifier.fillMaxWidth()) {
-                    Text(I18nStore.t("home.takeLevelTest", "Hacer el test de nivel"))
-                }
+                com.alturya.fluenta.ui.FluentaButton(
+                    text = I18nStore.t("home.takeLevelTest", "Hacer el test de nivel"),
+                    onClick = onLevelTest,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             } else {
                 val ladder = levelLadderShort(levelSystem)
                 Row(verticalAlignment = Alignment.CenterVertically) {

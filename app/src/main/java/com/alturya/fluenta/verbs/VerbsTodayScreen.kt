@@ -80,7 +80,8 @@ fun VerbsTodayScreen(previewState: VerbsTodayState? = null) {
         item {
             Spacer(Modifier.height(8.dp))
             // Coach handoff: jump back to WhatsApp to practice the whole drill conversationally.
-            Button(
+            com.alturya.fluenta.ui.FluentaButton(
+                text = I18nStore.t("verbs.practiceWa", "Practicar todos en WhatsApp"),
                 onClick = {
                     scope.launch {
                         try {
@@ -89,12 +90,9 @@ fun VerbsTodayScreen(previewState: VerbsTodayState? = null) {
                         } catch (_: Exception) { }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-            ) {
-                Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(I18nStore.t("verbs.practiceWa", "Practicar todos en WhatsApp"))
-            }
+                modifier = Modifier.fillMaxWidth(),
+                leading = { Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)) },
+            )
         }
     }
 }
@@ -201,9 +199,12 @@ private fun VerbCard(verb: DailyVerbCard, marked: Boolean, onPractice: () -> Uni
                 }
                 Spacer(Modifier.height(12.dp))
                 if (!mastered) {
-                    Button(onClick = onPractice, modifier = Modifier.fillMaxWidth()) {
-                        Text(I18nStore.t("verbs.known", "Ya lo sé ✓"))
-                    }
+                    com.alturya.fluenta.ui.FluentaButton(
+                        text = I18nStore.t("verbs.known", "Ya lo sé ✓"),
+                        onClick = onPractice,
+                        style = com.alturya.fluenta.ui.FluentaButtonStyle.Success,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
         }

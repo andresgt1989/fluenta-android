@@ -90,7 +90,7 @@ fun CurriculumMapScreen(
                     Spacer(Modifier.height(8.dp))
                     Text(state.error!!, style = MaterialTheme.typography.bodyLarge)
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = { vm.load() }) { Text(I18nStore.t("common.retry", "Reintentar")) }
+                    com.alturya.fluenta.ui.FluentaButton(text = I18nStore.t("common.retry", "Reintentar"), onClick = { vm.load() })
                 }
             }
             state.units.isEmpty() -> EmptyMap(state.l1, state.l2)

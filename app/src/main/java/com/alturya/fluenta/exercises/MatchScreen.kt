@@ -132,7 +132,7 @@ private fun WinPanel(attempts: Int, total: Int, onAgain: () -> Unit, onDone: () 
         Spacer(Modifier.height(8.dp))
         Text("Precisión: $accuracy%  ·  $total pares", style = MaterialTheme.typography.bodyLarge)
         Spacer(Modifier.height(32.dp))
-        Button(onClick = onAgain, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text(I18nStore.t("match.playAgain", "Jugar de nuevo")) }
+        com.alturya.fluenta.ui.FluentaButton(text = I18nStore.t("match.playAgain", "Jugar de nuevo"), onClick = onAgain, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(12.dp))
         OutlinedButton(onClick = onDone, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text(I18nStore.t("match.done", "Listo")) }
         Spacer(Modifier.height(20.dp))

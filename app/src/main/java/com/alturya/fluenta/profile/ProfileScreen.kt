@@ -66,7 +66,7 @@ fun ProfileScreen(
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(20.dp))
-            Button(onClick = { vm.load() }) { Text(I18nStore.t("common.retry", "Reintentar")) }
+            com.alturya.fluenta.ui.FluentaButton(text = I18nStore.t("common.retry", "Reintentar"), onClick = { vm.load() })
         }
         return
     }
@@ -109,10 +109,11 @@ fun ProfileScreen(
 
         if ((p?.plan ?: "free") == "free") {
             Text(I18nStore.t("profile.upgradeTitle", "Mejora tu plan"), style = MaterialTheme.typography.titleMedium)
-            Button(
+            com.alturya.fluenta.ui.FluentaButton(
+                text = I18nStore.t("profile.goPro", "Hazte Pro — \$9/mes"),
                 onClick = { vm.openCheckout("basic") { open(it) } },
-                modifier = Modifier.fillMaxWidth().height(52.dp)
-            ) { Text(I18nStore.t("profile.goPro", "Hazte Pro — \$9/mes")) }
+                modifier = Modifier.fillMaxWidth(),
+            )
             OutlinedButton(
                 onClick = { vm.openCheckout("pro") { open(it) } },
                 modifier = Modifier.fillMaxWidth()
@@ -127,10 +128,11 @@ fun ProfileScreen(
                 )
             }
         } else {
-            Button(
+            com.alturya.fluenta.ui.FluentaButton(
+                text = I18nStore.t("profile.manage", "Administrar suscripción"),
                 onClick = { vm.openPortal { open(it) } },
-                modifier = Modifier.fillMaxWidth()
-            ) { Text(I18nStore.t("profile.manage", "Administrar suscripción")) }
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
 
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
