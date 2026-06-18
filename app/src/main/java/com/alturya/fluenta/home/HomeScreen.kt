@@ -373,6 +373,32 @@ fun HomeScreen(
             )
         }
 
+        // ── Misiones de hoy (daily quests) — motor de retención client-side ────
+        // Derivadas de señales REALES del backend (todayXp / cardsDueToday); el
+        // backend las resetea cada día, así que se reinician solas.
+        val missions = DailyMissions.build(
+            progress = state.progress,
+            goalXp = localGoalXp,
+            titleStreak = I18nStore.t("missions.streak", "Preséntate hoy — protege tu racha"),
+            titleGoal = I18nStore.t("missions.goal", "Alcanza tu meta diaria"),
+            titleReview = I18nStore.t("missions.review", "Despeja tu repaso (SRS)"),
+        )
+        DailyMissionsCard(
+            missions = missions,
+            onMission = { action ->
+                when (action) {
+                    MissionAction.Review -> { Analytics.track(context, Analytics.LESSON_START, mapOf("from" to "mission_review")); onRepaso() }
+                    MissionAction.Lesson, MissionAction.Goal -> {
+                        val n = state.nextLesson
+                        if (n?.id != null) {
+                            Analytics.track(context, Analytics.LESSON_START, mapOf("from" to "mission", "lessonType" to (n.lessonType ?: "")))
+                            if (n.lessonType == "roleplay" || n.lessonType == "free_chat") onConversationLesson(n.id) else onStartLesson(n.id)
+                        } else onSeeMap()
+                    }
+                }
+            },
+        )
+
         // ── Goal picker dialog ────────────────────────────────────────────────
         if (showGoalDialog) {
             AlertDialog(
