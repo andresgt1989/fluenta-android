@@ -1,6 +1,10 @@
 package com.alturya.fluenta.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ThumbDown
+import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -34,12 +38,15 @@ fun FeedbackBar(surface: String, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (sent) {
-            Text(I18nStore.t("feedback.thanks", "¡Gracias por tu opinión! 🙌"), style = MaterialTheme.typography.bodySmall)
+            Text(I18nStore.t("feedback.thanks", "¡Gracias por tu opinión!"), style = MaterialTheme.typography.bodySmall)
         } else {
             Text(I18nStore.t("feedback.liked", "¿Te gustó?"), style = MaterialTheme.typography.bodySmall)
-            Spacer(Modifier.width(8.dp))
-            TextButton(onClick = { send(5) }) { Text("👍") }
-            TextButton(onClick = { send(1) }) { Text("👎") }
+            TextButton(onClick = { send(5) }) {
+                Icon(Icons.Default.ThumbUp, contentDescription = I18nStore.t("feedback.yes", "Sí"), tint = MaterialTheme.colorScheme.primary)
+            }
+            TextButton(onClick = { send(1) }) {
+                Icon(Icons.Default.ThumbDown, contentDescription = I18nStore.t("feedback.no", "No"), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }

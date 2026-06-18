@@ -33,7 +33,8 @@ data class LessonPlayerState(
     val answers: Map<Int, String> = emptyMap(),
     val checking: Boolean = false,               // calling /check for instant feedback
     val feedback: ExerciseCheckResponse? = null, // shown after "Comprobar", before "Continuar"
-    val hearts: Int = 3,                         // vidas: -1 por fallo; a 0 termina la lección
+    val hearts: Int = 5,                         // vidas: -1 por fallo; a 0 termina la lección
+    val combo: Int = 0,                          // aciertos seguidos (gamificación): se reinicia al fallar
     val startedAtMs: Long = 0L,
     val submitting: Boolean = false,
     val result: LessonSubmitResponse? = null,
@@ -64,7 +65,7 @@ class LessonPlayerViewModel(savedState: SavedStateHandle, private val app: Appli
                 answers = emptyMap(),
                 feedback = null,
                 result = null,
-                hearts = 3,
+                hearts = 5,
                 startedAtMs = System.currentTimeMillis(),
             )
         }
@@ -111,7 +112,8 @@ class LessonPlayerViewModel(savedState: SavedStateHandle, private val app: Appli
                 val res = ApiClient.api.checkExercise(lessonId, ExerciseCheckBody(idx, value))
                 _state.update {
                     val nh = if (!res.correct) (it.hearts - 1).coerceAtLeast(0) else it.hearts
-                    it.copy(checking = false, feedback = res, hearts = nh)
+                    val nc = if (res.correct) it.combo + 1 else 0
+                    it.copy(checking = false, feedback = res, hearts = nh, combo = nc)
                 }
             } catch (e: Exception) {
                 Log.e("LessonPlayer", "check failed", e)
@@ -126,6 +128,14 @@ class LessonPlayerViewModel(savedState: SavedStateHandle, private val app: Appli
         val outOfHearts = _state.value.hearts <= 0
         _state.update { it.copy(feedback = null) }
         if (outOfHearts) submit() else next()
+    }
+
+    /** "Reintentar" tras un fallo: limpia el feedback y deja reintentar el MISMO
+     *  ejercicio sin avanzar (el corazón ya se descontó, no se descuenta otra vez
+     *  hasta que vuelva a Comprobar). Solo tiene sentido si aún quedan vidas. */
+    fun retryAfterFeedback() {
+        if (_state.value.hearts <= 0) { continueAfterFeedback(); return }
+        _state.update { it.copy(feedback = null) }
     }
 
     fun next() {

@@ -6,6 +6,78 @@ data class OtpRequestBody(val phone: String)
 data class OtpVerifyBody(val phone: String, val code: String, val l1: String? = null, val l2: String? = null)
 data class OtpRequestResponse(val ok: Boolean, val delivered: Boolean?, val message: String?)
 data class OtpVerifyResponse(val ok: Boolean, val token: String?, val isNewUser: Boolean?)
+// Email login (canal que NO depende de Meta/WhatsApp)
+data class EmailRequestBody(val email: String)
+data class EmailVerifyBody(val email: String, val code: String, val l1: String? = null, val l2: String? = null)
+
+// Cuenta instantánea por dispositivo (anónima): entrar sin email/Google/Meta.
+data class DeviceAuthBody(val deviceId: String, val l1: String? = null, val l2: String? = null)
+
+// Google Sign-In (un toque, sin Meta, sin OTP). El idToken viene de Credential Manager.
+data class GoogleAuthBody(val idToken: String, val l1: String? = null, val l2: String? = null)
+data class AuthConfig(val googleClientId: String?)
+
+// Analítica de embudo (fire-and-forget). anonId enlaza el funnel guest con la cuenta.
+data class EventBody(val event: String, val anonId: String? = null, val props: Map<String, String>? = null)
+
+// ── Coach orquestador (guía IA proactiva hacia C1) ──────────────────────────
+data class CoachAction(val type: String, val label: String, val reason: String, val deeplink: String)
+data class CoachNext(
+    val message: String,
+    val goal: String? = null,
+    val l2: String? = null,
+    val l2Name: String? = null,
+    val currentLevel: String? = null,
+    val progressPct: Int = 0,
+    val readingScore: Int? = null,
+    val action: CoachAction,
+)
+
+// ── Script (sistema de escritura) para idiomas no-latinos ───────────────────
+data class ScriptUnitDto(
+    val key: String,
+    val name: String,
+    val family: String,
+    val rtl: Boolean = false,
+    val tonal: Boolean = false,
+    val gateFirst: Boolean = false,
+    val gateThreshold: Int = 0,
+    val writingSupported: Boolean = false,
+    val method: String? = null,
+    val mastery: Int = 0,
+)
+data class ScriptInfo(
+    val l2: String,
+    val nonLatin: Boolean,
+    val needsScriptFirst: Boolean,
+    val readingScore: Int,
+    val translitMode: String,
+    val scripts: List<ScriptUnitDto> = emptyList(),
+)
+data class ScriptLessonBody(val l2: String, val scriptKey: String? = null, val l1: String? = null)
+data class ScriptItem(
+    val glyph: String,
+    val romanization: String,
+    val meaning: String? = null,
+    val strokeCount: Int? = null,
+    val strokeOrder: String? = null,
+    val mnemonic: String? = null,
+    val example: String? = null,
+)
+data class ScriptLesson(
+    val scriptKey: String,
+    val name: String,
+    val family: String,
+    val rtl: Boolean = false,
+    val tonal: Boolean = false,
+    val writingSupported: Boolean = false,
+    val intro: String,
+    val items: List<ScriptItem> = emptyList(),
+)
+data class ScriptQuizItem(val glyph: String, val options: List<String>)
+data class ScriptQuiz(val quizId: String, val scriptKey: String, val name: String, val items: List<ScriptQuizItem> = emptyList())
+data class ScriptQuizGradeBody(val quizId: String, val answers: List<String>)
+data class ScriptQuizResult(val score: Int, val correct: Int, val total: Int, val scriptKey: String, val mastery: Int)
 
 data class UserProfile(
     val id: String,
@@ -336,3 +408,33 @@ data class UiStringsResponse(
     val lang: String,
     val strings: Map<String, String>?,
 )
+
+// ── Conversación de voz abierta (el wedge) ──────────────────────────────────
+data class ConvoStartBody(val lessonId: String? = null, val scenario: String? = null, val goal: String? = null)
+data class GuestConvoStartBody(val l1: String, val l2: String, val scenario: String? = null, val goal: String? = null)
+data class ConvoStartResponse(
+    val sessionId: String,
+    val reply: String,
+    val replyTranslit: String? = null,        // lectura latina (scripts no-latinos)
+    val suggestion: String? = null,
+    val suggestionTranslit: String? = null,
+    val scenario: String?,
+    val goal: String?,
+    val ttsUrl: String?,
+)
+data class ConvoTurnBody(val sessionId: String, val text: String)
+data class ConvoTurnResponse(
+    val reply: String,
+    val replyTranslit: String?,  // lectura latina del reply (scripts no-latinos)
+    val correction: String?,     // recast: la frase del alumno reescrita bien en L2
+    val tip: String?,            // nota breve en L1 (la regla)
+    val suggestion: String?,     // frase sugerida para seguir (scaffolding)
+    val suggestionTranslit: String?,
+    val scriptTip: String?,      // micro-enseñanza del script "a la par" (un carácter)
+    val didSucceed: Boolean,
+    val complete: Boolean,
+    val ttsUrl: String?,
+    val turns: Int,
+)
+data class ConvoEndBody(val sessionId: String)
+data class ConvoEndResponse(val spokenPhrases: Int, val xpEarned: Int, val turns: Int)

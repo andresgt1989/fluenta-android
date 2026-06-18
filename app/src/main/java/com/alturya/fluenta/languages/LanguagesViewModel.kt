@@ -41,6 +41,11 @@ class LanguagesViewModel : ViewModel() {
             _state.value = _state.value.copy(selecting = l2)
             try {
                 ApiClient.api.selectLanguage(SelectLanguageBody(l2))
+                // Update the in-memory snapshot immediately and tell the rest of the app
+                // (Home, Map, Coach) to re-fetch — otherwise they keep showing the old
+                // language until a cold restart.
+                com.alturya.fluenta.data.Session.l2 = l2
+                com.alturya.fluenta.data.Session.requestReload()
                 _state.value = _state.value.copy(selecting = null, message = I18nStore.t("languages.changed", "Idioma cambiado a {lang}").replace("{lang}", l2.uppercase()))
                 onDone()
             } catch (e: Exception) {

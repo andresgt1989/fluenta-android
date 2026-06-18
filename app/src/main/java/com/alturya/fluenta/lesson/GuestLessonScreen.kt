@@ -12,6 +12,11 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -110,7 +115,9 @@ fun GuestLessonScreen(l1: String, l2: String, onSignUp: () -> Unit, onBack: () -
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text("⚠️ ${state.error}", style = MaterialTheme.typography.bodyLarge)
+                Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp))
+                Spacer(Modifier.height(8.dp))
+                Text(state.error!!, style = MaterialTheme.typography.bodyLarge)
                 Spacer(Modifier.height(20.dp))
                 Button(onClick = onBack) { Text(I18nStore.t("common.back", "Volver")) }
             }
@@ -137,7 +144,7 @@ private fun GuestQuizView(
 
     Column(Modifier.fillMaxSize().padding(20.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = onBack) { Text("✕") }
+            IconButton(onClick = onBack) { Icon(Icons.Default.Close, contentDescription = I18nStore.t("common.back", "Volver"), modifier = Modifier.size(20.dp)) }
             LinearProgressIndicator(
                 progress = { progressFraction },
                 modifier = Modifier.weight(1f).height(8.dp),
@@ -213,7 +220,14 @@ private fun GuestExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) {
         }
         "translate_l1_to_l2", "translate_l2_to_l1", "fill_blank" -> {
             Text(ex.prompt ?: "", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            ex.hint?.let { Spacer(Modifier.height(8.dp)); Text("💡 $it", style = MaterialTheme.typography.bodySmall) }
+            ex.hint?.let { hint ->
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Lightbulb, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(hint, style = MaterialTheme.typography.bodySmall)
+                }
+            }
             Spacer(Modifier.height(16.dp))
             OutlinedTextField(
                 value = textInput,
@@ -254,7 +268,7 @@ private fun GuestResultView(
     ) {
         Spacer(Modifier.height(24.dp))
         AnimatedVisibility(visible = visible, enter = fadeIn() + scaleIn()) {
-            Text("🎉", style = MaterialTheme.typography.displayLarge)
+            Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(80.dp))
         }
         Spacer(Modifier.height(12.dp))
         Text(

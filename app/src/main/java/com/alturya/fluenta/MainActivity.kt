@@ -26,6 +26,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.alturya.fluenta.curriculum.CurriculumMapScreen
+import com.alturya.fluenta.data.Analytics
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.data.TokenStore
 import com.alturya.fluenta.diagnostic.DiagnosticScreen
@@ -33,7 +34,9 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.alturya.fluenta.exercises.MatchScreen
 import com.alturya.fluenta.home.HomeScreen
+import com.alturya.fluenta.conversation.ConversationScreen
 import com.alturya.fluenta.languages.LanguageSelectorScreen
+import com.alturya.fluenta.script.ScriptScreen
 import com.alturya.fluenta.lesson.GuestLessonScreen
 import com.alturya.fluenta.lesson.LessonPlayerScreen
 import com.alturya.fluenta.login.LoginScreen
@@ -44,8 +47,22 @@ import com.alturya.fluenta.profile.ProfileScreen
 import com.alturya.fluenta.progress.ProgressScreen
 import com.alturya.fluenta.pronunciation.PronunciationScreen
 import com.alturya.fluenta.repaso.RepasoScreen
+import com.alturya.fluenta.settings.SettingsScreen
 import com.alturya.fluenta.ui.theme.FluentaTheme
+import com.alturya.fluenta.upgrade.PaywallScreen
 import com.alturya.fluenta.verbs.VerbsTodayScreen
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Replay
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
  * Pulls a lesson UUID out of either of the two deep-link URI shapes we accept:
@@ -92,6 +109,13 @@ class MainActivity : ComponentActivity() {
 
                 LaunchedEffect(token) { token?.let { ApiClient.setToken(it) } }
 
+                // Señal de actividad diaria (D1/D7). Una vez por arranque.
+                LaunchedEffect(Unit) { Analytics.track(context, Analytics.APP_OPEN) }
+
+                // Respetar el toggle de sonido del usuario en toda la app.
+                val sfxOn by com.alturya.fluenta.data.SettingsStore.sfxEnabled(context).collectAsState(initial = true)
+                LaunchedEffect(sfxOn) { com.alturya.fluenta.audio.Sfx.enabled = sfxOn }
+
                 // Capa 1 — Detección L1 + 30 pares: cargar strings UI en idioma nativo.
                 // Si el usuario tiene perfil cargado, el L1 del perfil manda. Sin perfil:
                 // device locale como fallback razonable. Backend cachea 30d, app cachea 24h.
@@ -132,7 +156,9 @@ class MainActivity : ComponentActivity() {
                     composable("onboarding") {
                         OnboardingScreen(onPicked = { l1, l2 ->
                             scope.launch { TokenStore.saveOnboardingChoice(context, l1, l2) }
-                            rootNav.navigate("guest_lesson/$l1/$l2")
+                            // Cumple la promesa "practica hablando": el wedge de voz ES el
+                            // primer contacto (hablar en <60s, sin cuenta), luego el quiz.
+                            rootNav.navigate("guest_conversation/$l1/$l2")
                         })
                     }
                     composable("login") {
@@ -176,6 +202,23 @@ class MainActivity : ComponentActivity() {
                             },
                         )
                     }
+                    composable(
+                        route = "guest_conversation/{l1}/{l2}",
+                        arguments = listOf(
+                            navArgument("l1") { type = NavType.StringType },
+                            navArgument("l2") { type = NavType.StringType },
+                        ),
+                    ) { entry ->
+                        val gl1 = entry.arguments?.getString("l1") ?: "es"
+                        val gl2 = entry.arguments?.getString("l2") ?: "en"
+                        ConversationScreen(
+                            guest = true,
+                            l1 = gl1,
+                            l2 = gl2,
+                            // Pico de valor tras hablar inglés → registro (conversión), no el quiz.
+                            onDone = { rootNav.navigate("login") { popUpTo("onboarding") { inclusive = true } } },
+                        )
+                    }
                     composable("main") {
                         MainScaffold(
                             onLogout = {
@@ -200,14 +243,20 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private data class Tab(val route: String, val label: String, val icon: String)
+private data class Tab(
+    val route: String,
+    val labelKey: String,
+    val defaultLabel: String,
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector,
+)
 
 private val TABS = listOf(
-    Tab("home", "Inicio", "🏠"),
-    Tab("verbs", "Verbos", "📚"),
-    Tab("map", "Mapa", "🗺"),
-    Tab("progress", "Progreso", "📊"),
-    Tab("profile", "Perfil", "👤"),
+    Tab("home",     "nav.home",     "Inicio",    Icons.Filled.Home,     Icons.Outlined.Home),
+    Tab("map",      "nav.lessons",  "Lecciones", Icons.Filled.Map,      Icons.Outlined.Map),
+    Tab("repaso",   "nav.review",   "Repasar",   Icons.Filled.Replay,   Icons.Outlined.Replay),
+    Tab("progress", "nav.progress", "Progreso",  Icons.Filled.BarChart, Icons.Outlined.BarChart),
+    Tab("profile",  "nav.profile",  "Perfil",    Icons.Filled.Person,   Icons.Outlined.Person),
 )
 
 @Composable
@@ -241,8 +290,13 @@ private fun MainScaffold(
                                 restoreState = true
                             }
                         },
-                        icon = { Text(tab.icon) },
-                        label = { Text(I18nStore.t("nav.${tab.route}", tab.label)) }
+                        icon = {
+                            Icon(
+                                imageVector = if (currentRoute == tab.route) tab.selectedIcon else tab.unselectedIcon,
+                                contentDescription = tab.defaultLabel,
+                            )
+                        },
+                        label = { Text(I18nStore.t(tab.labelKey, tab.defaultLabel)) }
                     )
                 }
             }
@@ -266,7 +320,20 @@ private fun MainScaffold(
                     onChangeLanguage = { nav.navigate("languages") { launchSingleTop = true } },
                     onRepaso = { nav.navigate("repaso") { launchSingleTop = true } },
                     onLevelTest = { nav.navigate("diagnostic") { launchSingleTop = true } },
+                    onConversation = { nav.navigate("conversation") { launchSingleTop = true } },
+                    onConversationLesson = { lessonId -> nav.navigate("conversation_lesson/$lessonId") },
+                    onScript = { l2 -> nav.navigate("script/$l2") { launchSingleTop = true } },
+                    onUpgrade = { nav.navigate("paywall") },
                 )
+            }
+            composable("paywall") {
+                PaywallScreen(onDismiss = { nav.popBackStack() })
+            }
+            composable(
+                route = "script/{l2}",
+                arguments = listOf(navArgument("l2") { type = NavType.StringType }),
+            ) { entry ->
+                ScriptScreen(l2 = entry.arguments?.getString("l2") ?: "ja", onDone = { nav.popBackStack() })
             }
             composable("match") { MatchScreen(onDone = { nav.popBackStack() }) }
             composable(
@@ -274,21 +341,47 @@ private fun MainScaffold(
                 arguments = listOf(navArgument("lessonId") { type = NavType.StringType }),
             ) { backStackEntry ->
                 val lessonId = backStackEntry.arguments?.getString("lessonId") ?: ""
-                LessonPlayerScreen(lessonId = lessonId, onDone = { nav.popBackStack() })
+                LessonPlayerScreen(
+                    lessonId = lessonId,
+                    onDone = { nav.popBackStack() },
+                    onConversation = { nav.navigate("conversation") { launchSingleTop = true } },
+                )
             }
             composable("map") {
-                CurriculumMapScreen(onStartLesson = { lessonId -> nav.navigate("lesson/$lessonId") })
+                CurriculumMapScreen(
+                    onStartLesson = { lessonId -> nav.navigate("lesson/$lessonId") },
+                    onConversationLesson = { lessonId -> nav.navigate("conversation_lesson/$lessonId") },
+                )
             }
             composable("verbs") { VerbsTodayScreen() }
             composable("pronunciation") { PronunciationScreen() }
-            composable("repaso") { RepasoScreen(onDone = { nav.popBackStack() }) }
+            composable("conversation") { ConversationScreen(onDone = { nav.popBackStack() }) }
+            composable(
+                route = "conversation_lesson/{lessonId}",
+                arguments = listOf(navArgument("lessonId") { type = NavType.StringType }),
+            ) { entry ->
+                val lessonId = entry.arguments?.getString("lessonId") ?: ""
+                ConversationScreen(lessonId = lessonId, onDone = { nav.popBackStack() })
+            }
+            composable("repaso") {
+                RepasoScreen(onDone = {
+                    nav.navigate("home") {
+                        popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true; restoreState = true
+                    }
+                })
+            }
             composable("progress") { ProgressScreen() }
             composable("profile") {
                 ProfileScreen(
                     onChangeLanguage = { nav.navigate("languages") },
                     onLogout = onLogout,
-                    onDiagnostic = { nav.navigate("diagnostic") }
+                    onDiagnostic = { nav.navigate("diagnostic") },
+                    onSettings = { nav.navigate("settings") },
                 )
+            }
+            composable("settings") {
+                SettingsScreen(onBack = { nav.popBackStack() })
             }
             composable("languages") {
                 LanguageSelectorScreen(onChanged = { nav.popBackStack() })

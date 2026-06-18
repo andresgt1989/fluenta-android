@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 
 private val Context.dataStore by preferencesDataStore(name = "fluenta_prefs")
@@ -17,6 +18,17 @@ object TokenStore {
     private val ONBOARDING_DONE_KEY = booleanPreferencesKey("onboarding_done")
     private val CHOSEN_L1_KEY = stringPreferencesKey("chosen_l1")
     private val CHOSEN_L2_KEY = stringPreferencesKey("chosen_l2")
+    private val ANON_ID_KEY = stringPreferencesKey("anon_id")
+
+    // Stable per-install anonymous id. Stitches the pre-account (guest) funnel to
+    // the user once they register. Generated once, then reused.
+    suspend fun getOrCreateAnonId(context: Context): String {
+        val existing = context.dataStore.data.map { it[ANON_ID_KEY] }.firstOrNull()
+        if (!existing.isNullOrBlank()) return existing
+        val id = java.util.UUID.randomUUID().toString()
+        context.dataStore.edit { it[ANON_ID_KEY] = id }
+        return id
+    }
 
     fun getToken(context: Context): Flow<String?> =
         context.dataStore.data.map { it[TOKEN_KEY] }

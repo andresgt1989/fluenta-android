@@ -11,6 +11,9 @@ import android.os.Looper
  * no rompe nada; la háptica sigue dando feedback.
  */
 object Sfx {
+    // Respeta el toggle de Ajustes. MainActivity lo sincroniza desde SettingsStore.
+    @Volatile var enabled: Boolean = true
+
     // Correct: short satisfying ding
     fun correct() = play(ToneGenerator.TONE_PROP_BEEP, 120)
     // Wrong: gentle error tone (not harsh)
@@ -30,6 +33,7 @@ object Sfx {
     fun streakAlert() = play(ToneGenerator.TONE_PROP_NACK, 120)
 
     private fun play(tone: Int, durationMs: Int) {
+        if (!enabled) return
         try {
             val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 75)
             tg.startTone(tone, durationMs)

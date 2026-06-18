@@ -17,13 +17,46 @@ interface ApiService {
 
     @Streaming
     @GET("api/tts")
-    suspend fun getTts(@Query("text") text: String): Response<ResponseBody>
+    suspend fun getTts(@Query("text") text: String, @Query("l2") l2: String = "en"): Response<ResponseBody>
 
     @POST("api/auth/phone-request")
     suspend fun requestOtp(@Body body: OtpRequestBody): OtpRequestResponse
 
     @POST("api/auth/phone-verify")
     suspend fun verifyOtp(@Body body: OtpVerifyBody): OtpVerifyResponse
+
+    @POST("api/auth/email-request")
+    suspend fun requestEmailOtp(@Body body: EmailRequestBody): OtpRequestResponse
+
+    @POST("api/auth/email-verify")
+    suspend fun verifyEmailOtp(@Body body: EmailVerifyBody): OtpVerifyResponse
+
+    @GET("api/auth/config")
+    suspend fun getAuthConfig(): AuthConfig
+
+    @POST("api/auth/google")
+    suspend fun authGoogle(@Body body: GoogleAuthBody): OtpVerifyResponse
+
+    @POST("api/auth/device")
+    suspend fun authDevice(@Body body: DeviceAuthBody): OtpVerifyResponse
+
+    @POST("api/events")
+    suspend fun postEvent(@Body body: EventBody): Response<ResponseBody>
+
+    @GET("api/coach/next")
+    suspend fun getCoachNext(): CoachNext
+
+    @GET("api/script/info")
+    suspend fun getScriptInfo(@Query("l2") l2: String): ScriptInfo
+
+    @POST("api/script/lesson")
+    suspend fun getScriptLesson(@Body body: ScriptLessonBody): ScriptLesson
+
+    @GET("api/script/quiz")
+    suspend fun getScriptQuiz(@Query("l2") l2: String, @Query("scriptKey") scriptKey: String, @Query("n") n: Int = 8): ScriptQuiz
+
+    @POST("api/script/quiz/grade")
+    suspend fun gradeScriptQuiz(@Body body: ScriptQuizGradeBody): ScriptQuizResult
 
     @GET("api/user/profile")
     suspend fun getProfile(): UserProfile
@@ -130,4 +163,24 @@ interface ApiService {
         @Part("text") text: RequestBody,
         @Part("l2") l2: RequestBody,
     ): PronunciationAssessResponse
+
+    // Conversación de voz abierta (el wedge)
+    @POST("api/conversation/start")
+    suspend fun convoStart(@Body body: ConvoStartBody): ConvoStartResponse
+
+    @POST("api/conversation/turn")
+    suspend fun convoTurn(@Body body: ConvoTurnBody): ConvoTurnResponse
+
+    @POST("api/conversation/end")
+    suspend fun convoEnd(@Body body: ConvoEndBody): ConvoEndResponse
+
+    // Guest (sin cuenta) — hablar en <60s antes de registrarse
+    @POST("api/guest/conversation/start")
+    suspend fun guestConvoStart(@Body body: GuestConvoStartBody): ConvoStartResponse
+
+    @POST("api/guest/conversation/turn")
+    suspend fun guestConvoTurn(@Body body: ConvoTurnBody): ConvoTurnResponse
+
+    @POST("api/guest/conversation/end")
+    suspend fun guestConvoEnd(@Body body: ConvoEndBody): ConvoEndResponse
 }

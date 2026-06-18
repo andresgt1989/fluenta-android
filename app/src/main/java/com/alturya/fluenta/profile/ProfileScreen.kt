@@ -6,6 +6,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.GpsFixed
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,11 +34,14 @@ import com.alturya.fluenta.util.levelSystemName
 fun ProfileScreen(
     onChangeLanguage: () -> Unit = {},
     onLogout: () -> Unit = {},
-    onDiagnostic: () -> Unit = {}
+    onDiagnostic: () -> Unit = {},
+    onSettings: () -> Unit = {},
+    previewState: com.alturya.fluenta.profile.ProfileState? = null,
 ) {
     val context = LocalContext.current
     val vm: ProfileViewModel = viewModel()
-    val state by vm.state.collectAsState()
+    val vmState by vm.state.collectAsState()
+    val state = previewState ?: vmState
 
     fun open(url: String) {
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
@@ -40,6 +49,25 @@ fun ProfileScreen(
 
     if (state.loading) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        return
+    }
+
+    if (state.error) {
+        Column(
+            Modifier.fillMaxSize().padding(32.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Icon(Icons.Default.CloudOff, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(56.dp))
+            Spacer(Modifier.height(12.dp))
+            Text(
+                I18nStore.t("profile.loadError", "No pudimos cargar tu perfil. Revisa tu conexión."),
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(20.dp))
+            com.alturya.fluenta.ui.FluentaButton(text = I18nStore.t("common.retry", "Reintentar"), onClick = { vm.load() })
+        }
         return
     }
 
@@ -53,7 +81,8 @@ fun ProfileScreen(
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(20.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("📱 ", style = MaterialTheme.typography.titleMedium)
+                    Icon(Icons.Default.Phone, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text(p?.phone ?: "—", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
                 }
                 Spacer(Modifier.height(8.dp))
@@ -68,39 +97,68 @@ fun ProfileScreen(
             }
         }
 
+        // Share achievement card (Virality feature)
+        if (p != null) {
+            AchievementShareCard(
+                l2 = p.l2,
+                level = p.level,
+                levelSystem = p.levelSystem,
+                streakDays = p.streakDays ?: 0,
+            )
+        }
+
         if ((p?.plan ?: "free") == "free") {
             Text(I18nStore.t("profile.upgradeTitle", "Mejora tu plan"), style = MaterialTheme.typography.titleMedium)
-            Button(
+            com.alturya.fluenta.ui.FluentaButton(
+                text = I18nStore.t("profile.goPro", "Hazte Pro — \$9/mes"),
                 onClick = { vm.openCheckout("basic") { open(it) } },
-                modifier = Modifier.fillMaxWidth().height(52.dp)
-            ) { Text(I18nStore.t("profile.goPro", "Hazte Pro — \$9/mes")) }
+                modifier = Modifier.fillMaxWidth(),
+            )
             OutlinedButton(
                 onClick = { vm.openCheckout("pro") { open(it) } },
                 modifier = Modifier.fillMaxWidth()
             ) { Text(I18nStore.t("profile.goPremium", "Premium — \$19/mes · voz ilimitada")) }
-            Text(
-                I18nStore.t("profile.payNote", "🔒 Pago seguro con Stripe · aceptado en todo el mundo · cancela cuando quieras"),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    I18nStore.t("profile.payNote", "Pago seguro con Stripe · aceptado en todo el mundo · cancela cuando quieras"),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         } else {
-            Button(
+            com.alturya.fluenta.ui.FluentaButton(
+                text = I18nStore.t("profile.manage", "Administrar suscripción"),
                 onClick = { vm.openPortal { open(it) } },
-                modifier = Modifier.fillMaxWidth()
-            ) { Text(I18nStore.t("profile.manage", "Administrar suscripción")) }
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
 
-        Divider(Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
         OutlinedButton(
             onClick = onDiagnostic,
             modifier = Modifier.fillMaxWidth()
-        ) { Text(I18nStore.t("profile.levelTest", "🎯 Realiza tu test de nivel")) }
+        ) {
+            Icon(Icons.Default.GpsFixed, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(I18nStore.t("profile.levelTest", "Realiza tu test de nivel"))
+        }
 
         OutlinedButton(
             onClick = onChangeLanguage,
             modifier = Modifier.fillMaxWidth()
         ) { Text(I18nStore.t("profile.changeLanguage", "Cambiar idioma")) }
+
+        OutlinedButton(
+            onClick = onSettings,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(I18nStore.t("profile.settings", "Ajustes"))
+        }
 
         TextButton(
             onClick = { vm.logout(context, onLogout) },
@@ -109,7 +167,7 @@ fun ProfileScreen(
 
         // ── Badges / logros ───────────────────────────────────────────────────
         if (state.badges.isNotEmpty()) {
-            Divider(Modifier.padding(vertical = 4.dp))
+            HorizontalDivider(Modifier.padding(vertical = 4.dp))
             Text(
                 "${I18nStore.t("profile.badges", "Logros")} · ${state.badgesEarned}/${state.badgesTotal}",
                 style = MaterialTheme.typography.titleMedium,
@@ -124,7 +182,7 @@ fun ProfileScreen(
             }
         }
         // ── Referidos ─────────────────────────────────────────────────────────
-        Divider(Modifier.padding(vertical = 4.dp))
+        HorizontalDivider(Modifier.padding(vertical = 4.dp))
         ReferralCard()
 
         Spacer(Modifier.height(20.dp))

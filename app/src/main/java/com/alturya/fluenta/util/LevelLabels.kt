@@ -67,6 +67,13 @@ private fun langNameFallback(c: String): String = when (c) {
     else -> c.uppercase()
 }
 
+// Languages that use a right-to-left script. Used to set text direction in
+// conversation bubbles, repaso cards, and anywhere L2 text is displayed.
+fun isRtl(code: String?): Boolean = when ((code ?: "").lowercase()) {
+    "ar", "he", "fa", "ur" -> true
+    else -> false
+}
+
 fun flag(code: String?): String = when ((code ?: "").lowercase()) {
     "es" -> "🇪🇸"; "en" -> "🇬🇧"; "pt" -> "🇧🇷"
     "fr" -> "🇫🇷"; "it" -> "🇮🇹"; "de" -> "🇩🇪"

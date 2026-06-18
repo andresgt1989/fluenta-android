@@ -36,10 +36,20 @@ private val PRIORITY_PAIRS: Set<Pair<String, String>> = setOf(
 )
 
 @Composable
-fun LanguageSelectorScreen(onChanged: () -> Unit = {}) {
+fun LanguageSelectorScreen(onChanged: () -> Unit = {}, previewState: LanguagesState? = null) {
     val vm: LanguagesViewModel = viewModel()
-    val state by vm.state.collectAsState()
+    val vmState by vm.state.collectAsState()
+    val state = previewState ?: vmState
     val snackbar = remember { SnackbarHostState() }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val selectLang: (String) -> Unit = { l2 ->
+        com.alturya.fluenta.data.Analytics.track(
+            context,
+            com.alturya.fluenta.data.Analytics.LANGUAGE_CHANGE,
+            mapOf("l2" to l2),
+        )
+        vm.select(l2, onChanged)
+    }
 
     LaunchedEffect(state.message) {
         state.message?.let { snackbar.showSnackbar(it) }
@@ -86,7 +96,7 @@ fun LanguageSelectorScreen(onChanged: () -> Unit = {}) {
                                     modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
                                 )
                             }
-                            items(pairs) { pair -> PairRow(pair, state.selecting == pair.l2) { vm.select(pair.l2, onChanged) } }
+                            items(pairs) { pair -> PairRow(pair, state.selecting == pair.l2) { selectLang(pair.l2) } }
                         }
                     }
                     if (rest.isNotEmpty()) {
@@ -109,7 +119,7 @@ fun LanguageSelectorScreen(onChanged: () -> Unit = {}) {
                                     modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
                                 )
                             }
-                            items(pairs) { pair -> PairRow(pair, state.selecting == pair.l2) { vm.select(pair.l2, onChanged) } }
+                            items(pairs) { pair -> PairRow(pair, state.selecting == pair.l2) { selectLang(pair.l2) } }
                         }
                     }
                 }
@@ -120,10 +130,16 @@ fun LanguageSelectorScreen(onChanged: () -> Unit = {}) {
 
 @Composable
 private fun PairRow(pair: LanguagePair, selecting: Boolean, onClick: () -> Unit) {
+    // Sin currículo aún = "próximamente": no dejamos entrar a una experiencia vacía.
+    val available = pair.curriculumSeeded == true
     Card(
         onClick = onClick,
+        enabled = available,
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        ),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(14.dp),
@@ -144,6 +160,8 @@ private fun PairRow(pair: LanguagePair, selecting: Boolean, onClick: () -> Unit)
                     langName(pair.l2),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
+                    color = if (available) MaterialTheme.colorScheme.onSurface
+                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 )
                 Spacer(Modifier.height(2.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -152,19 +170,26 @@ private fun PairRow(pair: LanguagePair, selecting: Boolean, onClick: () -> Unit)
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    if (pair.curriculumSeeded == true) {
+                    if (available) {
                         Text(
                             "  ·  ${I18nStore.t("lang.curriculumReady", "con currículo")}",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
                         )
+                    } else {
+                        Text(
+                            "  ·  ${I18nStore.t("lang.comingSoon", "próximamente")}",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
             }
             if (selecting) {
                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-            } else {
+            } else if (available) {
                 Text(
                     "›",
                     style = MaterialTheme.typography.headlineSmall,

@@ -8,6 +8,11 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.GpsFixed
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,14 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.LeagueRow
-
-private fun tierEmoji(tier: String): String = when (tier) {
-    "bronze" -> "🥉"
-    "silver" -> "🥈"
-    "gold" -> "🥇"
-    "diamond" -> "💎"
-    else -> "🏅"
-}
+import com.alturya.fluenta.ui.ShimmerCard
 
 private fun tierName(tier: String): String = when (tier) {
     "bronze" -> I18nStore.t("league.tierBronze", "Liga Bronce")
@@ -65,9 +63,7 @@ fun LeagueCard() {
             Spacer(Modifier.height(8.dp))
 
             if (state.loading) {
-                Box(Modifier.fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(Modifier.size(28.dp))
-                }
+                ShimmerCard(height = 56.dp)
                 return@Column
             }
             val league = state.league
@@ -83,13 +79,19 @@ fun LeagueCard() {
             val tc = tierColor(league.tier)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(color = tc.copy(alpha = 0.15f), shape = RoundedCornerShape(8.dp)) {
-                    Text(
-                        "${tierEmoji(league.tier)} ${tierName(league.tier)}",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = tc,
+                    Row(
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                    )
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = tc, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            tierName(league.tier),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = tc,
+                        )
+                    }
                 }
                 Spacer(Modifier.weight(1f))
                 league.myRank?.let {
@@ -111,11 +113,15 @@ fun LeagueCard() {
             Spacer(Modifier.height(10.dp))
             Column {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(
-                        "🎯 ${I18nStore.t("league.toPromotion", "Para subir de liga")}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.GpsFixed, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(10.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            I18nStore.t("league.toPromotion", "Para subir de liga"),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     Text(
                         "$myXp / $promotionXp XP",
                         style = MaterialTheme.typography.labelSmall,
@@ -158,7 +164,7 @@ fun LeagueCard() {
 
             Spacer(Modifier.height(8.dp))
             Text(
-                I18nStore.t("league.promotion", "Top {n} suben de liga el domingo 🔼").replace("{n}", "${league.promotionCutoff}"),
+                I18nStore.t("league.promotion", "Top {n} suben de liga el domingo").replace("{n}", "${league.promotionCutoff}"),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.outline,
             )
@@ -184,19 +190,29 @@ private fun LeagueRowItem(row: LeagueRow, promotionCutoff: Int, tierColor: Color
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val rankText = when (row.rank) {
-            1 -> "🥇"
-            2 -> "🥈"
-            3 -> "🥉"
-            else -> "${row.rank}"
+        val medalColor = when (row.rank) {
+            1 -> Color(0xFFEAB308)
+            2 -> Color(0xFF94A3B8)
+            3 -> Color(0xFFCD7F32)
+            else -> null
         }
-        Text(
-            rankText,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = if (inPromotion) FontWeight.Bold else FontWeight.Normal,
-            color = if (inPromotion) tierColor else MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.width(32.dp),
-        )
+        Box(Modifier.width(32.dp), contentAlignment = Alignment.Center) {
+            if (medalColor != null) {
+                Icon(
+                    imageVector = if (row.rank == 1) Icons.Default.EmojiEvents else Icons.Default.Star,
+                    contentDescription = null,
+                    tint = medalColor,
+                    modifier = Modifier.size(20.dp),
+                )
+            } else {
+                Text(
+                    "${row.rank}",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = if (inPromotion) FontWeight.Bold else FontWeight.Normal,
+                    color = if (inPromotion) tierColor else MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        }
         Text(
             row.label,
             style = MaterialTheme.typography.bodyMedium,
@@ -210,8 +226,8 @@ private fun LeagueRowItem(row: LeagueRow, promotionCutoff: Int, tierColor: Color
             color = if (row.isMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
         )
         if (inPromotion) {
-            Spacer(Modifier.width(6.dp))
-            Text("🔼", style = MaterialTheme.typography.labelSmall)
+            Spacer(Modifier.width(4.dp))
+            Icon(Icons.Default.ArrowUpward, contentDescription = null, tint = tierColor, modifier = Modifier.size(14.dp))
         }
     }
 }

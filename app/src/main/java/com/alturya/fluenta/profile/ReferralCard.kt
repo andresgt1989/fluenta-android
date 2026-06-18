@@ -11,6 +11,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,17 +44,25 @@ fun ReferralCard() {
     val context = LocalContext.current
     val keyboard = LocalSoftwareKeyboardController.current
 
+    // Don't render a broken-looking "no disponible" card if referrals failed to load —
+    // hide it entirely until there's real data.
+    if (!state.loading && state.referral == null) return
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
     ) {
         Column(Modifier.padding(20.dp)) {
-            Text(
-                "🎁 ${I18nStore.t("referral.title", "Invita y gana días Pro")}",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.CardGiftcard, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    I18nStore.t("referral.title", "Invita y gana días Pro"),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
             Spacer(Modifier.height(4.dp))
 
             if (state.loading) {
@@ -96,54 +112,71 @@ fun ReferralCard() {
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary,
                 )
-                Text(
-                    if (copied) "✅ ${I18nStore.t("referral.copied", "Copiado")}"
-                    else "📋 ${I18nStore.t("referral.copy", "Copiar")}",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (copied) Color(0xFF15803D) else MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        if (copied) Icons.Default.CheckCircle else Icons.Default.ContentCopy,
+                        contentDescription = null,
+                        tint = if (copied) Color(0xFF15803D) else MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        if (copied) I18nStore.t("referral.copied", "Copiado") else I18nStore.t("referral.copy", "Copiar"),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (copied) Color(0xFF15803D) else MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
             }
 
             Spacer(Modifier.height(10.dp))
 
             // Stats row
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                RefStat("👥", "${ref.referred}", I18nStore.t("referral.invited", "Invitados"), Modifier.weight(1f))
-                RefStat("✅", "${ref.activated}", I18nStore.t("referral.activated", "Completaron lección"), Modifier.weight(1f))
-                RefStat("🎁", "${ref.activated * ref.rewardDays}d", I18nStore.t("referral.earned", "Días ganados"), Modifier.weight(1f))
+                RefStat(Icons.Default.Group, "${ref.referred}", I18nStore.t("referral.invited", "Invitados"), Modifier.weight(1f))
+                RefStat(Icons.Default.CheckCircle, "${ref.activated}", I18nStore.t("referral.activated", "Completaron lección"), Modifier.weight(1f))
+                RefStat(Icons.Default.CardGiftcard, "${ref.activated * ref.rewardDays}d", I18nStore.t("referral.earned", "Días ganados"), Modifier.weight(1f))
             }
 
             Spacer(Modifier.height(14.dp))
 
-            // Share button
+            // Share buttons — system chooser primary (reaches all apps), WhatsApp shortcut secondary
             Button(
+                onClick = {
+                    context.startActivity(Intent.createChooser(
+                        Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, ref.shareText)
+                        },
+                        I18nStore.t("referral.share", "Compartir código"),
+                    ))
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(I18nStore.t("referral.shareBtn", "Compartir mi código"), fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.height(6.dp))
+            OutlinedButton(
                 onClick = {
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
                         putExtra(Intent.EXTRA_TEXT, ref.shareText)
                         setPackage("com.whatsapp")
                     }
-                    runCatching {
-                        context.startActivity(intent)
-                    }.onFailure {
-                        // Fallback: generic share
+                    runCatching { context.startActivity(intent) }.onFailure {
                         context.startActivity(Intent.createChooser(
-                            Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, ref.shareText)
-                            },
+                            Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, ref.shareText) },
                             I18nStore.t("referral.share", "Compartir código"),
                         ))
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
             ) {
-                Text(
-                    "💬 ${I18nStore.t("referral.shareWa", "Invitar por WhatsApp")}",
-                    fontWeight = FontWeight.Bold,
-                )
+                Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, tint = Color(0xFF25D366), modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(I18nStore.t("referral.shareWa", "WhatsApp"), fontWeight = FontWeight.Bold, color = Color(0xFF25D366))
             }
 
             Spacer(Modifier.height(16.dp))
@@ -195,13 +228,13 @@ fun ReferralCard() {
 }
 
 @Composable
-private fun RefStat(icon: String, value: String, label: String, modifier: Modifier = Modifier) {
+private fun RefStat(icon: ImageVector, value: String, label: String, modifier: Modifier = Modifier) {
     Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(icon, style = MaterialTheme.typography.titleMedium)
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
             Text(value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             Text(label, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center)
         }

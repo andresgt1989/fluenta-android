@@ -5,6 +5,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,9 +21,10 @@ import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.ui.FeedbackBar
 
 @Composable
-fun MatchScreen(onDone: () -> Unit = {}) {
+fun MatchScreen(onDone: () -> Unit = {}, previewState: MatchState? = null) {
     val vm: MatchViewModel = viewModel()
-    val state by vm.state.collectAsState()
+    val vmState by vm.state.collectAsState()
+    val state = previewState ?: vmState
     val haptic = LocalHapticFeedback.current
 
     LaunchedEffect(state.wrongFlash) {
@@ -99,7 +102,7 @@ private fun GameBoard(state: MatchState, vm: MatchViewModel) {
 @Composable
 private fun Tile(text: String, bg: Color, enabled: Boolean, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp),
         colors = CardDefaults.cardColors(containerColor = bg),
         onClick = onClick,
         enabled = enabled
@@ -122,14 +125,14 @@ private fun WinPanel(attempts: Int, total: Int, onAgain: () -> Unit, onDone: () 
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         AnimatedVisibility(visible = true, enter = fadeIn() + scaleIn()) {
-            Text("🏆", style = MaterialTheme.typography.displayLarge)
+            Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(72.dp))
         }
         Spacer(Modifier.height(16.dp))
         Text(I18nStore.t("match.completed", "¡Completado!"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         Text("Precisión: $accuracy%  ·  $total pares", style = MaterialTheme.typography.bodyLarge)
         Spacer(Modifier.height(32.dp))
-        Button(onClick = onAgain, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text(I18nStore.t("match.playAgain", "Jugar de nuevo")) }
+        com.alturya.fluenta.ui.FluentaButton(text = I18nStore.t("match.playAgain", "Jugar de nuevo"), onClick = onAgain, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(12.dp))
         OutlinedButton(onClick = onDone, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text(I18nStore.t("match.done", "Listo")) }
         Spacer(Modifier.height(20.dp))

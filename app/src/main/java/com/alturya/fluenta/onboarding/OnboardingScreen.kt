@@ -10,6 +10,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.MicNone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -42,15 +45,23 @@ fun OnboardingScreen(onPicked: (l1: String, l2: String) -> Unit) {
 
     when (step) {
         0 -> WelcomeStep(onStart = { step = 1 })
-        1 -> SourceLanguageStep(selected = l1, onPick = { l1 = it; step = 2 })
-        else -> LanguagePickStep(l1 = l1, onPick = { l2 -> onPicked(l1, l2) })
+        1 -> SourceLanguageStep(selected = l1, onPick = { l1 = it; step = 2 }, onBack = { step = 0 })
+        else -> LanguagePickStep(l1 = l1, onPick = { l2 -> onPicked(l1, l2) }, onBack = { step = 1 })
     }
 }
 
 @Composable
-private fun SourceLanguageStep(selected: String, onPick: (String) -> Unit) {
+private fun BackBar(onBack: () -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(start = 8.dp, top = 8.dp)) {
+        TextButton(onClick = onBack) { Text("‹ ${I18nStore.t("common.back", "Atrás")}") }
+    }
+}
+
+@Composable
+private fun SourceLanguageStep(selected: String, onPick: (String) -> Unit, onBack: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
-        Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 32.dp, bottom = 8.dp)) {
+        BackBar(onBack)
+        Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp)) {
             Text(
                 I18nStore.t("onboarding.sourceTitle", "¿Qué idioma hablas?"),
                 style = MaterialTheme.typography.headlineMedium,
@@ -88,8 +99,7 @@ private fun SourceLanguageStep(selected: String, onPick: (String) -> Unit) {
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.weight(1f),
                         )
-                        if (code == selected) Text("✓", style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.primary)
+                        if (code == selected) Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                     }
                 }
             }
@@ -110,7 +120,7 @@ private fun WelcomeStep(onStart: () -> Unit) {
             modifier = Modifier.size(104.dp),
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Text("🗣️", style = MaterialTheme.typography.displayMedium)
+                Icon(Icons.Default.MicNone, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(56.dp))
             }
         }
         Spacer(Modifier.height(20.dp))
@@ -122,45 +132,48 @@ private fun WelcomeStep(onStart: () -> Unit) {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            I18nStore.t("onboarding.welcomeTagline", "Aprende un idioma de verdad. 15 minutos al día."),
+            I18nStore.t("onboarding.welcomeTagline", "Aprende un idioma de verdad, hablando desde el primer día."),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(24.dp))
-        Bullet(I18nStore.t("onboarding.bullet1", "Lecciones cortas, hechas para ti"))
-        Bullet(I18nStore.t("onboarding.bullet2", "Practica hablando, no solo memorizando"))
-        Bullet(I18nStore.t("onboarding.bullet3", "Tu coach te sigue por WhatsApp"))
+        Bullet(I18nStore.t("onboarding.bullet1", "Habla en voz alta desde el primer minuto"))
+        Bullet(I18nStore.t("onboarding.bullet2", "Tu tutor de IA te corrige al instante"))
+        Bullet(I18nStore.t("onboarding.bullet3", "Lecciones cortas: 10 minutos al día"))
         Spacer(Modifier.height(36.dp))
-        Button(
+        com.alturya.fluenta.ui.FluentaButton(
+            text = I18nStore.t("onboarding.start", "Empezar"),
             onClick = onStart,
-            modifier = Modifier.fillMaxWidth().height(54.dp),
-        ) {
-            Text(
-                I18nStore.t("onboarding.start", "Empezar"),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
-        }
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
 @Composable
 private fun Bullet(text: String) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("✅ ", style = MaterialTheme.typography.titleMedium)
+        // Icono consistente (no emoji) — más profesional + accesible.
+        androidx.compose.material3.Icon(
+            imageVector = Icons.Default.CheckCircle,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp),
+        )
+        Spacer(Modifier.width(12.dp))
         Text(text, style = MaterialTheme.typography.bodyLarge)
     }
 }
 
 @Composable
-private fun LanguagePickStep(l1: String, onPick: (String) -> Unit) {
+private fun LanguagePickStep(l1: String, onPick: (String) -> Unit, onBack: () -> Unit) {
     val targets = remember(l1) { TARGET_LANGS.filter { it != l1 } }
     Column(Modifier.fillMaxSize()) {
-        Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 32.dp, bottom = 8.dp)) {
+        BackBar(onBack)
+        Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp)) {
             Text(
                 I18nStore.t("onboarding.pickTitle", "¿Qué idioma quieres aprender?"),
                 style = MaterialTheme.typography.headlineMedium,
