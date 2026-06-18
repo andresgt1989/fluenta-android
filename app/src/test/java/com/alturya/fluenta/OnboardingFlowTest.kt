@@ -49,4 +49,16 @@ class OnboardingFlowTest {
         compose.onNodeWithText("¿Qué idioma quieres aprender?").assertIsDisplayed()
         compose.onNodeWithText("Inglés").assertIsDisplayed()
     }
+
+    @Test fun onboarding_asks_goal_after_language() {
+        compose.setContent { OnboardingScreen(onPicked = { _, _ -> }) }
+        compose.onNodeWithText("Empezar").performClick()
+        compose.onNodeWithText("Español").performClick()
+        compose.onNodeWithText("Inglés").performClick()
+
+        // Paso 3: DEBE preguntar la META / el "por qué" (gap del scorecard de onboarding)
+        compose.onNodeWithText("¿Para qué quieres aprender?").assertIsDisplayed()
+        compose.onNodeWithText("Viajar").assertIsDisplayed()
+        compose.onNodeWithText("Trabajo y carrera").assertIsDisplayed()
+    }
 }

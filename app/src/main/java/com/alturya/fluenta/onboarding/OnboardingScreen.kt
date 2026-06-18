@@ -21,8 +21,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.alturya.fluenta.data.I18nStore
+import com.alturya.fluenta.data.MotivationStore
 import com.alturya.fluenta.util.flag
 import com.alturya.fluenta.util.langName
+import kotlinx.coroutines.launch
 
 // Target languages offered up front. The long tail still exists in the in-app
 // selector; this is the curated set for the first-run pick.
@@ -40,13 +42,25 @@ fun OnboardingScreen(onPicked: (l1: String, l2: String) -> Unit) {
     val detected = remember {
         java.util.Locale.getDefault().language.takeIf { it in SOURCE_LANGS } ?: "es"
     }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
     var l1 by remember { mutableStateOf(detected) }
+    var l2 by remember { mutableStateOf("") }
     var step by remember { mutableStateOf(0) }
 
     when (step) {
         0 -> WelcomeStep(onStart = { step = 1 })
         1 -> SourceLanguageStep(selected = l1, onPick = { l1 = it; step = 2 }, onBack = { step = 0 })
-        else -> LanguagePickStep(l1 = l1, onPick = { l2 -> onPicked(l1, l2) }, onBack = { step = 1 })
+        2 -> LanguagePickStep(l1 = l1, onPick = { l2 = it; step = 3 }, onBack = { step = 1 })
+        // Paso de META / "por qué": personaliza la experiencia y crea compromiso
+        // antes del primer minuto (lo que pedía el scorecard de onboarding).
+        else -> MotivationStep(
+            onPick = { motivationId ->
+                scope.launch { com.alturya.fluenta.data.MotivationStore.set(context, motivationId) }
+                onPicked(l1, l2)
+            },
+            onBack = { step = 2 },
+        )
     }
 }
 
@@ -165,6 +179,56 @@ private fun Bullet(text: String) {
         )
         Spacer(Modifier.width(12.dp))
         Text(text, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+@Composable
+private fun MotivationStep(onPick: (String) -> Unit, onBack: () -> Unit) {
+    Column(Modifier.fillMaxSize()) {
+        BackBar(onBack)
+        Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp)) {
+            Text(
+                I18nStore.t("onboarding.motivationTitle", "¿Para qué quieres aprender?"),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                I18nStore.t("onboarding.motivationSubtitle", "Personalizamos tu experiencia según tu meta."),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        LazyColumn(
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            items(MotivationStore.OPTIONS) { opt ->
+                Card(
+                    onClick = { onPick(opt.id) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    ),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(opt.emoji, style = MaterialTheme.typography.headlineSmall)
+                        Spacer(Modifier.width(16.dp))
+                        Text(
+                            opt.label,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text("›", style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
     }
 }
 
