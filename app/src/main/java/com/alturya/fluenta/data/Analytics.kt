@@ -24,6 +24,7 @@ object Analytics {
     const val LESSON_START = "lesson_start"
     const val LESSON_COMPLETE = "lesson_complete"
     const val CONVERSATION_START = "conversation_start"
+    const val LANGUAGE_CHANGE = "language_change"   // mide caídas en idioma equivocado
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 

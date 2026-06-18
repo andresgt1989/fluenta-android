@@ -11,18 +11,33 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import com.alturya.fluenta.audio.TtsPlayer
+import kotlinx.coroutines.launch
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
+import com.alturya.fluenta.util.isRtl
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alturya.fluenta.data.I18nStore
+import com.alturya.fluenta.util.langName
 
 // Pantalla del wedge: conversación de voz abierta. El usuario habla (STT del
 // dispositivo), el partner IA responde por voz (TTS), con correcciones suaves.
@@ -61,12 +76,12 @@ fun ConversationScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Conversación") },
+                title = { Text(I18nStore.t("convo.title", "Conversación")) },
                 navigationIcon = {
                     TextButton(onClick = {
                         vm.end()
                         onDone()
-                    }) { Text("Salir") }
+                    }) { Text(I18nStore.t("convo.exit", "Salir")) }
                 },
             )
         },
@@ -84,8 +99,9 @@ fun ConversationScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 contentPadding = PaddingValues(vertical = 16.dp),
             ) {
+                val l2IsRtl = isRtl(l2)
                 items(state.messages) { msg ->
-                    MessageBubble(msg)
+                    MessageBubble(msg, isRtlL2 = l2IsRtl)
                 }
                 if (state.partial.isNotBlank()) {
                     item {
@@ -104,7 +120,11 @@ fun ConversationScreen(
                     Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         if (guest) {
                             // Momento "aha": acaba de hablar inglés. PICO DE VALOR → conversión.
-                            Text("¡Acabas de hablar en inglés! 🎉", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("¡Acabas de hablar en inglés!", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            }
                             Spacer(Modifier.height(6.dp))
                             Text(
                                 "Dijiste ${state.spokenPhrases} ${if (state.spokenPhrases == 1) "frase" else "frases"}. Crea tu cuenta gratis para guardar tu racha y seguir practicando.",
@@ -113,14 +133,18 @@ fun ConversationScreen(
                             )
                             Spacer(Modifier.height(14.dp))
                             Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
-                                Text("Crear cuenta gratis")
+                                Text(I18nStore.t("convo.createAccount", "Crear cuenta gratis"))
                             }
                         } else {
-                            Text("¡Conversación completa! 🎉", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("¡Conversación completa!", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            }
                             Spacer(Modifier.height(6.dp))
-                            Text("Hablaste ${state.spokenPhrases} veces · +${state.xpEarned} XP", style = MaterialTheme.typography.bodyMedium)
+                            Text(I18nStore.t("convo.spokeSummary", "Hablaste {n} veces · +{xp} XP").replace("{n}", "${state.spokenPhrases}").replace("{xp}", "${state.xpEarned}"), style = MaterialTheme.typography.bodyMedium)
                             Spacer(Modifier.height(12.dp))
-                            Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) { Text("Listo") }
+                            Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) { Text(I18nStore.t("common.done", "Listo")) }
                         }
                     }
                 }
@@ -131,12 +155,12 @@ fun ConversationScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     val statusText = when (state.phase) {
-                        ConvoPhase.CONNECTING -> "Conectando…"
-                        ConvoPhase.SPEAKING -> "🔊 Escuchando a tu compañero…"
-                        ConvoPhase.LISTENING -> "🎙️ Te escucho… habla en inglés"
+                        ConvoPhase.CONNECTING -> I18nStore.t("convo.connecting", "Conectando…")
+                        ConvoPhase.SPEAKING -> I18nStore.t("convo.partnerSpeaking", "Escuchando a tu compañero…")
+                        ConvoPhase.LISTENING -> I18nStore.t("convo.listening", "Te escucho… habla en ${langName(l2)}")
                         ConvoPhase.THINKING -> "…"
-                        ConvoPhase.YOUR_TURN -> "Tu turno — toca el micro y habla"
-                        ConvoPhase.ERROR -> state.error ?: "Algo salió mal"
+                        ConvoPhase.YOUR_TURN -> I18nStore.t("convo.yourTurn", "Tu turno — toca el micro y habla")
+                        ConvoPhase.ERROR -> state.error ?: I18nStore.t("common.errorGeneric", "Algo salió mal")
                         ConvoPhase.ENDED -> ""
                     }
                     Text(statusText, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
@@ -145,7 +169,7 @@ fun ConversationScreen(
                     }
                     if (state.phase == ConvoPhase.ERROR) {
                         Spacer(Modifier.height(12.dp))
-                        Button(onClick = { vm.retry() }) { Text("Reintentar") }
+                        Button(onClick = { vm.retry() }) { Text(I18nStore.t("common.retry", "Reintentar")) }
                     }
                     // Scaffolding: frase sugerida para que el principiante no se congele.
                     if (state.suggestion.isNotBlank() &&
@@ -156,10 +180,11 @@ fun ConversationScreen(
                             shape = RoundedCornerShape(12.dp),
                         ) {
                             Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                                Text(
-                                    "💡 Puedes decir: \"${state.suggestion}\"",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Lightbulb, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(I18nStore.t("convo.youCanSay", "Puedes decir: \"{s}\"").replace("{s}", state.suggestion), style = MaterialTheme.typography.bodyMedium)
+                                }
                                 if (state.suggestionTranslit.isNotBlank()) {
                                     Text(
                                         state.suggestionTranslit,
@@ -176,7 +201,8 @@ fun ConversationScreen(
                     val listening = state.phase == ConvoPhase.LISTENING
                     Box(
                         modifier = Modifier
-                            .size(84.dp)
+                            .size(100.dp)
+                            .shadow(elevation = 8.dp, shape = CircleShape)
                             .clip(CircleShape)
                             .background(
                                 when {
@@ -190,16 +216,29 @@ fun ConversationScreen(
                         TextButton(
                             enabled = canTalk,
                             onClick = { if (listening) vm.stopListening() else vm.startListening() },
+                            modifier = Modifier.fillMaxSize(),
                         ) {
-                            Text(if (listening) "⏹" else "🎤", style = MaterialTheme.typography.headlineMedium)
+                            Icon(
+                                imageVector = if (listening) Icons.Default.Stop else Icons.Default.Mic,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(44.dp),
+                            )
                         }
                     }
                     Spacer(Modifier.height(8.dp))
                     if (!hasMic) {
-                        Text("Necesitas dar permiso de micrófono para hablar.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                        OutlinedButton(
+                            onClick = { permLauncher.launch(Manifest.permission.RECORD_AUDIO) },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Icon(Icons.Default.Mic, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(I18nStore.t("convo.grantMic", "Permitir micrófono para hablar"))
+                        }
                     }
                     if (state.messages.size > 2 && state.phase == ConvoPhase.YOUR_TURN) {
-                        TextButton(onClick = { vm.end() }) { Text("Terminar conversación") }
+                        TextButton(onClick = { vm.end() }) { Text(I18nStore.t("convo.end", "Terminar conversación")) }
                     }
                 }
             }
@@ -208,18 +247,40 @@ fun ConversationScreen(
 }
 
 @Composable
-private fun MessageBubble(msg: ConvoMessage) {
+private fun MessageBubble(msg: ConvoMessage, isRtlL2: Boolean = false) {
     val align = if (msg.fromPartner) Alignment.Start else Alignment.End
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxWidth(), horizontalAlignment = align) {
         Surface(
             color = if (msg.fromPartner) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
             shape = RoundedCornerShape(16.dp),
         ) {
-            Text(
-                msg.text,
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                color = if (msg.fromPartner) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimary,
-            )
+            // Partner messages in RTL languages (Arabic, Hebrew, Persian, Urdu)
+            // need explicit paragraph direction so Bidi renders them correctly.
+            val textDir = if (isRtlL2 && msg.fromPartner) TextDirection.Rtl else TextDirection.ContentOrLtr
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    msg.text,
+                    modifier = Modifier.padding(start = 14.dp, end = if (msg.fromPartner) 2.dp else 14.dp, top = 10.dp, bottom = 10.dp),
+                    color = if (msg.fromPartner) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimary,
+                    style = MaterialTheme.typography.bodyMedium.copy(textDirection = textDir),
+                )
+                // Hear the partner speak the target language — essential for listening practice.
+                if (msg.fromPartner) {
+                    IconButton(
+                        onClick = { scope.launch { TtsPlayer.play(context, msg.text, com.alturya.fluenta.data.Session.l2 ?: "en") } },
+                        modifier = Modifier.size(32.dp),
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.VolumeUp,
+                            contentDescription = I18nStore.t("convo.hear", "Escuchar"),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                }
+            }
         }
         // Lectura latina (romaji/pinyin/…) para que se pueda leer un script no-latino.
         if (!msg.translit.isNullOrBlank()) {
@@ -232,19 +293,23 @@ private fun MessageBubble(msg: ConvoMessage) {
         }
         if (!msg.correction.isNullOrBlank()) {
             Spacer(Modifier.height(3.dp))
-            Surface(color = Color(0xFFFFF4E5), shape = RoundedCornerShape(10.dp)) {
+            Surface(color = MaterialTheme.colorScheme.tertiaryContainer, shape = RoundedCornerShape(10.dp)) {
                 Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
-                    Text(
-                        "✏️ Mejor: ${msg.correction}",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontStyle = FontStyle.Italic,
-                        color = Color(0xFF8A5A00),
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            I18nStore.t("convo.better", "Mejor: {s}").replace("{s}", msg.correction),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontStyle = FontStyle.Italic,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        )
+                    }
                     if (!msg.tip.isNullOrBlank()) {
                         Text(
                             msg.tip!!,
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFFB07400),
+                            color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f),
                         )
                     }
                 }
@@ -254,13 +319,12 @@ private fun MessageBubble(msg: ConvoMessage) {
         // aún no lee bien. Se desvanece sola al subir el dominio (backend).
         if (!msg.scriptTip.isNullOrBlank()) {
             Spacer(Modifier.height(3.dp))
-            Surface(color = Color(0xFFEDEBFF), shape = RoundedCornerShape(10.dp)) {
-                Text(
-                    "📖 ${msg.scriptTip}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF4030A0),
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                )
+            Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(10.dp)) {
+                Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(msg.scriptTip!!, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                }
             }
         }
     }

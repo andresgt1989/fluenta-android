@@ -4,6 +4,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -133,7 +137,11 @@ private fun SpeakRepeatCard(
                     modifier = Modifier.weight(1f),
                 ) {
                     if (playing) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                    else Text("🔊 ${I18nStore.t("pron.listen", "Escuchar")}")
+                    else {
+                        Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(I18nStore.t("pron.listen", "Escuchar"))
+                    }
                 }
 
                 // Record / Stop button
@@ -152,8 +160,16 @@ private fun SpeakRepeatCard(
                             Spacer(Modifier.width(6.dp))
                             Text(I18nStore.t("pron.analyzing", "Analizando…"))
                         }
-                        recording -> Text("⏹ ${I18nStore.t("pron.stop", "Parar")}")
-                        else -> Text("🎙 ${I18nStore.t("pron.record", "Grabar")}")
+                        recording -> {
+                            Icon(Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(I18nStore.t("pron.stop", "Parar"))
+                        }
+                        else -> {
+                            Icon(Icons.Default.Mic, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(I18nStore.t("pron.record", "Grabar"))
+                        }
                     }
                 }
             }

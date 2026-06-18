@@ -3,6 +3,10 @@ package com.alturya.fluenta.login
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.MicNone
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -87,7 +91,7 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
             modifier = Modifier.size(96.dp),
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Text("🗣️", style = MaterialTheme.typography.displaySmall)
+                Icon(Icons.Default.MicNone, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
             }
         }
         Spacer(Modifier.height(16.dp))
@@ -171,8 +175,8 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
         // Selector de canal: Email (primario) / Teléfono. Solo tras revelar "guardar progreso".
         if (showSecondary && state !is LoginState.OtpSent) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ModeButton("📧 Email", mode == "email", { mode = "email"; vm.reset() }, Modifier.weight(1f))
-                ModeButton("📱 Teléfono", mode == "phone", { mode = "phone"; vm.reset() }, Modifier.weight(1f))
+                ModeButton(Icons.Default.Email, "Email", mode == "email", { mode = "email"; vm.reset() }, Modifier.weight(1f))
+                ModeButton(Icons.Default.Phone, I18nStore.t("login.phone", "Teléfono"), mode == "phone", { mode = "phone"; vm.reset() }, Modifier.weight(1f))
             }
             Spacer(Modifier.height(16.dp))
         }
@@ -286,10 +290,15 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
 }
 
 @Composable
-private fun ModeButton(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun ModeButton(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val content: @Composable RowScope.() -> Unit = {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(label)
+    }
     if (selected) {
-        Button(onClick = onClick, modifier = modifier) { Text(label) }
+        Button(onClick = onClick, modifier = modifier, content = content)
     } else {
-        OutlinedButton(onClick = onClick, modifier = modifier) { Text(label) }
+        OutlinedButton(onClick = onClick, modifier = modifier, content = content)
     }
 }

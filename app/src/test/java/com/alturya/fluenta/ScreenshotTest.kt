@@ -73,6 +73,25 @@ class ScreenshotTest {
         ))
     }
 
+    // Reproduces the REAL broken first-run: returning account stuck on l2="zh" with
+    // zero progress — what the frustrated user actually sees, not curated English data.
+    @Test fun home_real_zh() = shot("home_real_zh") {
+        HomeScreen(previewState = HomeState(
+            loading = false,
+            profile = UserProfile(id = "u1", phone = "device", l1 = "es", l2 = "zh",
+                level = "hsk1", levelSystem = "hsk", goalTrack = "hsk3", plan = "free",
+                streakDays = 0, totalXp = 0, currentState = "active"),
+            progress = UserProgress(streakDays = 0, totalXp = 0, completedLessons = 0,
+                todayXp = 0, dailyGoalXp = 100, dailyGoalPct = 0, cardsDueToday = 0,
+                l1 = "es", l2 = "zh", level = "hsk1", levelSystem = "hsk"),
+            coach = CoachNext(
+                message = "你好！今天我们学习汉字。开始吧？",
+                goal = "hsk3", l2 = "zh", l2Name = "中文", currentLevel = "hsk1", progressPct = 5,
+                action = CoachAction("script", "学写汉字", "先学会读写。", "home"),
+            ),
+        ))
+    }
+
     // ---------- LECCIÓN ----------
     @Test fun lesson_teach() = shot("lesson_teach") {
         LessonPlayerScreen(lessonId = "preview", onDone = {}, previewState = LessonPlayerState(
@@ -89,7 +108,12 @@ class ScreenshotTest {
     @Test fun lesson_quiz() = shot("lesson_quiz") {
         LessonPlayerScreen(lessonId = "preview", onDone = {}, previewState = LessonPlayerState(
             loading = false, title = "Pedidos en un restaurante",
-            teach = emptyList(), teachDone = true, currentIndex = 0,
+            teach = listOf(
+                TeachItem("I'd like", "Quisiera", note = "Más educado que 'I want'"),
+                TeachItem("Could I have", "¿Me podría traer?", note = "Para pedir algo en la mesa"),
+                TeachItem("The bill, please", "La cuenta, por favor"),
+            ),
+            teachDone = true, currentIndex = 0,
             exercises = listOf(
                 PlayableExercise(0, "translate_l1_to_l2", prompt = "Quisiera un café, por favor"),
                 PlayableExercise(1, "multiple_choice",
@@ -99,7 +123,8 @@ class ScreenshotTest {
                     prompt = "Ordena la frase",
                     tokens = listOf("I'd", "like", "a", "table", "for", "two")),
             ),
-            hearts = 3,
+            hearts = 5,
+            combo = 3,
         ))
     }
     @Test fun lesson_feedback_correct() = shot("lesson_feedback_correct") {
@@ -313,6 +338,11 @@ class ScreenshotTest {
                 com.alturya.fluenta.network.LanguagePair("pt", "en", "tier1", "cefr", null, true, null),
             ),
         ))
+    }
+
+    // ---------- AJUSTES ----------
+    @Test fun settings() = shot("settings") {
+        com.alturya.fluenta.settings.SettingsScreen()
     }
 
     // ---------- DIAGNÓSTICO ----------

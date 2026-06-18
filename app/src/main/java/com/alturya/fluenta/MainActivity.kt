@@ -47,7 +47,9 @@ import com.alturya.fluenta.profile.ProfileScreen
 import com.alturya.fluenta.progress.ProgressScreen
 import com.alturya.fluenta.pronunciation.PronunciationScreen
 import com.alturya.fluenta.repaso.RepasoScreen
+import com.alturya.fluenta.settings.SettingsScreen
 import com.alturya.fluenta.ui.theme.FluentaTheme
+import com.alturya.fluenta.upgrade.PaywallScreen
 import com.alturya.fluenta.verbs.VerbsTodayScreen
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -109,6 +111,10 @@ class MainActivity : ComponentActivity() {
 
                 // Señal de actividad diaria (D1/D7). Una vez por arranque.
                 LaunchedEffect(Unit) { Analytics.track(context, Analytics.APP_OPEN) }
+
+                // Respetar el toggle de sonido del usuario en toda la app.
+                val sfxOn by com.alturya.fluenta.data.SettingsStore.sfxEnabled(context).collectAsState(initial = true)
+                LaunchedEffect(sfxOn) { com.alturya.fluenta.audio.Sfx.enabled = sfxOn }
 
                 // Capa 1 — Detección L1 + 30 pares: cargar strings UI en idioma nativo.
                 // Si el usuario tiene perfil cargado, el L1 del perfil manda. Sin perfil:
@@ -317,7 +323,11 @@ private fun MainScaffold(
                     onConversation = { nav.navigate("conversation") { launchSingleTop = true } },
                     onConversationLesson = { lessonId -> nav.navigate("conversation_lesson/$lessonId") },
                     onScript = { l2 -> nav.navigate("script/$l2") { launchSingleTop = true } },
+                    onUpgrade = { nav.navigate("paywall") },
                 )
+            }
+            composable("paywall") {
+                PaywallScreen(onDismiss = { nav.popBackStack() })
             }
             composable(
                 route = "script/{l2}",
@@ -362,8 +372,12 @@ private fun MainScaffold(
                 ProfileScreen(
                     onChangeLanguage = { nav.navigate("languages") },
                     onLogout = onLogout,
-                    onDiagnostic = { nav.navigate("diagnostic") }
+                    onDiagnostic = { nav.navigate("diagnostic") },
+                    onSettings = { nav.navigate("settings") },
                 )
+            }
+            composable("settings") {
+                SettingsScreen(onBack = { nav.popBackStack() })
             }
             composable("languages") {
                 LanguageSelectorScreen(onChanged = { nav.popBackStack() })

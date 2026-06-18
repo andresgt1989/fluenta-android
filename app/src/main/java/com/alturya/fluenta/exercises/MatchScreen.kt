@@ -5,6 +5,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -100,7 +102,7 @@ private fun GameBoard(state: MatchState, vm: MatchViewModel) {
 @Composable
 private fun Tile(text: String, bg: Color, enabled: Boolean, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp),
         colors = CardDefaults.cardColors(containerColor = bg),
         onClick = onClick,
         enabled = enabled
@@ -123,7 +125,7 @@ private fun WinPanel(attempts: Int, total: Int, onAgain: () -> Unit, onDone: () 
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         AnimatedVisibility(visible = true, enter = fadeIn() + scaleIn()) {
-            Text("🏆", style = MaterialTheme.typography.displayLarge)
+            Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(72.dp))
         }
         Spacer(Modifier.height(16.dp))
         Text(I18nStore.t("match.completed", "¡Completado!"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)

@@ -12,6 +12,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.MicNone
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.SportsEsports
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +31,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -41,6 +52,11 @@ fun CurriculumMapScreen(
     val vmState by vm.state.collectAsState()
     val state = previewState ?: vmState
     val listState = rememberLazyListState()
+    // Rebuild the path when the learning language changes elsewhere.
+    val reloadSignal by com.alturya.fluenta.data.Session.reloadSignal.collectAsState()
+    LaunchedEffect(reloadSignal) {
+        if (previewState == null && reloadSignal > 0) vm.load()
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Header
@@ -70,7 +86,7 @@ fun CurriculumMapScreen(
             }
             state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("😕", style = MaterialTheme.typography.displaySmall)
+                    Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(56.dp))
                     Spacer(Modifier.height(8.dp))
                     Text(state.error!!, style = MaterialTheme.typography.bodyLarge)
                     Spacer(Modifier.height(16.dp))
@@ -86,6 +102,10 @@ fun CurriculumMapScreen(
                         unit.lessons.forEach { add(LessonEntry(it, unit)) }
                     }
                 }
+                // Only the FIRST incomplete lesson is "active" (pulses). Otherwise every
+                // pending node pulsed at once — visual noise with no clear next step.
+                val activeLessonId = state.units.flatMap { it.lessons }
+                    .firstOrNull { !it.completed }?.id
 
                 LazyColumn(
                     state = listState,
@@ -102,6 +122,7 @@ fun CurriculumMapScreen(
                                     PathLessonNode(
                                         lesson = item.lesson,
                                         xFraction = xFraction,
+                                        isActive = item.lesson.id == activeLessonId,
                                         onClick = {
                                             // Una lección de roleplay/free_chat ES conversación,
                                             // no un quiz: enrutamos al motor de conversación real.
@@ -143,6 +164,29 @@ private fun UnitSectionHeader(unit: CurriculumUnit) {
                 textAlign = TextAlign.Center,
             )
         }
+        // Per-unit completion progress — shows how far along this unit the user is.
+        val doneCount = unit.lessons.count { it.completed }
+        val totalCount = unit.lessons.size
+        if (totalCount > 0) {
+            Spacer(Modifier.height(6.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                LinearProgressIndicator(
+                    progress = { doneCount.toFloat() / totalCount },
+                    modifier = Modifier.width(96.dp).height(6.dp),
+                    color = MaterialTheme.colorScheme.tertiary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
+                Text(
+                    "$doneCount/$totalCount",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         unit.description?.let {
             Spacer(Modifier.height(4.dp))
             Text(it, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center,
@@ -152,9 +196,9 @@ private fun UnitSectionHeader(unit: CurriculumUnit) {
 }
 
 @Composable
-private fun PathLessonNode(lesson: Lesson, xFraction: Float, onClick: () -> Unit) {
+private fun PathLessonNode(lesson: Lesson, xFraction: Float, isActive: Boolean = false, onClick: () -> Unit) {
     val isCompleted = lesson.completed
-    // First incomplete lesson is the "active" one (slight pulse animation)
+    // Only the active (first incomplete) lesson pulses — clear single "next step".
     val transition = rememberInfiniteTransition(label = "pulse_$xFraction")
     val pulse by transition.animateFloat(
         initialValue = 1f, targetValue = 1.08f,
@@ -164,11 +208,12 @@ private fun PathLessonNode(lesson: Lesson, xFraction: Float, onClick: () -> Unit
 
     val nodeColor = when {
         isCompleted -> Color(0xFF1BB6A6)  // teal — completed
-        else -> MaterialTheme.colorScheme.primary  // active/available
+        isActive -> MaterialTheme.colorScheme.primary  // active/available — next step
+        else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)  // locked-looking, upcoming
     }
-    val iconText = when {
-        isCompleted -> "✓"
-        else -> lessonIcon(lesson.type)
+    val nodeIcon = when {
+        isCompleted -> Icons.Default.CheckCircle
+        else -> lessonIconVector(lesson.type)
     }
 
     BoxWithConstraints(
@@ -193,7 +238,7 @@ private fun PathLessonNode(lesson: Lesson, xFraction: Float, onClick: () -> Unit
             modifier = Modifier
                 .offset(x = offsetX.coerceIn(4.dp, maxW - 76.dp))
                 .align(Alignment.CenterStart)
-                .scale(if (!isCompleted) pulse else 1f),
+                .scale(if (isActive) pulse else 1f),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(
@@ -205,15 +250,22 @@ private fun PathLessonNode(lesson: Lesson, xFraction: Float, onClick: () -> Unit
                     .clickable(onClick = onClick),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(iconText, fontSize = 26.sp, color = Color.White)
+                Icon(nodeIcon, contentDescription = lesson.type, tint = Color.White, modifier = Modifier.size(32.dp))
             }
             Spacer(Modifier.height(2.dp))
+            // El icono ya indica que es conversación → quitamos el prefijo redundante
+            // "Conversación:" para que el título quepa sin truncarse.
+            val displayTitle = lesson.title
+                .removePrefix("Conversación: ")
+                .removePrefix("Conversation: ")
+                .trim()
             Text(
-                lesson.title,
+                displayTitle,
                 style = MaterialTheme.typography.labelSmall,
                 maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.width(88.dp),
+                modifier = Modifier.width(112.dp),
             )
         }
     }
@@ -226,7 +278,7 @@ private fun EmptyMap(l1: String?, l2: String?) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("🗺️", style = MaterialTheme.typography.displayMedium)
+        Icon(Icons.Default.Map, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(64.dp))
         Spacer(Modifier.height(12.dp))
         Text(I18nStore.t("curriculum.emptyTitle", "Tu mapa se irá llenando"),
             style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
@@ -240,13 +292,13 @@ private fun EmptyMap(l1: String?, l2: String?) {
     }
 }
 
-private fun lessonIcon(type: String): String = when (type) {
-    "roleplay" -> "🎭"
-    "translation" -> "🔤"
-    "free_chat" -> "💬"
-    "listening" -> "👂"
-    "pronunciation" -> "🗣"
-    else -> "⭐"
+private fun lessonIconVector(type: String): androidx.compose.ui.graphics.vector.ImageVector = when (type) {
+    "roleplay" -> Icons.Default.SportsEsports
+    "translation" -> Icons.Default.Translate
+    "free_chat" -> Icons.AutoMirrored.Filled.Chat
+    "listening" -> Icons.AutoMirrored.Filled.VolumeUp
+    "pronunciation" -> Icons.Default.MicNone
+    else -> Icons.Default.School
 }
 
 private fun lessonTypeLabel(type: String): String = when (type) {

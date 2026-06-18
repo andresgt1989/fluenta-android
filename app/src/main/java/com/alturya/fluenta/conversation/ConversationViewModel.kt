@@ -43,8 +43,38 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
 
     private var sessionId: String? = null
     private var recognizer: SpeechRecognizer? = null
-    // STT language = the language being learned (L2). es→en MVP.
-    private val sttLang = "en-US"
+    // STT language = BCP-47 locale for the language being learned (L2).
+    // Computed dynamically so conversations work for all 29 supported languages.
+    private val sttLang: String get() = when (gl2) {
+        "zh"               -> "zh-CN"
+        "ja"               -> "ja-JP"
+        "ko"               -> "ko-KR"
+        "ar"               -> "ar-SA"
+        "pt", "pt-BR"      -> "pt-BR"
+        "fr"               -> "fr-FR"
+        "de", "de-ch"      -> "de-DE"
+        "it"               -> "it-IT"
+        "es"               -> "es-ES"
+        "ru"               -> "ru-RU"
+        "hi"               -> "hi-IN"
+        "tr"               -> "tr-TR"
+        "pl"               -> "pl-PL"
+        "nl"               -> "nl-NL"
+        "sv"               -> "sv-SE"
+        "da"               -> "da-DK"
+        "fi"               -> "fi-FI"
+        "el"               -> "el-GR"
+        "he"               -> "iw-IL"  // Android uses "iw" for Hebrew
+        "fa"               -> "fa-IR"
+        "vi"               -> "vi-VN"
+        "th"               -> "th-TH"
+        "id"               -> "id-ID"
+        "uk"               -> "uk-UA"
+        "ur"               -> "ur-PK"
+        "et"               -> "et-EE"
+        "lt"               -> "lt-LT"
+        else               -> "en-US"
+    }
 
     // Guest mode: el wedge debe ser jugable SIN cuenta (activación en <60s).
     private var guest = false

@@ -17,6 +17,7 @@ data class ProfileState(
     val badges: List<Badge> = emptyList(),
     val badgesEarned: Int = 0,
     val badgesTotal: Int = 0,
+    val error: Boolean = false,
 )
 
 class ProfileViewModel : ViewModel() {
@@ -34,6 +35,8 @@ class ProfileViewModel : ViewModel() {
             _state.value = ProfileState(
                 loading = false,
                 profile = profile,
+                // Si ni siquiera el perfil cargó, es un error real (no solo datos vacíos).
+                error = profile == null,
                 badges = badgesRes?.badges ?: emptyList(),
                 badgesEarned = badgesRes?.earned ?: 0,
                 badgesTotal = badgesRes?.total ?: 0,

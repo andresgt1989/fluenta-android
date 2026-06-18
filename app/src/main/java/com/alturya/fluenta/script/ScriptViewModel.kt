@@ -54,10 +54,15 @@ class ScriptViewModel : ViewModel() {
     fun startQuiz() {
         val l2 = _state.value.l2
         if (l2.isBlank() || scriptKey.isBlank()) return
+        // Only test glyphs the user actually saw in this lesson — never surprise them with unknowns
+        val taughtGlyphs = _state.value.lesson?.items?.map { it.glyph }?.toSet() ?: emptySet()
         _state.value = _state.value.copy(phase = ScriptPhase.LOADING)
         viewModelScope.launch {
             try {
-                val quiz = ApiClient.api.getScriptQuiz(l2, scriptKey)
+                val rawQuiz = ApiClient.api.getScriptQuiz(l2, scriptKey)
+                val filteredItems = if (taughtGlyphs.isEmpty()) rawQuiz.items
+                                    else rawQuiz.items.filter { it.glyph in taughtGlyphs }
+                val quiz = rawQuiz.copy(items = filteredItems)
                 _state.value = _state.value.copy(phase = ScriptPhase.QUIZ, quiz = quiz, answers = emptyMap(), result = null)
             } catch (e: Exception) {
                 _state.value = _state.value.copy(phase = ScriptPhase.ERROR, error = "No se pudo cargar el examen de lectura.")

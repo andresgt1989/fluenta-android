@@ -15,7 +15,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 // trazos animado y un modo "practicar" que valida cada trazo. Para glifos sin
 // datos (p.ej. kana), Hanzi Writer dispara onLoadCharDataError → mostramos un
 // fallback amable en vez de romper la pantalla.
-@SuppressLint("SetJavaScriptEnabled")
+@SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
 @Composable
 fun StrokeWriter(glyph: String, modifier: Modifier = Modifier) {
     AndroidView(
@@ -27,6 +27,20 @@ fun StrokeWriter(glyph: String, modifier: Modifier = Modifier) {
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                // When the user draws a stroke, disallow the parent Compose scroll from
+                // intercepting touch events — otherwise ACTION_MOVE gets swallowed as a
+                // scroll and Hanzi Writer never sees the full stroke path.
+                setOnTouchListener { v, event ->
+                    when (event.actionMasked) {
+                        android.view.MotionEvent.ACTION_DOWN,
+                        android.view.MotionEvent.ACTION_MOVE ->
+                            v.parent?.requestDisallowInterceptTouchEvent(true)
+                        android.view.MotionEvent.ACTION_UP,
+                        android.view.MotionEvent.ACTION_CANCEL ->
+                            v.parent?.requestDisallowInterceptTouchEvent(false)
+                    }
+                    false // let the WebView handle the event normally
+                }
                 loadDataWithBaseURL("https://cdn.jsdelivr.net", strokeHtml(glyph), "text/html", "utf-8", null)
             }
         },
@@ -58,7 +72,7 @@ private fun strokeHtml(glyph: String): String {
   </div>
   <div id="fallback">
     <div id="big">$safe</div>
-    La animación de trazos para este carácter llegará pronto.<br>Cópialo respetando el orden: arriba→abajo, izquierda→derecha.
+    <span id="fallback-msg">La animación de trazos para este carácter llegará pronto.<br>Cópialo respetando el orden: arriba→abajo, izquierda→derecha.</span>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
   <script>
@@ -66,15 +80,27 @@ private fun strokeHtml(glyph: String): String {
     function showFallback(){ document.getElementById('grid').style.display='none';
       document.getElementById('controls').style.display='none';
       document.getElementById('fallback').style.display='block'; }
-    try {
-      writer = HanziWriter.create('target', '$safe', {
-        width:300, height:300, padding:4, showOutline:true,
-        strokeAnimationSpeed:1, delayBetweenStrokes:250,
-        strokeColor:'#222', radicalColor:'#3b5bfd', outlineColor:'#ddd',
-        onLoadCharDataError: function(){ showFallback(); }
-      });
-      writer.animateCharacter();
-    } catch(e){ showFallback(); }
+    // Hangul (Korean) is not in the HanziWriter dataset — skip the attempt
+    // and go straight to the stroke-order guide to avoid a silent load error.
+    var code = '$safe'.charCodeAt(0);
+    var isHangul = (code >= 0xAC00 && code <= 0xD7A3) || (code >= 0x1100 && code <= 0x11FF);
+    if (!isHangul) {
+      try {
+        writer = HanziWriter.create('target', '$safe', {
+          width:300, height:300, padding:4, showOutline:true,
+          strokeAnimationSpeed:1, delayBetweenStrokes:250,
+          strokeColor:'#222', radicalColor:'#3b5bfd', outlineColor:'#ddd',
+          onLoadCharDataError: function(){ showFallback(); }
+        });
+        writer.animateCharacter();
+      } catch(e){ showFallback(); }
+    } else {
+      showFallback();
+      document.getElementById('fallback-msg').innerHTML =
+        'Carácter Hangul 한글 — traza en este orden:<br>' +
+        '① Trazos horizontales antes que verticales<br>' +
+        '② Arriba → Abajo · Izquierda → Derecha dentro del bloque';
+    }
     function animate(){ if(writer) writer.animateCharacter(); }
     function practice(){ if(writer) writer.quiz({ showHintAfterMisses:2 }); }
   </script>

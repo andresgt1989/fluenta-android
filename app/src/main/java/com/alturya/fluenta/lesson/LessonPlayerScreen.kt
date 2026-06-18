@@ -5,6 +5,7 @@ import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.rotate
 import kotlin.math.sin
@@ -39,6 +40,24 @@ import com.alturya.fluenta.R
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.audio.Sfx
 import com.alturya.fluenta.audio.TtsPlayer
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -131,27 +150,32 @@ private fun TeachView(items: List<com.alturya.fluenta.network.TeachItem>, onDone
             fontWeight = FontWeight.Bold,
         )
         Spacer(Modifier.height(4.dp))
-        Text(
-            I18nStore.t("lesson.teachSubtitle", "Toca una tarjeta para escucharla. Luego practicamos."),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(
+                I18nStore.t("lesson.teachSubtitle", "Toca una tarjeta para escucharla. Luego practicamos."),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Spacer(Modifier.height(16.dp))
         LazyColumn(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(bottom = 8.dp),
         ) {
             items(items.size) { i ->
                 val t = items[i]
                 Card(
                     onClick = { scope.launch { TtsPlayer.play(context, t.l2) } },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 100.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                 ) {
-                    Column(Modifier.padding(16.dp)) {
+                    Column(Modifier.padding(20.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(t.l2, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                            Text("🔊", style = MaterialTheme.typography.titleMedium)
+                            Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(24.dp))
                         }
                         t.transliteration?.takeIf { it.isNotBlank() }?.let {
                             Text(it, style = MaterialTheme.typography.bodyMedium, fontStyle = FontStyle.Italic,
@@ -161,17 +185,22 @@ private fun TeachView(items: List<com.alturya.fluenta.network.TeachItem>, onDone
                         Text(t.l1, style = MaterialTheme.typography.bodyLarge)
                         t.note?.takeIf { it.isNotBlank() }?.let {
                             Spacer(Modifier.height(2.dp))
-                            Text("💡 $it", style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Lightbulb, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
                     }
                 }
             }
         }
         Spacer(Modifier.height(12.dp))
-        Button(onClick = onDone, modifier = Modifier.fillMaxWidth().height(54.dp)) {
-            Text(I18nStore.t("lesson.teachStart", "¡Listo, a practicar!"), fontWeight = FontWeight.Bold)
-        }
+        com.alturya.fluenta.ui.FluentaButton(
+            text = I18nStore.t("lesson.teachStart", "¡Listo, a practicar!"),
+            onClick = onDone,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -185,8 +214,24 @@ private fun QuizView(state: LessonPlayerState, vm: LessonPlayerViewModel) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(I18nStore.t("lesson.exerciseOf", "Ejercicio {n} de {total}").replace("{n}", "${state.currentIndex + 1}").replace("{total}", "$total"), style = MaterialTheme.typography.labelMedium)
             Spacer(Modifier.weight(1f))
+            // Combo de aciertos seguidos — refuerzo positivo (gamificación).
+            if (state.combo >= 2) {
+                Surface(
+                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier.padding(end = 8.dp),
+                ) {
+                    Text(
+                        "🔥 ${state.combo}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                    )
+                }
+            }
             Text(
-                "❤️".repeat(state.hearts) + "🤍".repeat((3 - state.hearts).coerceAtLeast(0)),
+                "❤️".repeat(state.hearts) + "🤍".repeat((5 - state.hearts).coerceAtLeast(0)),
                 style = MaterialTheme.typography.labelMedium,
             )
         }
@@ -206,9 +251,11 @@ private fun QuizView(state: LessonPlayerState, vm: LessonPlayerViewModel) {
             label = "exercise",
         ) { _ ->
             when (ex.kind) {
-                "translate_l1_to_l2", "translate_l2_to_l1" -> TranslateExercise(ex, onSubmit = { v ->
-                    vm.checkAnswer(v)
-                })
+                "translate_l1_to_l2", "translate_l2_to_l1" -> TranslateExercise(
+                    ex = ex,
+                    teachItems = state.teach,
+                    onSubmit = { v -> vm.checkAnswer(v) },
+                )
                 "multiple_choice" -> MultipleChoiceExercise(ex, onSubmit = { v ->
                     vm.checkAnswer(v)
                 })
@@ -227,7 +274,7 @@ private fun QuizView(state: LessonPlayerState, vm: LessonPlayerViewModel) {
                 "speak_repeat" -> SpeakRepeatExercise(ex, onSubmit = { v ->
                     vm.checkAnswer(v)
                 })
-                else -> Text("Tipo no soportado: ${ex.kind}", style = MaterialTheme.typography.bodyMedium)
+                else -> Text(I18nStore.t("lesson.unsupportedType", "Tipo no soportado: {k}").replace("{k}", ex.kind), style = MaterialTheme.typography.bodyMedium)
             }
         }
 
@@ -242,6 +289,8 @@ private fun QuizView(state: LessonPlayerState, vm: LessonPlayerViewModel) {
                 FeedbackBar(
                     fb = fb,
                     showExpected = ex.kind != "match_pairs",
+                    canRetry = !fb.correct && state.hearts > 0,
+                    onRetry = vm::retryAfterFeedback,
                     onContinue = vm::continueAfterFeedback,
                 )
             }
@@ -256,10 +305,14 @@ private fun QuizView(state: LessonPlayerState, vm: LessonPlayerViewModel) {
 private fun FeedbackBar(
     fb: com.alturya.fluenta.network.ExerciseCheckResponse,
     showExpected: Boolean,
+    canRetry: Boolean = false,
+    onRetry: () -> Unit = {},
     onContinue: () -> Unit,
 ) {
     val haptic = LocalHapticFeedback.current
     val iconScale = remember { Animatable(0f) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(fb) {
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -269,16 +322,24 @@ private fun FeedbackBar(
     }
 
     val correct = fb.correct
-    val container = if (correct) Color(0xFFD7F5DD) else MaterialTheme.colorScheme.errorContainer
-    val accent = if (correct) Color(0xFF15803D) else MaterialTheme.colorScheme.error
+    // Verde para correcto (semántico) pero adaptado a dark mode: en tema oscuro el
+    // verde claro fijo se veía fuera de lugar; usamos un verde que contrasta en ambos.
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val container = if (correct) {
+        if (isDark) Color(0xFF14532D) else Color(0xFFD7F5DD)
+    } else MaterialTheme.colorScheme.errorContainer
+    val accent = if (correct) {
+        if (isDark) Color(0xFF86EFAC) else Color(0xFF15803D)
+    } else MaterialTheme.colorScheme.error
 
     Surface(color = container, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    if (correct) "✅" else "❌",
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.scale(iconScale.value),
+                Icon(
+                    imageVector = if (correct) Icons.Default.CheckCircle else Icons.Default.Cancel,
+                    contentDescription = null,
+                    tint = accent,
+                    modifier = Modifier.size(32.dp).scale(iconScale.value),
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
@@ -295,24 +356,85 @@ private fun FeedbackBar(
                     shape = MaterialTheme.shapes.small,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "${I18nStore.t("lesson.answerLabel", "Respuesta correcta")}: ${fb.expected}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.weight(1f),
+                        )
+                        // Hear the correct L2 answer — key for actually learning pronunciation.
+                        IconButton(onClick = {
+                            scope.launch { TtsPlayer.play(context, fb.expected, com.alturya.fluenta.data.Session.l2 ?: "en") }
+                        }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.VolumeUp,
+                                contentDescription = I18nStore.t("lesson.hearAnswer", "Escuchar respuesta"),
+                                tint = accent,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
+                }
+            }
+            fb.feedback?.let { tip ->
+                Spacer(Modifier.height(8.dp))
+                Surface(
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(Modifier.padding(10.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Lightbulb, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                I18nStore.t("lesson.grammarTip", "¿Por qué?"),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = accent,
+                            )
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(tip, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+            if (!correct) {
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Refresh, contentDescription = null, tint = accent, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(4.dp))
                     Text(
-                        "${I18nStore.t("lesson.answerLabel", "Respuesta correcta")}: ${fb.expected}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(10.dp),
+                        I18nStore.t("lesson.savedToReview", "Guardado en tu repaso para no olvidarlo"),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = accent,
                     )
                 }
             }
-            fb.feedback?.let {
-                Spacer(Modifier.height(6.dp))
-                Text("💡 $it", style = MaterialTheme.typography.bodySmall, color = accent.copy(alpha = 0.85f))
-            }
             Spacer(Modifier.height(14.dp))
-            Button(
-                onClick = onContinue,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = accent),
-            ) { Text(I18nStore.t("common.continue", "Continuar"), fontWeight = FontWeight.Bold) }
+            if (canRetry) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(
+                        onClick = onRetry,
+                        modifier = Modifier.weight(1f).height(52.dp),
+                    ) { Text(I18nStore.t("lesson.retry", "Reintentar"), fontWeight = FontWeight.Bold) }
+                    Button(
+                        onClick = onContinue,
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = accent),
+                    ) { Text(I18nStore.t("common.continue", "Continuar"), fontWeight = FontWeight.Bold) }
+                }
+            } else {
+                Button(
+                    onClick = onContinue,
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = accent),
+                ) { Text(I18nStore.t("common.continue", "Continuar"), fontWeight = FontWeight.Bold) }
+            }
         }
     }
 }
@@ -330,9 +452,18 @@ private fun TransliterationText(reading: String?) {
 }
 
 @Composable
-private fun TranslateExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) {
+private fun TranslateExercise(
+    ex: PlayableExercise,
+    teachItems: List<com.alturya.fluenta.network.TeachItem> = emptyList(),
+    onSubmit: (String) -> Unit,
+) {
     var text by rememberSaveable(ex.index) { mutableStateOf("") }
+    var vocabExpanded by rememberSaveable(ex.index) { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    // When translating FROM L2, the prompt is in the target language — let the user hear it.
+    val promptIsL2 = ex.kind == "translate_l2_to_l1"
 
     Column {
         Card(
@@ -345,15 +476,84 @@ private fun TranslateExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) 
                     style = MaterialTheme.typography.labelMedium,
                 )
                 Spacer(Modifier.height(4.dp))
-                Text(
-                    ex.prompt ?: "",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        ex.prompt ?: "",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (promptIsL2 && !ex.prompt.isNullOrBlank()) {
+                        IconButton(onClick = {
+                            scope.launch { TtsPlayer.play(context, ex.prompt!!, com.alturya.fluenta.data.Session.l2 ?: "en") }
+                        }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.VolumeUp,
+                                contentDescription = I18nStore.t("lesson.hearPrompt", "Escuchar"),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
+                    }
+                }
                 TransliterationText(ex.transliteration)
                 ex.hint?.let {
                     Spacer(Modifier.height(8.dp))
-                    Text("💡 $it", style = MaterialTheme.typography.bodySmall)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Lightbulb, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(it, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        }
+        // Collapsible vocab reference — lets students look back without leaving the quiz
+        if (teachItems.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            OutlinedCard(Modifier.fillMaxWidth()) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().clickable { vocabExpanded = !vocabExpanded }.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Default.Lightbulb, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            I18nStore.t("lesson.vocabHintTap", "Vocabulario — toca una palabra para usarla"),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Icon(
+                            if (vocabExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    AnimatedVisibility(visible = vocabExpanded) {
+                        Column(Modifier.padding(horizontal = 14.dp).padding(bottom = 10.dp)) {
+                            HorizontalDivider()
+                            Spacer(Modifier.height(8.dp))
+                            teachItems.forEach { item ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth()
+                                        .clickable {
+                                            // Tap a word to build the answer — scaffolding for A1 beginners.
+                                            text = (text.trim() + " " + item.l2).trim()
+                                        }
+                                        .padding(vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(item.l2, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(item.l1, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -406,7 +606,11 @@ private fun FillBlankExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) 
                 TransliterationText(ex.transliteration)
                 ex.hint?.let {
                     Spacer(Modifier.height(8.dp))
-                    Text("💡 $it", style = MaterialTheme.typography.bodySmall)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Lightbulb, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(it, style = MaterialTheme.typography.bodySmall)
+                    }
                 }
             }
         }
@@ -607,7 +811,11 @@ private fun SpeakRepeatExercise(ex: PlayableExercise, onSubmit: (String) -> Unit
                 TransliterationText(ex.transliteration)
                 ex.hint?.let {
                     Spacer(Modifier.height(8.dp))
-                    Text("💡 $it", style = MaterialTheme.typography.bodySmall)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Lightbulb, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(it, style = MaterialTheme.typography.bodySmall)
+                    }
                 }
             }
         }
@@ -712,9 +920,21 @@ private fun SpeakRepeatExercise(ex: PlayableExercise, onSubmit: (String) -> Unit
                     Spacer(Modifier.width(8.dp))
                     Text(I18nStore.t("speak.analyzing", "Analizando pronunciación…"))
                 }
-                recording -> Text("⏹ ${I18nStore.t("speak.stopRecording", "Parar y evaluar")}")
-                score != null -> Text("🔄 ${I18nStore.t("speak.tryAgain", "Intentar de nuevo")}")
-                else -> Text("🎙 ${I18nStore.t("speak.startRecording", "Grabar mi voz")}")
+                recording -> {
+                    Icon(Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(I18nStore.t("speak.stopRecording", "Parar y evaluar"))
+                }
+                score != null -> {
+                    Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(I18nStore.t("speak.tryAgain", "Intentar de nuevo"))
+                }
+                else -> {
+                    Icon(Icons.Default.Mic, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(I18nStore.t("speak.startRecording", "Grabar mi voz"))
+                }
             }
         }
 
@@ -770,7 +990,7 @@ private fun ListenSelectExercise(ex: PlayableExercise, onSubmit: (String) -> Uni
                 if (playing) {
                     CircularProgressIndicator(Modifier.size(36.dp), strokeWidth = 3.dp)
                 } else {
-                    Text("🔊", style = MaterialTheme.typography.displaySmall)
+                    Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(48.dp))
                 }
                 Spacer(Modifier.width(12.dp))
                 Text(
@@ -824,7 +1044,7 @@ private fun WordOrderExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) 
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         ) {
             Column(Modifier.padding(20.dp)) {
-                Text("Ordena las palabras:", style = MaterialTheme.typography.labelMedium)
+                Text(I18nStore.t("lesson.wordOrder", "Ordena las palabras:"), style = MaterialTheme.typography.labelMedium)
                 Spacer(Modifier.height(4.dp))
                 Text(ex.prompt ?: "", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             }
@@ -926,11 +1146,16 @@ private fun ResultView(
             if (result.passed) {
                 Image(
                     painter = painterResource(R.drawable.ic_fluenta_celebra),
-                    contentDescription = null,
+                    contentDescription = I18nStore.t("result.celebrateAlt", "¡Lección completada!"),
                     modifier = Modifier.size(150.dp).scale(pulse),
                 )
             } else {
-                Text("💪", style = MaterialTheme.typography.displayLarge)
+                Icon(
+                    Icons.AutoMirrored.Filled.TrendingUp,
+                    contentDescription = I18nStore.t("result.keepGoing", "Sigue practicando"),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(100.dp),
+                )
             }
         }
         Spacer(Modifier.height(8.dp))
@@ -945,9 +1170,9 @@ private fun ResultView(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.scale(if (result.passed) xpScale.value else 1f),
         ) {
-            Stat("✓", "${result.correctCount}/${result.total}", I18nStore.t("result.correct", "Correctos"))
-            Stat("⭐", "+${result.xpEarned}", "XP")
-            result.newStreakDays?.let { Stat("🔥", "$it", I18nStore.t("result.streak", "Racha")) }
+            Stat(Icons.Default.CheckCircle, "${result.correctCount}/${result.total}", I18nStore.t("result.correct", "Correctos"))
+            Stat(Icons.Default.Star, "+${result.xpEarned}", "XP")
+            result.newStreakDays?.let { Stat(Icons.Default.LocalFireDepartment, "$it", I18nStore.t("result.streak", "Racha")) }
         }
 
         Spacer(Modifier.height(24.dp))
@@ -965,17 +1190,28 @@ private fun ResultView(
 
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {
-                Text("Tu desempeño", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(I18nStore.t("result.performance", "Tu desempeño"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
                 result.results.forEachIndexed { idx, r ->
                     Row(Modifier.padding(vertical = 4.dp)) {
-                        Text(if (r.correct) "✓ " else "✗ ", color = if (r.correct) Color(0xFF22C55E) else MaterialTheme.colorScheme.error)
+                        Icon(
+                            imageVector = if (r.correct) Icons.Default.CheckCircle else Icons.Default.Cancel,
+                            contentDescription = null,
+                            tint = if (r.correct) Color(0xFF22C55E) else MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(18.dp),
+                        )
                         Column {
-                            Text("Ej. ${idx + 1}: ${r.expected}", style = MaterialTheme.typography.bodySmall)
+                            Text(I18nStore.t("lesson.exNum", "Ej. {n}: {ans}").replace("{n}", "${idx + 1}").replace("{ans}", r.expected), style = MaterialTheme.typography.bodySmall)
                             if (!r.correct && r.given.isNotEmpty()) {
-                                Text("Tu respuesta: ${r.given}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                                Text(I18nStore.t("lesson.yourAnswerWas", "Tu respuesta: {g}").replace("{g}", r.given), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                             }
-                            r.feedback?.let { Text("💡 $it", style = MaterialTheme.typography.labelSmall) }
+                            r.feedback?.let {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Lightbulb, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(it, style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
                         }
                     }
                 }
@@ -990,7 +1226,11 @@ private fun ResultView(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
         ) {
             Column(Modifier.padding(16.dp)) {
-                Text("💬 Aplica lo aprendido", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(I18nStore.t("result.applyTitle", "Aplica lo aprendido"), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                }
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "Tu coach te espera en WhatsApp para usar esto en una conversación real.",
@@ -1000,38 +1240,84 @@ private fun ResultView(
                 Button(
                     onClick = onContinueOnWhatsApp,
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("Continuar en WhatsApp →") }
+                ) { Text(I18nStore.t("result.continueWa", "Continuar en WhatsApp →")) }
             }
         }
 
         Spacer(Modifier.height(12.dp))
 
-        // Share to WhatsApp — Sprint 5.1 viral mechanic
+        // Share — primary: system chooser (viral for any app), secondary: WhatsApp shortcut
         if (result.passed) {
             val xpEarned = result.xpEarned
             val streakDays = result.newStreakDays ?: 0
             val shareText = if (streakDays > 0)
-                I18nStore.t("result.shareText", "🔥 Racha de $streakDays días en Fluenta · +$xpEarned XP · Aprende inglés por WhatsApp → fluenta.alturya.com")
-                    .replace("$streakDays", "$streakDays").replace("$xpEarned", "$xpEarned")
+                "🔥 Racha de $streakDays días en Fluenta · +$xpEarned XP · Aprende inglés → fluenta.alturya.com"
             else
-                I18nStore.t("result.shareTextNoStreak", "🎓 Completé una lección en Fluenta · +$xpEarned XP · Aprende inglés por WhatsApp → fluenta.alturya.com")
-                    .replace("$xpEarned", "$xpEarned")
+                "🎓 Completé una lección en Fluenta · +$xpEarned XP · Aprende inglés → fluenta.alturya.com"
 
             Button(
+                onClick = {
+                    context.startActivity(Intent.createChooser(
+                        Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, shareText)
+                        },
+                        I18nStore.t("result.shareTitle", "Compartir mi progreso"),
+                    ))
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(I18nStore.t("result.share", "Compartir logro"), fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.height(6.dp))
+            OutlinedButton(
                 onClick = {
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
                         putExtra(Intent.EXTRA_TEXT, shareText)
                         setPackage("com.whatsapp")
                     }
-                    runCatching { context.startActivity(intent) }
+                    runCatching { context.startActivity(intent) }.onFailure {
+                        context.startActivity(Intent.createChooser(
+                            Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, shareText) },
+                            I18nStore.t("result.shareTitle", "Compartir mi progreso"),
+                        ))
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
             ) {
-                Text("💬 ${I18nStore.t("result.shareWhatsapp", "Compartir en WhatsApp")}", fontWeight = FontWeight.Bold)
+                Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, tint = Color(0xFF25D366), modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(I18nStore.t("result.shareWhatsapp", "Compartir en WhatsApp"))
             }
             Spacer(Modifier.height(8.dp))
+
+            // Reto a un amigo — viral deeplink after streak ≥ 3
+            if (streakDays >= 3) {
+                val challengeText = "¡Llevo $streakDays días aprendiendo inglés con Fluenta sin parar! ¿Cuántos días aguantas tú? → fluenta.alturya.com"
+                OutlinedButton(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, challengeText)
+                            setPackage("com.whatsapp")
+                        }
+                        runCatching { context.startActivity(intent) }.onFailure {
+                            context.startActivity(Intent.createChooser(
+                                Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, challengeText) }, null,
+                            ))
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, tint = Color(0xFF25D366), modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(I18nStore.t("result.challenge", "Retar a un amigo"))
+                }
+                Spacer(Modifier.height(6.dp))
+            }
         }
 
         OutlinedButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
@@ -1107,13 +1393,13 @@ private fun ConfettiOverlay() {
 }
 
 @Composable
-private fun Stat(icon: String, value: String, label: String) {
+private fun Stat(icon: ImageVector, value: String, label: String) {
     Card(modifier = Modifier.width(96.dp)) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(icon, style = MaterialTheme.typography.titleLarge)
+            Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
             Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Text(label, style = MaterialTheme.typography.labelSmall)
         }
@@ -1127,12 +1413,12 @@ private fun ErrorView(message: String, onRetry: () -> Unit, onBack: () -> Unit) 
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("⚠️", style = MaterialTheme.typography.displaySmall)
+        Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(56.dp))
         Spacer(Modifier.height(12.dp))
         Text(message, style = MaterialTheme.typography.bodyLarge)
         Spacer(Modifier.height(20.dp))
-        Button(onClick = onRetry) { Text("Reintentar") }
+        Button(onClick = onRetry) { Text(I18nStore.t("common.retry", "Reintentar")) }
         Spacer(Modifier.height(8.dp))
-        TextButton(onClick = onBack) { Text("Volver") }
+        TextButton(onClick = onBack) { Text(I18nStore.t("common.back", "Volver")) }
     }
 }

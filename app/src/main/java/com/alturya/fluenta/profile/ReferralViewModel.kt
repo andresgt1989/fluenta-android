@@ -52,7 +52,7 @@ class ReferralViewModel : ViewModel() {
                     it.copy(
                         claiming = false,
                         claimSuccess = res.ok,
-                        claimMessage = res.message ?: res.reason ?: if (res.ok) "✅ Código aplicado" else "Código no válido",
+                        claimMessage = res.message ?: res.reason ?: if (res.ok) "Código aplicado" else "Código no válido",
                     )
                 }
                 if (res.ok) load()
