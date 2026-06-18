@@ -45,10 +45,22 @@ jobs:
 
       - name: Run Robo test on real device
         run: |
-          gcloud firebase test android run \
+          set -o pipefail
+          if gcloud firebase test android run \
             --type robo \
             --app app/build/outputs/apk/debug/app-debug.apk \
             --device model=MediumPhone.arm,version=34,locale=es,orientation=portrait \
             --timeout 120s \
             --results-dir "ci-${{ github.run_number }}" \
-            --record-video
+            --record-video 2>&1 | tee /tmp/robo.log; then
+            echo "Robo OK en dispositivo real."
+          else
+            # Cuota diaria de Test Lab agotada NO debe bloquear el merge: el gate duro
+            # es build + tests dirigidos (Robolectric). El robo es best-effort.
+            if grep -q "TEST_QUOTA_EXCEEDED" /tmp/robo.log; then
+              echo "::warning::Test Lab quota agotada — robo omitido (no bloquea). Gate duro = build + tests dirigidos."
+              exit 0
+            fi
+            echo "::error::Robo falló por una razón REAL (no cuota)."
+            exit 1
+          fi

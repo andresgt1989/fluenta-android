@@ -38,10 +38,11 @@ Una nota sube SOLO si hay **señal externa, basada en reglas, difícil de falsea
 - 📈 La suite de evals **crece con cada feature**, o el techo lo pone la cobertura, no la capacidad.
 
 ## Estado del motor (capacidades / brechas)
-**Tengo:** rama+PR+CI que bloquea · robo real auto en PR (reparado) · unit tests · **1er test de UI dirigido** (`DailyMissionsUiTest`) · scoring honesto en loop · deploy beta en 1 comando.
+**Tengo:** rama+PR+CI que bloquea · robo real auto en PR (reparado; **cuota-graceful**: si Test Lab se queda sin cuota diaria NO bloquea el merge, solo avisa) · unit tests · tests de UI dirigidos (`DailyMissionsUiTest`, `OnboardingFlowTest`) · **instrumentation lista** (`DailyMissionsInstrumentedTest` + `testlab-instr.sh`, on-demand) · scoring honesto en loop · deploy beta en 1 comando.
+**Nota de cuota:** Firebase Test Lab (Spark) tiene **cuota diaria** de runs; con iteración rápida se agota. Por eso: el **gate duro de cada PR = build + tests dirigidos** (Robolectric, sin cuota); robo/instrumentation en dispositivo real son **best-effort/on-demand** y se corren cuando hay cuota (resetea ~diario). Una nota de dispositivo real solo sube cuando ese run corre VERDE — no antes.
 **Brechas a cerrar (siguiente trabajo del motor):**
-1. Instrumentation en Test Lab (assert dirigido en dispositivo real) — capa 4.
-2. Auto-captura+lectura de screenshot de la pantalla concreta en cada PR (critic visual).
+1. Correr `testlab-instr.sh` en VERDE cuando la cuota resetee → recién ahí sube Retención por evidencia de dispositivo real. (Infra ya compila; bloqueado hoy por `TEST_QUOTA_EXCEEDED`.)
+2. Auto-captura+lectura de screenshot de la pantalla concreta (critic visual).
 3. Telemetría real de retención (D1/D7) para cerrar el loop con datos de uso, no solo render.
 
 ## Fuera del alcance del motor (acción del usuario / backend)
