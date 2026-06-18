@@ -281,23 +281,16 @@ fun PaywallScreen(onDismiss: () -> Unit) {
                     Text(err, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(bottom = 8.dp))
                 }
-                Button(
+                com.alturya.fluenta.ui.FluentaButton(
+                    text = if (state.loading) I18nStore.t("paywall.processing", "Procesando…")
+                           else I18nStore.t("paywall.startTrial", "Empezar 7 días gratis"),
                     onClick = { vm.startCheckout() },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
                     enabled = !state.loading,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                ) {
-                    if (state.loading) {
-                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary)
-                    } else {
-                        Text(
-                            I18nStore.t("paywall.startTrial", "Empezar 7 días gratis"),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                }
+                    modifier = Modifier.fillMaxWidth(),
+                    leading = if (state.loading) {
+                        { CircularProgressIndicator(Modifier.size(18.dp).padding(end = 4.dp), strokeWidth = 2.dp, color = Color.White) }
+                    } else null,
+                )
                 Spacer(Modifier.height(8.dp))
                 TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
                     Text(
