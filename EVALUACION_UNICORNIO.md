@@ -65,8 +65,32 @@ UX 25 · Onboarding 50 · Pedagogía 45 · Retención 40 · IA 55 · Contenido 3
 - **Independencia WhatsApp:** transversal — quitada dependencia muerta (lección/home/verbos → in-app).
 → **Global ~48/100**
 
+### Iteración 3 (tras: Misiones diarias + arreglo del robo CI + merge PR #1 + test de UI dirigido)
+**Disciplina anti-inflación aplicada (ver "Regla de oro del score" abajo):** una nota sube SOLO con señal externa dura. El usuario detectó (con razón) que subí Retención antes de tener un assert dirigido → corregido a un bump conservador anclado a evidencia.
+
+Evidencia dura de esta iteración:
+- ✅ `DailyMissionsTest` (7 casos, lógica pura) — VERDE.
+- ✅ `DailyMissionsUiTest` (4 casos, **test de UI DIRIGIDO** Robolectric): hace assert de que las 3 misiones renderizan con su progreso real por el camino de producción (`UserProgress`→`DailyMissions.build`→`DailyMissionsCard`): título, contador 0/3 · 1/3 · 3/3, y celebración al completar — VERDE. Esto reemplaza la dependencia del crawl genérico.
+- ✅ Robo en dispositivo real (Pixel emu Android 14): **OUTCOME Passed** (no crashea con misiones). Botones 3D confirmados en test/paywall/repaso. (Home se capturó en shimmer — el crawl libre no esperó la carga; por eso el assert dirigido es la verificación válida, no el screenshot del crawl.)
+- ✅ **PR #1 mergeado a master**; robo CI **arreglado** (`--no-record-video=false`→`--record-video`) — la auto-QA real corre end-to-end por 1ª vez.
+
+Bumps conservadores anclados a esa evidencia:
+- **Retención 40→46** (+6): misiones diarias shippeadas + verificadas por test dirigido (render) + no-crash en real. NO sube más porque: liga sigue placeholder, sin notis, recompensa sin XP server-side, y el assert dirigido aún corre en JVM (Robolectric), no en instrumentation sobre dispositivo real (próximo gate del motor).
+- **Tech 72→76** (+4): robo CI reparado + auto-QA real end-to-end + 11 tests nuevos (incluido el 1er test de UI dirigido de una pantalla concreta).
+→ **Global ~50/100**
+
+## 🔒 Regla de oro del score (anti reward-hacking) — el motor honesto
+Investigación 2026 (RLVR / verifiers): el mayor fallo de un loop de auto-mejora con IA es **hacer reward-hacking de su propio scorecard** (inflar la nota sin señal externa). Antídoto, ahora ley del loop:
+1. **Una nota sube SOLO con señal externa, basada en reglas, difícil de falsear:** test dirigido VERDE + robo `Passed` + (idealmente) screenshot que muestre el cambio. Nunca por "se ve mejor".
+2. **El test debe ejercer el camino REAL de producción** (isomorfismo): construir el estado como en la app (p.ej. `DailyMissions.build`), no objetos falsos a mano. Prohibido borrar/relajar asserts para pasar.
+3. **La suite de evals CRECE con cada feature** (cada pantalla nueva → su test dirigido), o el techo lo pone la cobertura, no la capacidad real.
+4. **Cero-crédito si el render es inválido** (crash, pantalla vacía) aunque el build pase.
+
 ## Próximo objetivo del loop = la nota más baja
-Empate en lo más bajo: **Contenido (35)** y **Retención (40)**. Contenido (3→20 idiomas, profundidad A1→C2, ejercicios avanzados) es mayormente BACKEND. **Retención (40)** tiene piezas client-side de alto ROI: liga real, misiones diarias, notis inteligentes. → **Siguiente: Retención + seguir UX** (sigue siendo bajo en 45 y es el cuello de botella percibido).
+Lo más bajo accionable client-side: **UX (45)** (cuello de botella percibido) y **Retención (46)**. Contenido (35) es BACKEND (escalado). → **Siguiente:**
+1. **Motor:** elevar el assert dirigido de misiones a **instrumentation en Test Lab (dispositivo real)** → recién ahí Retención sube más. Es el upgrade que cierra la brecha "robo solo prueba no-crash".
+2. **UX 45→:** botones 3D **planos aún en Login** (visto en robo), Paywall/GuestLesson, FluentaCard, mascota en bienvenida/estados vacíos.
+3. **Retención:** liga real, notis inteligentes.
 
 ## Honestidad de método
 Cada nota se sube SOLO con evidencia real (Firebase Test Lab / código verificado), nunca con datos falsos. Si una mejora no se puede verificar en dispositivo real, no cuenta para subir la nota.

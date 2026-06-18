@@ -2,11 +2,16 @@
 
 > Al entrar a **modo admin Fluenta**: lee este archivo + `CLAUDE.md` + `EVALUACION_UNICORNIO.md`, recrea las tareas como TaskCreate, y **continúa el LOOP** desde "Próximo paso" sin esperar instrucciones. Mantén este archivo actualizado al avanzar.
 
-## 📍 DÓNDE QUEDAMOS (última sesión: 2026-06-18)
-Score honesto **48/100** (de 43). Rama `admin/design-system-pipeline`, **PR #1** abierto con todo.
-**Hecho esta sesión:** botón 3D en ~18 pantallas · mascota en feedback · conversación in-app arreglada (timeout+carga) · **independencia de WhatsApp** (Meta muerto; lección/home/verbos → in-app) · tests unit + **test de UI de flujo crítico** (`OnboardingFlowTest`) · CI que bloquea regresiones · Firebase Test Lab auto en cada PR · `testlab.sh` (verificación real en 1 comando) · sistema de scoring en loop · protocolo CEO en CLAUDE.md.
-**Pendiente de mergear:** PR #1 a master (revisa si CI verde y mergea).
-**▶️ CONTINUAR POR AQUÍ →** ver "Próximo paso" abajo (UX: FluentaCard + mascota en más momentos + botones 3D en Login/Paywall/GuestLesson · Retención: misiones diarias, liga real, notis · de-priorizar login WhatsApp).
+## 📍 DÓNDE QUEDAMOS (última sesión: 2026-06-18, iter 3)
+Score honesto **~50/100**. **PR #1 MERGEADO a master.** Trabajo nuevo en rama `admin/*` (PR).
+**Hecho esta sesión (iter 3):**
+- 🔧 **Robo CI reparado**: fallaba SIEMPRE por `--no-record-video=false` (gcloud lo rechaza) → `--record-video`. Ahora **OUTCOME Passed** en dispositivo real.
+- ✅ **PR #1 mergeado** a master (build + robo verdes).
+- 🎯 **Retención — Misiones diarias** en Home: 3 quests (racha/meta/repaso) derivadas de señales REALES del backend (`todayXp`, `cardsDueToday`); tarjeta con mascota + progreso + check; cada misión navega a su acción.
+- 🧪 **Test de UI DIRIGIDO** (`DailyMissionsUiTest`, Robolectric, 4 casos) que hace assert de que las 3 misiones renderizan con su progreso real por el camino de producción — **reemplaza la dependencia del crawl genérico** del robo. + `DailyMissionsTest` (7 casos de lógica pura).
+- 🛠️ **Motor formalizado**: creado `MOTOR_UNICORNIO.md` (loop autónomo robusto + 🔒 Regla de oro anti reward-hacking) y enganchado a `CLAUDE.md` + memoria.
+**Corrección de honestidad:** subí Retención antes de tener el assert dirigido; corregido a bump conservador anclado a evidencia (40→46). La nota sube solo con señal externa dura.
+**▶️ CONTINUAR POR AQUÍ →** ver "Próximo paso".
 
 ## KPI único
 App de idiomas líder mundial / unicornio. Score honesto hoy: **~43/100** (UX visual ~25 = cuello de botella). Scorecard: `EVALUACION_UNICORNIO.md`.
@@ -22,10 +27,11 @@ App de idiomas líder mundial / unicornio. Score honesto hoy: **~43/100** (UX vi
 ## Score actual (loop): Global ~48/100 (iteración 2). Áreas más bajas: Contenido 35 (backend), Retención 40, UX 45.
 
 ## Próximo paso (continúa por aquí)
-WhatsApp independence HECHO (lección/home/verbos → in-app); falta de-priorizar login por WhatsApp (dejar email/Google/device). Luego, atacar la nota más baja accionable:
-1. **UX 45→** seguir: FluentaCard (tarjeta firma), mascota en más momentos (bienvenida home, estados vacíos), micro-animaciones, botones 3D en Login/Paywall/GuestLesson.
-2. **Retención 40→** liga semanal real, misiones diarias, notificaciones inteligentes.
-Re-calificar tras cada lote en EVALUACION_UNICORNIO.md.
+Sigue el ciclo de `MOTOR_UNICORNIO.md` (test dirigido primero → código → verificación en capas → re-score honesto → PR/merge). Por prioridad:
+1. **MOTOR (cierra la brecha de verificación):** elevar el assert dirigido de misiones a **instrumentation en Test Lab (dispositivo real)** — hoy corre en JVM (Robolectric). Ese es el gate que permite subir Retención más allá de 46 con evidencia de dispositivo real. Falta: añadir `androidTestImplementation` (compose-ui-test + espresso runner) + workflow `--type instrumentation`.
+2. **UX 45→** botones 3D **planos aún en Login** (confirmado en robo), Paywall/GuestLesson; FluentaCard (tarjeta firma); mascota en bienvenida home + estados vacíos.
+3. **Retención 46→** liga semanal real (hoy placeholder), notificaciones inteligentes, recompensa de misión con XP server-side.
+Re-calificar tras cada lote en EVALUACION_UNICORNIO.md, **solo con señal externa dura** (🔒 Regla de oro).
 
 ## Pipeline (se cuida solo)
 CI (`build-apk.yml`) compila + corre `testDebugUnitTest` (bloquea si falla). `testlab.yml` corre Firebase Test Lab (Robo, dispositivo real) en cada PR. Rama de trabajo: `admin/design-system-pipeline` (PR #1). Tests: `app/src/test/.../LevelLabelsTest.kt`.
