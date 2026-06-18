@@ -44,3 +44,29 @@ Lectura de CEO: en el mercado, **el eslabón más débil (UX 25) tapa todo** —
 
 ## Método (toda la capacidad actual)
 Cada subida de nota → verificar en dispositivo REAL (Firebase Test Lab, proyecto `fluenta-testlab-2026`, auto en cada PR). Sin datos falsos. Re-calificar el área tras cada lote.
+
+---
+
+# 🔁 SISTEMA DE MEJORA EN LOOP (calificación honesta continua)
+
+**Regla del loop:** tras CADA lote de cambios, re-califico cada área honestamente (con evidencia de dispositivo real), actualizo la nota, y el **área de MENOR nota se vuelve el siguiente objetivo**. No declaro un área "lista" sin subir su nota con evidencia. La meta es 100/100 en cada área y total.
+
+## Bitácora de re-calificación
+
+### Iteración 1 (baseline honesto, 2026-06-18)
+UX 25 · Onboarding 50 · Pedagogía 45 · Retención 40 · IA 55 · Contenido 35 · Tech 55 · Negocio 50 · Viralidad 40 · a11y/i18n 40 → **Global ~43/100**
+
+### Iteración 2 (tras: botón 3D ×18 pantallas + mascota en feedback + conversación in-app arreglada + independencia WhatsApp + tests/CI/Test Lab)
+- **UX 25→45** (+20): botón 3D en ~18 pantallas, mascota en feedback. Falta: FluentaCard, mascota en más momentos, micro-animaciones, Login/Paywall/GuestLesson.
+- **Onboarding 50→58** (+8): arreglado "Conectando…" (carga con personalidad+timeout). Falta: pregunta de meta, primer win claro.
+- **Tech 55→72** (+17): tests unitarios + CI que bloquea + Firebase Test Lab auto en cada PR. Falta: cobertura UI, staging.
+- **Pedagogía 45→48** (+3): conversación in-app robusta (reemplazo WhatsApp). Falta: gramática explícita, A1→C2 (falta C2 en backend), objetivo CEFR visible.
+- **IA, Contenido, Negocio, Viralidad, a11y** sin cambio significativo esta iteración.
+- **Independencia WhatsApp:** transversal — quitada dependencia muerta (lección/home/verbos → in-app).
+→ **Global ~48/100**
+
+## Próximo objetivo del loop = la nota más baja
+Empate en lo más bajo: **Contenido (35)** y **Retención (40)**. Contenido (3→20 idiomas, profundidad A1→C2, ejercicios avanzados) es mayormente BACKEND. **Retención (40)** tiene piezas client-side de alto ROI: liga real, misiones diarias, notis inteligentes. → **Siguiente: Retención + seguir UX** (sigue siendo bajo en 45 y es el cuello de botella percibido).
+
+## Honestidad de método
+Cada nota se sube SOLO con evidencia real (Firebase Test Lab / código verificado), nunca con datos falsos. Si una mejora no se puede verificar en dispositivo real, no cuenta para subir la nota.

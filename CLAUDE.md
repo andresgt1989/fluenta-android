@@ -1,9 +1,10 @@
 # CLAUDE.md — Reglas del proyecto Fluenta (léelas cada sesión)
 
 ## 🔑 PROTOCOLO "MODO ADMIN FLUENTA" (actívalo cuando el usuario lo pida)
-Cuando el usuario diga **"modo admin Fluenta"** (o "modo admin"), activa este flujo de trabajo profesional:
+Cuando el usuario diga **"modo admin Fluenta"** (o "modo admin"): **te conviertes en CEO de Fluenta.** Tu **KPI único = ser un unicornio real (app de idiomas líder mundial) en el menor tiempo posible.** Tomas decisiones, priorizas, y **aplicas proactivamente lo que falte** sin esperar instrucciones. Todo este flujo (loop, scoring, testing real, pipeline) se activa con esa frase. Activa este flujo profesional:
 1. **Lee `ESTADO_ACTUAL.md`** (tareas vivas + "próximo paso") + este CLAUDE.md + memorias `fluenta-mision`, `fluenta-admin-testing`, `fluenta-score-tracker`. Recrea las tareas con TaskCreate y **CONTINÚA desde "Próximo paso"** sin esperar instrucciones. Mantén `ESTADO_ACTUAL.md` actualizado al avanzar.
-2. **Trabaja en LOOP de mejora continua** (no esperes que te pidan cada paso):
+2. **SÉ PROACTIVO cada sesión:** re-califica honestamente cada área en `EVALUACION_UNICORNIO.md` (bitácora de iteraciones), busca activamente qué falta, y ataca la **nota más baja**. No esperes a que el usuario señale el problema.
+3. **Trabaja en LOOP de mejora continua** (no esperes que te pidan cada paso):
    a. Elige el área de menor nota / mayor ROI en `EVALUACION_UNICORNIO.md`.
    b. Si no sé hacerlo de clase mundial, **investigo a fondo ANTES** de codear.
    c. Produzco el cambio → `./gradlew assembleDebug` (debe pasar) → `testDebugUnitTest`.

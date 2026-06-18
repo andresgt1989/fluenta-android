@@ -13,8 +13,13 @@ App de idiomas líder mundial / unicornio. Score honesto hoy: **~43/100** (UX vi
 2. **[PENDIENTE] Independencia de WhatsApp:** quitar/reemplazar CTAs muertos por equivalentes in-app. Ubicaciones: `verbs/VerbsTodayScreen.kt:84` (Practicar en WhatsApp), `home/HomeScreen.kt:523` (acción WhatsApp), `lesson/LessonPlayerScreen.kt:1248` (Continuar en WhatsApp), `login/LoginScreen.kt` (OTP por WhatsApp), `home/HomeViewModel.kt:48` (practiceWaUrl). Reemplazar "continuar practicando" por la Conversación in-app.
 3. **[HECHO esta sesión] Conversación in-app robusta:** estado de carga con mascota + timeout 20s + reintentar (arregló "Conectando…" vacío). Verificar en Test Lab.
 
+## Score actual (loop): Global ~48/100 (iteración 2). Áreas más bajas: Contenido 35 (backend), Retención 40, UX 45.
+
 ## Próximo paso (continúa por aquí)
-Terminar tarea #2 (independencia WhatsApp): reemplazar el "Continuar en WhatsApp" del resultado de lección y la acción WhatsApp del Home por la **Conversación in-app** (que ya funciona); quitar el botón de WhatsApp de Verbos; de-priorizar el login por WhatsApp (dejar email/Google/device). Luego seguir UX (FluentaCard + mascota) y subir cobertura de tests.
+WhatsApp independence HECHO (lección/home/verbos → in-app); falta de-priorizar login por WhatsApp (dejar email/Google/device). Luego, atacar la nota más baja accionable:
+1. **UX 45→** seguir: FluentaCard (tarjeta firma), mascota en más momentos (bienvenida home, estados vacíos), micro-animaciones, botones 3D en Login/Paywall/GuestLesson.
+2. **Retención 40→** liga semanal real, misiones diarias, notificaciones inteligentes.
+Re-calificar tras cada lote en EVALUACION_UNICORNIO.md.
 
 ## Pipeline (se cuida solo)
 CI (`build-apk.yml`) compila + corre `testDebugUnitTest` (bloquea si falla). `testlab.yml` corre Firebase Test Lab (Robo, dispositivo real) en cada PR. Rama de trabajo: `admin/design-system-pipeline` (PR #1). Tests: `app/src/test/.../LevelLabelsTest.kt`.
