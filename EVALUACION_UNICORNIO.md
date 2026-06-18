@@ -84,6 +84,12 @@ Evidencia dura: build + `testDebugUnitTest` VERDE; robo **Passed**; **screenshot
 - **UX 45→48** (+3): Login era la última pantalla de ENTRADA con botones planos → ahora 3D coherente con test/paywall/repaso. Primera impresión más pulida, verificada en dispositivo real. NO sube más: faltan FluentaCard (tarjeta firma), mascota en bienvenida/estados vacíos, micro-animaciones, Paywall/GuestLesson y los botones OTP secundarios.
 → **Global ~50/100** (el bump de UX es real pero pequeño; no inflo el global).
 
+### Iteración 5 (tras: paso de META en onboarding)
+Evidencia dura: build verde con **test dirigido** `onboarding_asks_goal_after_language` (maneja el `OnboardingScreen` REAL: welcome→idioma→ y hace assert de "¿Para qué quieres aprender?" + opciones) + robo **Passed** (no-crash) en dispositivo real.
+- **Onboarding 58→62** (+4): ahora pregunta la meta/"por qué" (6 motivaciones), guardada client-side (`MotivationStore`); cierra el gap del scorecard. Falta: primer "win" hablado, y captura del first-run en dispositivo real (pendiente de instrumentation — ver abajo).
+→ **Global ~51/100**.
+- ⚠️ **Hallazgo del motor (2ª vez):** el robo libre NO alcanza pantallas con estado específico — la cuenta de Test Lab ya está onboardeada (l2=NL) → no llega al first-run; igual que Home cargó en shimmer. **Confirma que el #1 del motor es instrumentation dirigida** (navegar a propósito a la pantalla en dispositivo real). Mientras tanto, el test dirigido Robolectric (que ejerce el composable real) es la verificación válida por la Regla de oro.
+
 ## 🔒 Regla de oro del score (anti reward-hacking) — el motor honesto
 Investigación 2026 (RLVR / verifiers): el mayor fallo de un loop de auto-mejora con IA es **hacer reward-hacking de su propio scorecard** (inflar la nota sin señal externa). Antídoto, ahora ley del loop:
 1. **Una nota sube SOLO con señal externa, basada en reglas, difícil de falsear:** test dirigido VERDE + robo `Passed` + (idealmente) screenshot que muestre el cambio. Nunca por "se ve mejor".
