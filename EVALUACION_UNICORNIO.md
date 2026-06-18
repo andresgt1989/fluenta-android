@@ -79,6 +79,11 @@ Bumps conservadores anclados a esa evidencia:
 - **Tech 72→76** (+4): robo CI reparado + auto-QA real end-to-end + 11 tests nuevos (incluido el 1er test de UI dirigido de una pantalla concreta).
 → **Global ~50/100**
 
+### Iteración 4 (tras: botones 3D en los CTA hero de Login)
+Evidencia dura: build + `testDebugUnitTest` VERDE; robo **Passed**; **screenshot de dispositivo real** (robo ci-17, frame 7/8) que MUESTRA "Probar una lección ahora" y "Empezar gratis" con la base 3D (antes planos — comparado contra el robo anterior). Señal externa que cumple la Regla de oro.
+- **UX 45→48** (+3): Login era la última pantalla de ENTRADA con botones planos → ahora 3D coherente con test/paywall/repaso. Primera impresión más pulida, verificada en dispositivo real. NO sube más: faltan FluentaCard (tarjeta firma), mascota en bienvenida/estados vacíos, micro-animaciones, Paywall/GuestLesson y los botones OTP secundarios.
+→ **Global ~50/100** (el bump de UX es real pero pequeño; no inflo el global).
+
 ## 🔒 Regla de oro del score (anti reward-hacking) — el motor honesto
 Investigación 2026 (RLVR / verifiers): el mayor fallo de un loop de auto-mejora con IA es **hacer reward-hacking de su propio scorecard** (inflar la nota sin señal externa). Antídoto, ahora ley del loop:
 1. **Una nota sube SOLO con señal externa, basada en reglas, difícil de falsear:** test dirigido VERDE + robo `Passed` + (idealmente) screenshot que muestre el cambio. Nunca por "se ve mejor".

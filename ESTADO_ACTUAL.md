@@ -11,6 +11,9 @@ Score honesto **~50/100**. **PR #1 MERGEADO a master.** Trabajo nuevo en rama `a
 - 🧪 **Test de UI DIRIGIDO** (`DailyMissionsUiTest`, Robolectric, 4 casos) que hace assert de que las 3 misiones renderizan con su progreso real por el camino de producción — **reemplaza la dependencia del crawl genérico** del robo. + `DailyMissionsTest` (7 casos de lógica pura).
 - 🛠️ **Motor formalizado**: creado `MOTOR_UNICORNIO.md` (loop autónomo robusto + 🔒 Regla de oro anti reward-hacking) y enganchado a `CLAUDE.md` + memoria.
 **Corrección de honestidad:** subí Retención antes de tener el assert dirigido; corregido a bump conservador anclado a evidencia (40→46). La nota sube solo con señal externa dura.
+- 🎨 **UX — Login 3D** (iter 4): los 2 CTA hero de Login pasaron de planos a `FluentaButton` 3D. **Verificado en dispositivo real** (screenshot del robo ci-17). Era la última pantalla de entrada con botones planos. UX 45→48.
+- ✅ **PR #2 y #3 mergeados** a master (motor/verificación dirigida + UX Login).
+
 **▶️ CONTINUAR POR AQUÍ →** ver "Próximo paso".
 
 ## KPI único
@@ -29,7 +32,7 @@ App de idiomas líder mundial / unicornio. Score honesto hoy: **~43/100** (UX vi
 ## Próximo paso (continúa por aquí)
 Sigue el ciclo de `MOTOR_UNICORNIO.md` (test dirigido primero → código → verificación en capas → re-score honesto → PR/merge). Por prioridad:
 1. **MOTOR (cierra la brecha de verificación):** elevar el assert dirigido de misiones a **instrumentation en Test Lab (dispositivo real)** — hoy corre en JVM (Robolectric). Ese es el gate que permite subir Retención más allá de 46 con evidencia de dispositivo real. Falta: añadir `androidTestImplementation` (compose-ui-test + espresso runner) + workflow `--type instrumentation`.
-2. **UX 45→** botones 3D **planos aún en Login** (confirmado en robo), Paywall/GuestLesson; FluentaCard (tarjeta firma); mascota en bienvenida home + estados vacíos.
+2. **UX 48→** (Login 3D ✅ HECHO iter 4) siguiente: 3D en Paywall/GuestLesson + botones OTP de Login; **FluentaCard** (tarjeta firma); mascota en bienvenida home + estados vacíos; micro-animaciones.
 3. **Retención 46→** liga semanal real (hoy placeholder), notificaciones inteligentes, recompensa de misión con XP server-side.
 Re-calificar tras cada lote en EVALUACION_UNICORNIO.md, **solo con señal externa dura** (🔒 Regla de oro).
 
