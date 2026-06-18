@@ -90,6 +90,13 @@ Evidencia dura: build verde con **test dirigido** `onboarding_asks_goal_after_la
 → **Global ~51/100**.
 - ⚠️ **Hallazgo del motor (2ª vez):** el robo libre NO alcanza pantallas con estado específico — la cuenta de Test Lab ya está onboardeada (l2=NL) → no llega al first-run; igual que Home cargó en shimmer. **Confirma que el #1 del motor es instrumentation dirigida** (navegar a propósito a la pantalla en dispositivo real). Mientras tanto, el test dirigido Robolectric (que ejerce el composable real) es la verificación válida por la Regla de oro.
 
+### Iteración 6 (MOTOR: instrumentation dirigida VERDE en dispositivo real + Blaze)
+Cerrada la brecha de verificación. Tras habilitar Blaze en `fluenta-testlab-2026` (estaba en Spark → cuota agotada; el billing no estaba enlazado), `DailyMissionsInstrumentedTest` corrió en hardware real:
+- ✅ **OUTCOME Passed — 3 test cases passed** en `MediumPhone.arm-34-es-portrait` (Firebase Test Lab, `--type instrumentation`). Assert dirigido de que las 3 misiones renderizan con su progreso real **sobre un teléfono real** (no el crawl genérico, no JVM). Señal externa máxima de la Regla de oro.
+- **Retención 46→50** (+4): este era el gate exacto que dije que faltaba en la iter 3 ("el assert dirigido aún corre en JVM, no en instrumentation sobre dispositivo real"). Cruzado con evidencia. Las Misiones diarias quedan verificadas end-to-end: lógica (unit) → render (Robolectric) → **render en dispositivo real (instrumentation)**. NO sube más: liga sigue placeholder, sin notis, recompensa sin XP server-side.
+- **Tech 76→79** (+3): el motor ahora tiene capa 4 (instrumentation dirigida en dispositivo real, on-demand vía `testlab-instr.sh`) + pipeline cuota-graceful. Auto-QA real de pantallas concretas, no solo no-crash.
+→ **Global ~53/100**.
+
 ## 🔒 Regla de oro del score (anti reward-hacking) — el motor honesto
 Investigación 2026 (RLVR / verifiers): el mayor fallo de un loop de auto-mejora con IA es **hacer reward-hacking de su propio scorecard** (inflar la nota sin señal externa). Antídoto, ahora ley del loop:
 1. **Una nota sube SOLO con señal externa, basada en reglas, difícil de falsear:** test dirigido VERDE + robo `Passed` + (idealmente) screenshot que muestre el cambio. Nunca por "se ve mejor".
