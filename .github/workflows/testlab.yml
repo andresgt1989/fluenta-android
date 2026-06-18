@@ -51,4 +51,4 @@ jobs:
             --device model=MediumPhone.arm,version=34,locale=es,orientation=portrait \
             --timeout 120s \
             --results-dir "ci-${{ github.run_number }}" \
-            --no-record-video=false
+            --record-video
