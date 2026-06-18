@@ -2,6 +2,12 @@
 
 > Al entrar a **modo admin Fluenta**: lee este archivo + `CLAUDE.md` + `EVALUACION_UNICORNIO.md`, recrea las tareas como TaskCreate, y **continúa el LOOP** desde "Próximo paso" sin esperar instrucciones. Mantén este archivo actualizado al avanzar.
 
+## 📍 DÓNDE QUEDAMOS (última sesión: 2026-06-18)
+Score honesto **48/100** (de 43). Rama `admin/design-system-pipeline`, **PR #1** abierto con todo.
+**Hecho esta sesión:** botón 3D en ~18 pantallas · mascota en feedback · conversación in-app arreglada (timeout+carga) · **independencia de WhatsApp** (Meta muerto; lección/home/verbos → in-app) · tests unit + **test de UI de flujo crítico** (`OnboardingFlowTest`) · CI que bloquea regresiones · Firebase Test Lab auto en cada PR · `testlab.sh` (verificación real en 1 comando) · sistema de scoring en loop · protocolo CEO en CLAUDE.md.
+**Pendiente de mergear:** PR #1 a master (revisa si CI verde y mergea).
+**▶️ CONTINUAR POR AQUÍ →** ver "Próximo paso" abajo (UX: FluentaCard + mascota en más momentos + botones 3D en Login/Paywall/GuestLesson · Retención: misiones diarias, liga real, notis · de-priorizar login WhatsApp).
+
 ## KPI único
 App de idiomas líder mundial / unicornio. Score honesto hoy: **~43/100** (UX visual ~25 = cuello de botella). Scorecard: `EVALUACION_UNICORNIO.md`.
 
