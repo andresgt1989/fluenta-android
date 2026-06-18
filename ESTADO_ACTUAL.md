@@ -12,7 +12,9 @@ Score honesto **~50/100**. **PR #1 MERGEADO a master.** Trabajo nuevo en rama `a
 - 🛠️ **Motor formalizado**: creado `MOTOR_UNICORNIO.md` (loop autónomo robusto + 🔒 Regla de oro anti reward-hacking) y enganchado a `CLAUDE.md` + memoria.
 **Corrección de honestidad:** subí Retención antes de tener el assert dirigido; corregido a bump conservador anclado a evidencia (40→46). La nota sube solo con señal externa dura.
 - 🎨 **UX — Login 3D** (iter 4): los 2 CTA hero de Login pasaron de planos a `FluentaButton` 3D. **Verificado en dispositivo real** (screenshot del robo ci-17). Era la última pantalla de entrada con botones planos. UX 45→48.
-- ✅ **PR #2 y #3 mergeados** a master (motor/verificación dirigida + UX Login).
+- 🎯 **Onboarding — paso de META** (iter 5): tras elegir idioma pregunta "¿Para qué quieres aprender?" (6 motivaciones, guardado en `MotivationStore`); cierra el gap del scorecard. Test dirigido `onboarding_asks_goal_after_language` VERDE. Onboarding 58→62.
+- ✅ **PRs #2/#3/#4/#5 mergeados** a master (motor + UX Login + re-score + onboarding meta).
+- ⚠️ El robo libre no alcanza pantallas con estado específico (Home shimmer, first-run onboarding) → **instrumentation dirigida es ahora el #1 del motor**.
 
 **▶️ CONTINUAR POR AQUÍ →** ver "Próximo paso".
 
