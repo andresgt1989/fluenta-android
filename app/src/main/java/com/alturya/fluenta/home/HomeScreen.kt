@@ -437,7 +437,7 @@ fun HomeScreen(
                                 ) {
                                     Column(Modifier.weight(1f)) {
                                         Text(opt.label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                                        Text(opt.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(I18nStore.t("goal.${opt.xp}.desc", opt.description), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                     if (selected) {
                                         Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))

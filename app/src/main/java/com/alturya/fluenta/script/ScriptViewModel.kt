@@ -2,6 +2,7 @@ package com.alturya.fluenta.script
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.network.ScriptInfo
 import com.alturya.fluenta.network.ScriptLesson
@@ -46,7 +47,7 @@ class ScriptViewModel : ViewModel() {
                 val lesson = ApiClient.api.getScriptLesson(ScriptLessonBody(l2 = l2, scriptKey = scriptKey))
                 _state.value = _state.value.copy(phase = ScriptPhase.LEARN, info = info, lesson = lesson)
             } catch (e: Exception) {
-                _state.value = _state.value.copy(phase = ScriptPhase.ERROR, error = "No se pudo cargar el alfabeto. Revisa tu conexión.")
+                _state.value = _state.value.copy(phase = ScriptPhase.ERROR, error = I18nStore.t("script.error.alphabet", "No se pudo cargar el alfabeto. Revisa tu conexión."))
             }
         }
     }
@@ -65,7 +66,7 @@ class ScriptViewModel : ViewModel() {
                 val quiz = rawQuiz.copy(items = filteredItems)
                 _state.value = _state.value.copy(phase = ScriptPhase.QUIZ, quiz = quiz, answers = emptyMap(), result = null)
             } catch (e: Exception) {
-                _state.value = _state.value.copy(phase = ScriptPhase.ERROR, error = "No se pudo cargar el examen de lectura.")
+                _state.value = _state.value.copy(phase = ScriptPhase.ERROR, error = I18nStore.t("script.error.quiz", "No se pudo cargar el examen de lectura."))
             }
         }
     }
@@ -83,7 +84,7 @@ class ScriptViewModel : ViewModel() {
                 val result = ApiClient.api.gradeScriptQuiz(ScriptQuizGradeBody(quiz.quizId, answers))
                 _state.value = _state.value.copy(phase = ScriptPhase.RESULT, result = result)
             } catch (e: Exception) {
-                _state.value = _state.value.copy(phase = ScriptPhase.ERROR, error = "No se pudo calificar el examen.")
+                _state.value = _state.value.copy(phase = ScriptPhase.ERROR, error = I18nStore.t("script.error.grade", "No se pudo calificar el examen."))
             }
         }
     }

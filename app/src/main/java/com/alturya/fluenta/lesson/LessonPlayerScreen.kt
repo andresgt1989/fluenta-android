@@ -1170,7 +1170,7 @@ private fun ResultView(
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            if (result.passed) "¡Lección completada!" else "Sigue practicando",
+            if (result.passed) I18nStore.t("lesson.result.passed", "¡Lección completada!") else I18nStore.t("lesson.result.keepGoing", "Sigue practicando"),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
         )
@@ -1190,7 +1190,7 @@ private fun ResultView(
         if (!result.passed) {
             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
                 Text(
-                    "Necesitas 70% para completarla. Inténtala otra vez — vas en buen camino.",
+                    I18nStore.t("lesson.result.retryHint", "Necesitas 70% para completarla. Inténtala otra vez — vas en buen camino."),
                     modifier = Modifier.padding(16.dp),
                     style = MaterialTheme.typography.bodyMedium,
                 )
@@ -1262,9 +1262,11 @@ private fun ResultView(
             val xpEarned = result.xpEarned
             val streakDays = result.newStreakDays ?: 0
             val shareText = if (streakDays > 0)
-                "🔥 Racha de $streakDays días en Fluenta · +$xpEarned XP · Aprende inglés → fluenta.alturya.com"
+                I18nStore.t("lesson.share.streak", "🔥 Racha de {days} días en Fluenta · +{xp} XP · Aprende inglés → fluenta.alturya.com")
+                    .replace("{days}", "$streakDays").replace("{xp}", "$xpEarned")
             else
-                "🎓 Completé una lección en Fluenta · +$xpEarned XP · Aprende inglés → fluenta.alturya.com"
+                I18nStore.t("lesson.share.completed", "🎓 Completé una lección en Fluenta · +{xp} XP · Aprende inglés → fluenta.alturya.com")
+                    .replace("{xp}", "$xpEarned")
 
             Button(
                 onClick = {
@@ -1307,7 +1309,7 @@ private fun ResultView(
 
             // Reto a un amigo — viral deeplink after streak ≥ 3
             if (streakDays >= 3) {
-                val challengeText = "¡Llevo $streakDays días aprendiendo inglés con Fluenta sin parar! ¿Cuántos días aguantas tú? → fluenta.alturya.com"
+                val challengeText = I18nStore.t("lesson.share.challenge", "¡Llevo {days} días aprendiendo inglés con Fluenta sin parar! ¿Cuántos días aguantas tú? → fluenta.alturya.com").replace("{days}", "$streakDays")
                 OutlinedButton(
                     onClick = {
                         val intent = Intent(Intent.ACTION_SEND).apply {

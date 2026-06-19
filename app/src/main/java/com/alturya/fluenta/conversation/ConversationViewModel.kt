@@ -1,5 +1,6 @@
 package com.alturya.fluenta.conversation
 
+import com.alturya.fluenta.data.I18nStore
 import android.app.Application
 import android.content.Intent
 import android.os.Bundle
@@ -112,7 +113,7 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     phase = ConvoPhase.ERROR,
-                    error = "No se pudo iniciar la conversación. Revisa tu conexión.",
+                    error = I18nStore.t("convo.error.start", "No se pudo iniciar la conversación. Revisa tu conexión."),
                 )
             }
         }
@@ -121,7 +122,7 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
     fun startListening() {
         val ctx = getApplication<Application>()
         if (!SpeechRecognizer.isRecognitionAvailable(ctx)) {
-            _state.value = _state.value.copy(error = "El reconocimiento de voz no está disponible en este dispositivo.")
+            _state.value = _state.value.copy(error = I18nStore.t("convo.error.noStt", "El reconocimiento de voz no está disponible en este dispositivo."))
             return
         }
         recognizer?.destroy()
@@ -192,7 +193,7 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
                 TtsPlayer.play(getApplication(), res.reply, gl2)
                 if (res.complete) end() else _state.value = _state.value.copy(phase = ConvoPhase.YOUR_TURN)
             } catch (e: Exception) {
-                _state.value = _state.value.copy(phase = ConvoPhase.YOUR_TURN, error = "Error de conexión, intenta de nuevo.")
+                _state.value = _state.value.copy(phase = ConvoPhase.YOUR_TURN, error = I18nStore.t("convo.error.network", "Error de conexión, intenta de nuevo."))
             }
         }
     }

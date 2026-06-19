@@ -57,7 +57,7 @@ class RepasoViewModel : ViewModel() {
                 }
                 _state.value = RepasoState(loading = false, queue = due)
             } catch (e: Exception) {
-                _state.value = RepasoState(loading = false, error = "No se pudo cargar el repaso. Reintenta.")
+                _state.value = RepasoState(loading = false, error = I18nStore.t("repaso.error.load", "No se pudo cargar el repaso. Reintenta."))
             }
         }
     }

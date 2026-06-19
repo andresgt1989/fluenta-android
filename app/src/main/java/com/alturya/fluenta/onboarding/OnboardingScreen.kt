@@ -218,7 +218,7 @@ private fun MotivationStep(onPick: (String) -> Unit, onBack: () -> Unit) {
                         Text(opt.emoji, style = MaterialTheme.typography.headlineSmall)
                         Spacer(Modifier.width(16.dp))
                         Text(
-                            opt.label,
+                            I18nStore.t("motivation.${opt.id}", opt.label),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.weight(1f),

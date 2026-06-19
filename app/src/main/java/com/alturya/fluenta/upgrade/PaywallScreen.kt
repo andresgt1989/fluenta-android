@@ -69,33 +69,39 @@ class PaywallViewModel : ViewModel() {
                 val res = ApiClient.api.getCheckoutUrl(plan)
                 _state.value = _state.value.copy(loading = false, checkoutUrl = res.url)
             } catch (e: Exception) {
-                _state.value = _state.value.copy(loading = false, error = "No se pudo iniciar el pago. Intenta de nuevo.")
+                _state.value = _state.value.copy(loading = false, error = I18nStore.t("paywall.error.checkout", "No se pudo iniciar el pago. Intenta de nuevo."))
             }
         }
     }
 }
 
-private data class Feature(val icon: ImageVector, val title: String, val subtitle: String, val proOnly: Boolean = false)
-private data class Testimonial(val quote: String, val author: String, val stars: Int = 5)
+// titleKey/subtitleKey: claves i18n estables; title/subtitle: fallback es. Se RESUELVEN en
+// el render con I18nStore.t(key, fallback) — no aquí, que se evalúa con memCache vacío.
+private data class Feature(val icon: ImageVector, val titleKey: String, val title: String, val subtitleKey: String, val subtitle: String, val proOnly: Boolean = false)
+private data class Testimonial(val quoteKey: String, val quote: String, val authorKey: String, val author: String, val stars: Int = 5)
 
 private val TESTIMONIALS = listOf(
     Testimonial(
+        quoteKey = "paywall.testimonial1.quote",
         quote = "Aprendí más inglés en 2 semanas con Fluenta que en 2 años con otras apps. ¡El coach de IA realmente te habla!",
+        authorKey = "paywall.testimonial1.author",
         author = "María G. · México · Inglés B2",
     ),
     Testimonial(
+        quoteKey = "paywall.testimonial2.quote",
         quote = "Lo uso 10 minutos en el metro. Mi inglés mejoró notablemente y me ascendieron en el trabajo.",
+        authorKey = "paywall.testimonial2.author",
         author = "Carlos R. · Argentina · Inglés B1",
     ),
 )
 
 private val FEATURES = listOf(
-    Feature(Icons.Default.MicNone,            "Conversación IA ilimitada",        "Habla inglés sin límites con tu coach"),
-    Feature(Icons.Default.Shield,             "Escudo de racha",                  "Protege tu racha hasta 3 días", proOnly = true),
-    Feature(Icons.Default.WifiOff,            "Lecciones sin conexión",           "Practica en el metro, sin internet", proOnly = true),
-    Feature(Icons.Default.LocalFireDepartment,"Sin anuncios ni interrupciones",   "Flujo de aprendizaje puro", proOnly = true),
-    Feature(Icons.Default.Star,               "Repaso inteligente ilimitado",     "SRS sin tope de tarjetas por día"),
-    Feature(Icons.Default.CheckCircle,        "Estadísticas avanzadas",           "Velocidad lectora, éxito por habilidad", proOnly = true),
+    Feature(Icons.Default.MicNone,            "paywall.feat.convo.title",    "Conversación IA ilimitada",      "paywall.feat.convo.sub",    "Habla inglés sin límites con tu coach"),
+    Feature(Icons.Default.Shield,             "paywall.feat.shield.title",   "Escudo de racha",                "paywall.feat.shield.sub",   "Protege tu racha hasta 3 días", proOnly = true),
+    Feature(Icons.Default.WifiOff,            "paywall.feat.offline.title",  "Lecciones sin conexión",         "paywall.feat.offline.sub",  "Practica en el metro, sin internet", proOnly = true),
+    Feature(Icons.Default.LocalFireDepartment,"paywall.feat.noads.title",    "Sin anuncios ni interrupciones", "paywall.feat.noads.sub",    "Flujo de aprendizaje puro", proOnly = true),
+    Feature(Icons.Default.Star,               "paywall.feat.srs.title",      "Repaso inteligente ilimitado",   "paywall.feat.srs.sub",      "SRS sin tope de tarjetas por día"),
+    Feature(Icons.Default.CheckCircle,        "paywall.feat.stats.title",    "Estadísticas avanzadas",         "paywall.feat.stats.sub",    "Velocidad lectora, éxito por habilidad", proOnly = true),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -401,13 +407,13 @@ private fun TestimonialCard(t: Testimonial) {
             }
             Spacer(Modifier.height(6.dp))
             Text(
-                "\"${t.quote}\"",
+                "\"${I18nStore.t(t.quoteKey, t.quote)}\"",
                 style = MaterialTheme.typography.bodyMedium,
                 fontStyle = FontStyle.Italic,
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "— ${t.author}",
+                "— ${I18nStore.t(t.authorKey, t.author)}",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -427,7 +433,7 @@ private fun FeatureRow(feature: Feature) {
         Spacer(Modifier.width(12.dp))
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(feature.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                Text(I18nStore.t(feature.titleKey, feature.title), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                 if (feature.proOnly) {
                     Spacer(Modifier.width(6.dp))
                     Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.extraSmall) {
@@ -437,7 +443,7 @@ private fun FeatureRow(feature: Feature) {
                     }
                 }
             }
-            Text(feature.subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(I18nStore.t(feature.subtitleKey, feature.subtitle), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
