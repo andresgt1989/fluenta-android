@@ -36,6 +36,19 @@ internal fun unitCompletedBy(
     return unit.takeIf { it.lessons.isNotEmpty() && it.lessons.all { l -> l.completed } }
 }
 
+/**
+ * leccion_abandonada (predicado puro, testeable en JVM): dado el estado de la
+ * lección y si ya se emitió un evento de salida, decide si el abandono debe
+ * dispararse. Solo cuenta como abandono si la lección estaba EN CURSO (cargada,
+ * con ejercicios, sin resultado) y aún no se emitió ningún evento de salida —
+ * garantiza exclusión mutua con leccion_completada y un único disparo.
+ */
+internal fun shouldFireAbandon(state: LessonPlayerState, alreadyTracked: Boolean): Boolean =
+    !alreadyTracked &&
+        state.result == null &&
+        !state.loading &&
+        state.exercises.isNotEmpty()
+
 data class LessonPlayerState(
     val loading: Boolean = true,
     val error: String? = null,
@@ -235,8 +248,7 @@ class LessonPlayerViewModel(savedState: SavedStateHandle, private val app: Appli
     fun abandon() {
         val ctx = app ?: return
         val s = _state.value
-        if (outcomeTracked || s.result != null) return
-        if (s.loading || s.exercises.isEmpty()) return
+        if (!shouldFireAbandon(s, outcomeTracked)) return
         outcomeTracked = true
         Analytics.track(ctx, Analytics.LESSON_ABANDON, mapOf(
             "lessonId" to lessonId,
