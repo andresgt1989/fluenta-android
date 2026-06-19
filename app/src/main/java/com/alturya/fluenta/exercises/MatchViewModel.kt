@@ -1,5 +1,6 @@
 package com.alturya.fluenta.exercises
 
+import com.alturya.fluenta.data.I18nStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alturya.fluenta.network.ApiClient
@@ -46,7 +47,7 @@ class MatchViewModel : ViewModel() {
                     answerKey = pairs.associate { it.l2 to it.l1 }
                 )
             } catch (e: Exception) {
-                _state.value = MatchState(loading = false, error = "No se pudo cargar el ejercicio")
+                _state.value = MatchState(loading = false, error = I18nStore.t("match.error.load", "No se pudo cargar el ejercicio"))
             }
         }
     }

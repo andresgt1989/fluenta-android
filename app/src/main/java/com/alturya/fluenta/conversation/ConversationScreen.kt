@@ -153,11 +153,13 @@ fun ConversationScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("¡Acabas de hablar en inglés!", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text(I18nStore.t("convo.justSpoke", "¡Acabas de hablar en inglés!"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             }
                             Spacer(Modifier.height(6.dp))
                             Text(
-                                "Dijiste ${state.spokenPhrases} ${if (state.spokenPhrases == 1) "frase" else "frases"}. Crea tu cuenta gratis para guardar tu racha y seguir practicando.",
+                                I18nStore.t("convo.guestSummary", "Dijiste {n} {plural}. Crea tu cuenta gratis para guardar tu racha y seguir practicando.")
+                                    .replace("{n}", "${state.spokenPhrases}")
+                                    .replace("{plural}", if (state.spokenPhrases == 1) I18nStore.t("convo.phraseSingular", "frase") else I18nStore.t("convo.phrasePlural", "frases")),
                                 style = MaterialTheme.typography.bodyMedium,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             )
@@ -169,7 +171,7 @@ fun ConversationScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("¡Conversación completa!", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text(I18nStore.t("convo.complete", "¡Conversación completa!"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             }
                             Spacer(Modifier.height(6.dp))
                             Text(I18nStore.t("convo.spokeSummary", "Hablaste {n} veces · +{xp} XP").replace("{n}", "${state.spokenPhrases}").replace("{xp}", "${state.xpEarned}"), style = MaterialTheme.typography.bodyMedium)

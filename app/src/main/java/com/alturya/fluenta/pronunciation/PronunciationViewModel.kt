@@ -1,5 +1,6 @@
 package com.alturya.fluenta.pronunciation
 
+import com.alturya.fluenta.data.I18nStore
 import android.content.Context
 import android.media.MediaRecorder
 import android.os.Build
@@ -56,7 +57,7 @@ class PronunciationViewModel : ViewModel() {
                 val res = ApiClient.api.getDrill(phoneme)
                 _state.value = PronState(loading = false, drill = res.drill, source = res.source)
             } catch (e: Exception) {
-                _state.value = PronState(loading = false, error = "No se pudo cargar el ejercicio")
+                _state.value = PronState(loading = false, error = I18nStore.t("pron.error.load", "No se pudo cargar el ejercicio"))
             }
         }
     }
@@ -67,7 +68,7 @@ class PronunciationViewModel : ViewModel() {
             _state.value = _state.value.copy(playing = text)
             val res = TtsPlayer.play(context, text)
             _state.value = if (res.isSuccess) _state.value.copy(playing = null)
-            else _state.value.copy(playing = null, error = "No se pudo reproducir el audio")
+            else _state.value.copy(playing = null, error = I18nStore.t("pron.error.audio", "No se pudo reproducir el audio"))
         }
     }
 
@@ -117,7 +118,7 @@ class PronunciationViewModel : ViewModel() {
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     assessing = null,
-                    error = "Error al evaluar: ${e.message?.take(60)}",
+                    error = I18nStore.t("pron.error.assess", "Error al evaluar: {msg}").replace("{msg}", "${e.message?.take(60)}"),
                 )
             } finally {
                 file.delete()

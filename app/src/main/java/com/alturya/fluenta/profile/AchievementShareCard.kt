@@ -65,7 +65,7 @@ fun AchievementShareCard(
             Text(
                 buildString {
                     append("${flag(l2)} ${langName(l2)} · ${levelLabel(level, levelSystem)} ${levelSystemName(levelSystem)}")
-                    if (streakDays > 1) append(" · $streakDays días")
+                    if (streakDays > 1) append(" · " + I18nStore.t("profile.streakDays", "{n} días").replace("{n}", "$streakDays"))
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,

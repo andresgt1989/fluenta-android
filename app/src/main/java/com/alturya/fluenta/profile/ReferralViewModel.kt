@@ -1,5 +1,6 @@
 package com.alturya.fluenta.profile
 
+import com.alturya.fluenta.data.I18nStore
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -52,12 +53,12 @@ class ReferralViewModel : ViewModel() {
                     it.copy(
                         claiming = false,
                         claimSuccess = res.ok,
-                        claimMessage = res.message ?: res.reason ?: if (res.ok) "Código aplicado" else "Código no válido",
+                        claimMessage = res.message ?: res.reason ?: if (res.ok) I18nStore.t("referral.applied", "Código aplicado") else I18nStore.t("referral.invalid", "Código no válido"),
                     )
                 }
                 if (res.ok) load()
             } catch (e: Exception) {
-                _state.update { it.copy(claiming = false, claimMessage = "Error de red. Intenta de nuevo.") }
+                _state.update { it.copy(claiming = false, claimMessage = I18nStore.t("referral.error.network", "Error de red. Intenta de nuevo.")) }
             }
         }
     }

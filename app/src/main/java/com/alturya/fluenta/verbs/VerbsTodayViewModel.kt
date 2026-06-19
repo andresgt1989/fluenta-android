@@ -1,5 +1,6 @@
 package com.alturya.fluenta.verbs
 
+import com.alturya.fluenta.data.I18nStore
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -46,7 +47,7 @@ class VerbsTodayViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 Log.e("VerbsToday", "load failed", e)
-                _state.update { it.copy(loading = false, error = "No se pudieron cargar los verbos.") }
+                _state.update { it.copy(loading = false, error = I18nStore.t("verbs.error.load", "No se pudieron cargar los verbos.")) }
             }
         }
     }
