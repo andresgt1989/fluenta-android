@@ -13,7 +13,7 @@ Lentes: **PhD Pedagogía de idiomas · PhD UX · Builder de unicornios · CEO de
 | 3 | **Pedagogía / eficacia real** | **45** | Tiene SRS, diagnóstico CAT, conversación, errores por categoría. Pero gramática no explícita, profundidad A1→C2 sin probar, práctica oral rota en el arranque. |
 | 4 | **Retención / hábito / gamificación** | **40** | Racha + XP + SRS + combo. Pero liga es placeholder, misiones ausentes, logros delgados, notificaciones recién con opt-in. |
 | 5 | **Personalización / IA** | **55** | Coach proactivo, diagnóstico adaptativo, patrones de error. Fortaleza relativa. Pero el coach habla en L2 a principiantes (aterrador). |
-| 6 | **Contenido** | **35** | Currículo solo en algunos pares (muchos "próximamente"), profundidad por nivel sin probar, ~16 destinos de 20. |
+| 6 | **Contenido** | **42** | Motor de contenido research-grounded: competencias A1–C2 + exámenes oficiales + **gate PhD probado** (rechaza basura). Falta: generar a escala (20×6) y wirear a la app. (Era 35.) |
 | 7 | **Tecnología / fiabilidad** | **55** | Sin crashes en logcat (bien). Pero 65 fallos silenciosos (mejorando), offline parcial, sin tests que bloqueen regresiones. |
 | 8 | **Negocio / monetización** | **50** | Stripe + planes + paywall existen. Paywall día-1 spam, sin precios localizados (PPP), prueba sin recordatorio de cobro. |
 | 9 | **Viralidad / growth loops** | **40** | Referidos + share card existen, pero referidos fallaba/oculto; sin loop fuerte ni k-factor medido. |
@@ -104,11 +104,21 @@ Investigación 2026 (RLVR / verifiers): el mayor fallo de un loop de auto-mejora
 3. **La suite de evals CRECE con cada feature** (cada pantalla nueva → su test dirigido), o el techo lo pone la cobertura, no la capacidad real.
 4. **Cero-crédito si el render es inválido** (crash, pantalla vacía) aunque el build pase.
 
-## Próximo objetivo del loop = la nota más baja
-Lo más bajo accionable client-side: **UX (45)** (cuello de botella percibido) y **Retención (46)**. Contenido (35) es BACKEND (escalado). → **Siguiente:**
-1. **Motor:** elevar el assert dirigido de misiones a **instrumentation en Test Lab (dispositivo real)** → recién ahí Retención sube más. Es el upgrade que cierra la brecha "robo solo prueba no-crash".
-2. **UX 45→:** botones 3D **planos aún en Login** (visto en robo), Paywall/GuestLesson, FluentaCard, mascota en bienvenida/estados vacíos.
-3. **Retención:** liga real, notis inteligentes.
+### Iteración 7 (CONTENIDO = prioridad #1: motor de contenido en el backend)
+Foco reorientado por decisión del CEO: **el contenido es lo crítico, el resto es accesorio.** Backend `/opt/alturya-incubator/apps/fluenta` (rama `admin/content-engine-evaluator`). Evidencia dura (tests + LLM real):
+- **`competency-model.ts`** — competencias CEFR **A1–C2** (vocab por familias, gramática, can-do) ancladas en investigación (Milton/Meara, Nation, CEFR CV) + mapeo a exámenes oficiales (HSK/JLPT/TOPIK).
+- **`language-standards.ts`** — exámenes oficiales reales por idioma/país (DELE, HSK, JLPT, TOPIK, Goethe, DELF…) = la "vara real".
+- **`content-evaluator.ts`** — **gate PhD-pedagogía** (determinista + examinador LLM) cableado al generador: genera→evalúa→regenera con crítica→solo entra lo aprobado.
+- **`learning-path.ts`** — report card: sitúa al alumno en su examen real + qué sigue hacia la meta.
+- **C2 habilitado end-to-end** (el enum DB ya lo tenía; sin migración) + TTS `tts-1-hd`.
+- ✅ **VERIFICADO con LLM real** (`verify-evaluator.ts`): unidad B2 buena `passed, score 82`; basura principiante `rechazada, score 30` (fuga + palabras sueltas). El gate anti-basura funciona end-to-end. **27 tests de contenido verdes, tsc 0 errores.**
+- **Contenido 35→42** (+7): C2 alcanzable + meta anclada en exámenes reales + gate de calidad probado. NO sube más: falta generar el currículo a escala (20×6 pasando el gate) y wirear a la app.
+→ **Global ~54/100**.
+
+## Próximo objetivo del loop = CONTENIDO (prioridad #1) + nota más baja
+**Contenido (42)** sigue siendo lo más bajo y es la PRIORIDAD. → **Siguiente:**
+1. **CONTENIDO:** wirear `learning-path` a un endpoint (la app muestra "estás en HSK 3 → ruta a HSK 6"); planificador adaptativo del siguiente ejercicio; correr generación a escala pasando el gate; considerar modelo LLM más fuerte (hoy gpt-4o-mini). Ver memoria `fluenta-content-engine`.
+2. **UX/Retención (accesorios):** Login OTP/GuestLesson 3D, FluentaCard, mascota; liga real, notis.
 
 ## Honestidad de método
 Cada nota se sube SOLO con evidencia real (Firebase Test Lab / código verificado), nunca con datos falsos. Si una mejora no se puede verificar en dispositivo real, no cuenta para subir la nota.
