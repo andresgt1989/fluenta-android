@@ -5,6 +5,15 @@
 > Objetivo: que cada iteración **componga** sobre la anterior con evidencia real,
 > sin reward-hacking del propio scorecard.
 
+## 🥇 PRIORIDAD #1 ABSOLUTA: CONTENIDO (decisión del CEO)
+**La mayor parte del loop debe ir a CONTENIDO; UX/botones/retención son ACCESORIOS.**
+Sin profesores ni usuarios reales, el contenido debe anclarse en **investigación constante**, nunca inventarse. **Filtro en CADA decisión de contenido:** "¿esto es nivel app unicornio / como lo haría Duolingo / lo aceptaría un curso universitario / prepara para el examen oficial REAL del idioma?".
+
+**El loop de contenido (cerebro pedagógico):**
+> investigar (constante) → modelo de competencias por nivel/idioma → generar → **evaluador PhD-pedagogía valida contra la rúbrica + el examen oficial** → solo lo aprobado entra → enseño → testeo → evalúo en qué nivel está → planeo los siguientes ejercicios hacia el EXAMEN REAL (SAT/TOEFL/HSK/JLPT…) → envío el ejercicio exacto → repito, adaptándome.
+
+**Dónde vive:** backend `/opt/alturya-incubator/apps/fluenta` (no el repo Android). Verificar con `npx vitest run` + `npx tsc --noEmit` (sin red, sin cuota). Ver memoria `fluenta-content-engine`. Construido: `competency-model.ts` (A1-C2), `language-standards.ts` (exámenes oficiales), `content-evaluator.ts` (gate PhD), cableado al generador. La nota más baja real = **Contenido**; subirla solo con tests verdes + generación real pasando el gate.
+
 ## Por qué este doc existe (la lección)
 Un loop de IA que se auto-califica tiende a **inflar su nota** (reward-hacking del
 verificador): subir el score sin señal externa dura, o "pasar tests" sin hacer el
