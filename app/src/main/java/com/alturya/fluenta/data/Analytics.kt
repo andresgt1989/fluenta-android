@@ -23,6 +23,8 @@ object Analytics {
     const val REGISTER_SUCCESS = "register_success"
     const val LESSON_START = "lesson_start"
     const val LESSON_COMPLETE = "lesson_complete"
+    const val LESSON_ABANDON = "lesson_abandon"     // ← salió de la lección SIN terminarla (retención)
+    const val UNIT_COMPLETE = "unit_complete"       // ← completó la última lección de una unidad (retención)
     const val CONVERSATION_START = "conversation_start"
     const val LANGUAGE_CHANGE = "language_change"   // mide caídas en idioma equivocado
 

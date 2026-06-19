@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.alturya.fluenta.data.Analytics
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.network.ExerciseCheckBody
@@ -19,6 +20,21 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+/**
+ * unidad_completada (función pura, testeable en JVM): dada la respuesta del mapa de
+ * currículo y la lección recién enviada, devuelve la unidad que contiene esa lección
+ * SI y solo si, con esta lección, TODAS las lecciones de la unidad quedan completas;
+ * `null` en caso contrario. Reglas: la lección debe pertenecer a alguna unidad; una
+ * unidad sin lecciones nunca cuenta como completada.
+ */
+internal fun unitCompletedBy(
+    map: com.alturya.fluenta.network.CurriculumMapResponse,
+    lessonId: String,
+): com.alturya.fluenta.network.CurriculumUnit? {
+    val unit = map.map.firstOrNull { u -> u.lessons.any { it.id == lessonId } } ?: return null
+    return unit.takeIf { it.lessons.isNotEmpty() && it.lessons.all { l -> l.completed } }
+}
 
 data class LessonPlayerState(
     val loading: Boolean = true,
@@ -47,6 +63,11 @@ class LessonPlayerViewModel(savedState: SavedStateHandle, private val app: Appli
 
     private val _state = MutableStateFlow(LessonPlayerState(lessonId = lessonId))
     val state: StateFlow<LessonPlayerState> = _state.asStateFlow()
+
+    // Retención: cada lección emite EXACTAMENTE un evento de salida —
+    // leccion_completada (submit OK) o leccion_abandonada (salió antes). Este flag
+    // garantiza que no se dispare ninguno dos veces ni ambos para la misma lección.
+    private var outcomeTracked = false
 
     init { load() }
 
@@ -168,11 +189,61 @@ class LessonPlayerViewModel(savedState: SavedStateHandle, private val app: Appli
                     LessonSubmitBody(answers = answers, timeSpentSeconds = timeSpent),
                 )
                 _state.update { it.copy(submitting = false, result = res) }
+                trackCompletion(res, timeSpent)
             } catch (e: Exception) {
                 Log.e("LessonPlayer", "submit failed", e)
                 _state.update { it.copy(submitting = false, error = I18nStore.t("lesson.submitError", "Error enviando respuestas. Reintenta.")) }
             }
         }
+    }
+
+    /** leccion_completada (+ unidad_completada si ésta era la última de su unidad).
+     *  Solo se llama tras un submit con éxito; nunca tras un abandono. */
+    private fun trackCompletion(res: LessonSubmitResponse, timeSpentSeconds: Int) {
+        val ctx = app ?: return
+        if (outcomeTracked) return
+        outcomeTracked = true
+        Analytics.track(ctx, Analytics.LESSON_COMPLETE, mapOf(
+            "lessonId" to lessonId,
+            "scorePct" to res.scorePct.toString(),
+            "passed" to res.passed.toString(),
+            "timeSpentSeconds" to timeSpentSeconds.toString(),
+        ))
+        // unidad_completada: derivada del mapa de currículo (fuente de verdad del
+        // backend). Si todas las lecciones de la unidad que contiene a ésta quedan
+        // `completed`, la unidad se completó con esta lección. Fire-and-forget: si
+        // la red falla, perdemos el evento de unidad pero nunca el de lección.
+        if (!res.passed) return
+        viewModelScope.launch {
+            try {
+                val unit = unitCompletedBy(ApiClient.api.getCurriculumMap(), lessonId) ?: return@launch
+                Analytics.track(ctx, Analytics.UNIT_COMPLETE, mapOf(
+                    "unitId" to unit.id,
+                    "unitNumber" to unit.number.toString(),
+                    "lessonId" to lessonId,
+                ))
+            } catch (e: Exception) {
+                Log.e("LessonPlayer", "unit-complete check failed", e)
+            }
+        }
+    }
+
+    /** leccion_abandonada: el usuario salió de la lección SIN terminarla.
+     *  Idempotente y mutuamente excluyente con leccion_completada. Solo cuenta si la
+     *  lección ya estaba en curso (se cargó), para no marcar como abandono una
+     *  pantalla que nunca llegó a mostrar ejercicios. */
+    fun abandon() {
+        val ctx = app ?: return
+        val s = _state.value
+        if (outcomeTracked || s.result != null) return
+        if (s.loading || s.exercises.isEmpty()) return
+        outcomeTracked = true
+        Analytics.track(ctx, Analytics.LESSON_ABANDON, mapOf(
+            "lessonId" to lessonId,
+            "exerciseIndex" to s.currentIndex.toString(),
+            "total" to s.exercises.size.toString(),
+            "teachDone" to s.teachDone.toString(),
+        ))
     }
 
     fun retry() = load()

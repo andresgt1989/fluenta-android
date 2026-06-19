@@ -94,13 +94,15 @@ import java.io.File
 
 @Composable
 fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit, onConversation: () -> Unit = {}, previewState: LessonPlayerState? = null) {
+    val appContext = LocalContext.current.applicationContext as android.app.Application
     val vm: LessonPlayerViewModel = viewModel(
         key = "lesson_$lessonId",
         factory = object : androidx.lifecycle.ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T =
                 LessonPlayerViewModel(
-                    androidx.lifecycle.SavedStateHandle(mapOf("lessonId" to lessonId))
+                    androidx.lifecycle.SavedStateHandle(mapOf("lessonId" to lessonId)),
+                    appContext,
                 ) as T
         }
     )
@@ -108,6 +110,14 @@ fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit, onConversation: () 
     val state = previewState ?: vmState
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+
+    // leccion_abandonada: salir con el botón atrás del sistema ANTES de completar
+    // cuenta como abandono (retención). Tras ver resultados, atrás solo navega.
+    // El previewState (tests de UI/screenshots) no instrumenta.
+    androidx.activity.compose.BackHandler(enabled = previewState == null) {
+        if (state.result == null) vm.abandon()
+        onDone()
+    }
 
     Box(Modifier.fillMaxSize()) {
         when {
