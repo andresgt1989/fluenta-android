@@ -37,6 +37,7 @@ import com.alturya.fluenta.util.isRtl
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alturya.fluenta.data.I18nStore
+import com.alturya.fluenta.ui.SpeakerButton
 import com.alturya.fluenta.util.langName
 
 // Pantalla del wedge: conversación de voz abierta. El usuario habla (STT del
@@ -298,17 +299,10 @@ private fun MessageBubble(msg: ConvoMessage, isRtlL2: Boolean = false) {
                 )
                 // Hear the partner speak the target language — essential for listening practice.
                 if (msg.fromPartner) {
-                    IconButton(
+                    SpeakerButton(
                         onClick = { scope.launch { TtsPlayer.play(context, msg.text, com.alturya.fluenta.data.Session.l2 ?: "en") } },
-                        modifier = Modifier.size(32.dp),
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.VolumeUp,
-                            contentDescription = I18nStore.t("convo.hear", "Escuchar"),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(16.dp),
-                        )
-                    }
+                        contentDescription = I18nStore.t("convo.hear", "Escuchar"),
+                    )
                 }
             }
         }
