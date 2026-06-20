@@ -19,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.alturya.fluenta.audio.Sfx
@@ -84,6 +86,7 @@ fun SettingsScreen(onBack: () -> Unit = {}) {
             I18nStore.t("settings.title", "Ajustes"),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
+            modifier = Modifier.semantics { heading() }, // a11y: encabezado de pantalla para TalkBack
         )
         Spacer(Modifier.height(4.dp))
 
@@ -200,6 +203,9 @@ private fun SectionTitle(text: String) {
         style = MaterialTheme.typography.titleSmall,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.primary,
+        // a11y: marca el título como encabezado para que TalkBack permita saltar
+        // sección a sección (WCAG 1.3.1 / 2.4.10). Patrón a replicar en otras pantallas.
+        modifier = Modifier.semantics { heading() },
     )
 }
 
