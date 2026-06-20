@@ -111,12 +111,33 @@ fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit, onConversation: () 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // leccion_abandonada: salir con el botón atrás del sistema ANTES de completar
-    // cuenta como abandono (retención). Tras ver resultados, atrás solo navega.
-    // El previewState (tests de UI/screenshots) no instrumenta.
-    androidx.activity.compose.BackHandler(enabled = previewState == null) {
-        if (state.result == null) vm.abandon()
-        onDone()
+    // Retención: salir a media lección es la mayor fuga. En vez de abandonar al
+    // primer toque de "atrás", confirmamos. Así se reducen abandonos accidentales
+    // y leccion_abandonada pasa a medir abandono INTENCIONAL. Tras ver resultados
+    // (result != null) o antes de cargar ejercicios, atrás solo navega.
+    val midLesson = state.result == null && !state.loading && state.exercises.isNotEmpty()
+    var showExitConfirm by rememberSaveable { mutableStateOf(false) }
+    androidx.activity.compose.BackHandler {
+        if (midLesson) showExitConfirm = true else onDone()
+    }
+    if (showExitConfirm) {
+        AlertDialog(
+            onDismissRequest = { showExitConfirm = false },
+            title = { Text(I18nStore.t("lesson.exitTitle", "¿Salir de la lección?")) },
+            text = { Text(I18nStore.t("lesson.exitBody", "Perderás el progreso de esta sesión. Estás muy cerca de terminar.")) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showExitConfirm = false
+                    vm.abandon()
+                    onDone()
+                }) { Text(I18nStore.t("lesson.exitConfirm", "Salir")) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExitConfirm = false }) {
+                    Text(I18nStore.t("lesson.exitStay", "Seguir aprendiendo"))
+                }
+            },
+        )
     }
 
     Box(Modifier.fillMaxSize()) {
