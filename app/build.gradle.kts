@@ -68,6 +68,8 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    // Recordatorio diario local (retención): notificación programada sin depender del backend.
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
     // Sign in with Google (Credential Manager — replaces the deprecated GoogleSignInClient)
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")

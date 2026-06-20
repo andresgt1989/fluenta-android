@@ -28,7 +28,10 @@ import androidx.navigation.compose.rememberNavController
 import com.alturya.fluenta.curriculum.CurriculumMapScreen
 import com.alturya.fluenta.data.Analytics
 import com.alturya.fluenta.data.I18nStore
+import com.alturya.fluenta.data.SettingsStore
 import com.alturya.fluenta.data.TokenStore
+import com.alturya.fluenta.reminder.ReminderScheduler
+import kotlinx.coroutines.flow.first
 import com.alturya.fluenta.diagnostic.DiagnosticScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
@@ -111,6 +114,15 @@ class MainActivity : ComponentActivity() {
 
                 // Señal de actividad diaria (D1/D7). Una vez por arranque.
                 LaunchedEffect(Unit) { Analytics.track(context, Analytics.APP_OPEN) }
+
+                // Recordatorio diario: reprogramar en cada arranque si está activo. El
+                // worker es OneTime y se reencadena solo, pero reprogramar aquí lo
+                // mantiene vivo tras reinstalar/forzar cierre. Idempotente (REPLACE).
+                LaunchedEffect(Unit) {
+                    if (SettingsStore.remindersEnabled(context).first()) {
+                        ReminderScheduler.schedule(context)
+                    }
+                }
 
                 // Respetar el toggle de sonido del usuario en toda la app.
                 val sfxOn by com.alturya.fluenta.data.SettingsStore.sfxEnabled(context).collectAsState(initial = true)

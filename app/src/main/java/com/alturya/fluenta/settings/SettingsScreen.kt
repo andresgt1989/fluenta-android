@@ -25,6 +25,7 @@ import com.alturya.fluenta.audio.Sfx
 import com.alturya.fluenta.data.GoalStore
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.data.SettingsStore
+import com.alturya.fluenta.reminder.ReminderScheduler
 import kotlinx.coroutines.launch
 
 @Composable
@@ -43,12 +44,15 @@ fun SettingsScreen(onBack: () -> Unit = {}) {
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         scope.launch { SettingsStore.setReminders(context, granted) }
+        // Solo programa si concedió el permiso; si no, el toggle queda apagado.
+        if (granted) ReminderScheduler.schedule(context)
     }
     fun enableReminders() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         } else {
             scope.launch { SettingsStore.setReminders(context, true) }
+            ReminderScheduler.schedule(context)
         }
     }
 
@@ -88,8 +92,12 @@ fun SettingsScreen(onBack: () -> Unit = {}) {
             title = I18nStore.t("settings.dailyReminder", "Recordatorio diario de práctica"),
             checked = remindersOn,
             onCheckedChange = { on ->
-                if (on) enableReminders()
-                else scope.launch { SettingsStore.setReminders(context, false) }
+                if (on) {
+                    enableReminders()
+                } else {
+                    scope.launch { SettingsStore.setReminders(context, false) }
+                    ReminderScheduler.cancel(context)
+                }
             },
         )
 
