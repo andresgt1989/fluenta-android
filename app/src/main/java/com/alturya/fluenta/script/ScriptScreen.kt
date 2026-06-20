@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -27,6 +28,16 @@ fun ScriptScreen(l2: String, onDone: () -> Unit = {}, previewState: ScriptUiStat
     val state = previewState ?: vmState
 
     LaunchedEffect(l2) { if (previewState == null) vm.load(l2) }
+
+    // SRS de caracteres: los glifos de esta lección entran a la cola de repaso
+    // espaciado (idempotente). Lo que se aprende vuelve para no olvidarse.
+    val context = LocalContext.current
+    LaunchedEffect(state.lesson?.items) {
+        val items = state.lesson?.items
+        if (previewState == null && !items.isNullOrEmpty()) {
+            HanziSrsStore.enqueue(context, l2, items)
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
