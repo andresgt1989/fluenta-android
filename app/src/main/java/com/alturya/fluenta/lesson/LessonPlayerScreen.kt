@@ -1204,7 +1204,10 @@ private fun ResultView(
                     Row(Modifier.padding(vertical = 4.dp)) {
                         Icon(
                             imageVector = if (r.correct) Icons.Default.CheckCircle else Icons.Default.Cancel,
-                            contentDescription = null,
+                            // a11y: la corrección se transmite por icono+color; sin label el lector
+                            // de pantalla no sabria si el ejercicio fue acierto o fallo (WCAG 1.1.1/1.4.1).
+                            contentDescription = if (r.correct) I18nStore.t("result.itemCorrect", "Correcto")
+                                else I18nStore.t("result.itemWrong", "Incorrecto"),
                             tint = if (r.correct) Color(0xFF22C55E) else MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(18.dp),
                         )
