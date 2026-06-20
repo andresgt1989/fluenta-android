@@ -254,7 +254,7 @@ private fun ErrorRow(err: ErrorItem) {
             val reviews = err.reviewCount ?: 0
             if (reviews > 0) {
                 Spacer(Modifier.height(4.dp))
-                Text(I18nStore.t("progress.reviewedCount", "Repasado {n} {plural}").replace("{n}", "$reviews").replace("{plural}", if (reviews == 1) I18nStore.t("progress.timeSingular", "vez") else I18nStore.t("progress.timePlural", "veces")), style = MaterialTheme.typography.labelSmall)
+                Text(I18nStore.plural("progress.reviewedCount", reviews, one = "Repasado {n} vez", other = "Repasado {n} veces"), style = MaterialTheme.typography.labelSmall)
             }
             err.nextReviewAt?.let { dateStr ->
                 val daysLeft = runCatching {

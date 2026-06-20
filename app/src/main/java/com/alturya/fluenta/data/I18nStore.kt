@@ -46,6 +46,31 @@ object I18nStore {
     fun t(key: String, fallback: String = key): String =
         memCache[key] ?: fallback
 
+    /**
+     * Plural-aware lookup. Picks the CLDR category for [count] in the current interface
+     * language and resolves `"$key.<category>"` from the backend strings, e.g.
+     * `progress.reviewedCount.one` / `.other` / (Arabic) `.few` / `.many`.
+     *
+     * The call-site NEVER branches on the language — it only supplies the two Spanish
+     * fallbacks ([one], [other]), which are correct for the source language (es has just
+     * one/other). Languages with richer rules (ar, ru, pl…) supply the extra forms from
+     * the backend JSON; if a needed form is missing we fall back to `.other`, then to the
+     * inline fallback. `{n}` is substituted with the locale-formatted number.
+     */
+    fun plural(key: String, count: Int, one: String, other: String, lang: String = memLang): String {
+        val cat = PluralRules.select(lang, count)
+        val template = memCache["$key.${cat.tag}"]
+            ?: memCache["$key.${PluralCategory.OTHER.tag}"]
+            ?: if (cat == PluralCategory.ONE) one else other
+        return template.replace("{n}", formatNumber(count, lang))
+    }
+
+    /** Locale-aware integer formatting (grouping separators differ: es "1.000" vs en "1,000"). */
+    fun formatNumber(n: Int, lang: String = memLang): String =
+        runCatching {
+            java.text.NumberFormat.getIntegerInstance(java.util.Locale.forLanguageTag(lang)).format(n.toLong())
+        }.getOrDefault(n.toString())
+
     /** Right-to-left interface languages (layout must mirror for these). */
     private val RTL_LANGS = setOf("ar", "fa", "ur", "he")
     fun isRtl(lang: String): Boolean = lang.lowercase().take(2) in RTL_LANGS
