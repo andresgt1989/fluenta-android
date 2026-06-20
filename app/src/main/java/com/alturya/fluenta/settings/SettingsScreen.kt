@@ -24,8 +24,10 @@ import androidx.compose.ui.unit.dp
 import com.alturya.fluenta.audio.Sfx
 import com.alturya.fluenta.data.GoalStore
 import com.alturya.fluenta.data.I18nStore
+import com.alturya.fluenta.data.InterfaceLang
 import com.alturya.fluenta.data.InterfaceLanguages
 import com.alturya.fluenta.data.SettingsStore
+import com.alturya.fluenta.network.ApiClient
 import kotlinx.coroutines.launch
 
 @Composable
@@ -38,6 +40,26 @@ fun SettingsScreen(onBack: () -> Unit = {}) {
     val remindersOn by SettingsStore.remindersEnabled(context).collectAsState(initial = true)
     val goalXp by GoalStore.flow(context).collectAsState(initial = 50)
     val uiLang by I18nStore.currentLangFlow(context).collectAsState(initial = "es")
+
+    // Idiomas de interfaz: server-driven para escalar sin release. Arranca con la lista
+    // curada (offline/fallback) y la reemplaza si el backend responde con una válida.
+    var languages by remember { mutableStateOf(InterfaceLanguages.SUPPORTED) }
+    LaunchedEffect(Unit) {
+        runCatching { ApiClient.api.getInterfaceLanguages() }
+            .getOrNull()?.languages
+            ?.mapNotNull { dto ->
+                dto.code?.lowercase()?.take(2)?.takeIf { it.length == 2 }?.let { code ->
+                    val known = InterfaceLanguages.byCode(code)
+                    InterfaceLang(
+                        code = code,
+                        nativeName = dto.nativeName?.takeIf { it.isNotBlank() } ?: known?.nativeName ?: code,
+                        flag = dto.flag?.takeIf { it.isNotBlank() } ?: known?.flag ?: "🌐",
+                    )
+                }
+            }
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { languages = it }
+    }
 
     // Permiso de notificaciones (Android 13+): se pide CON CONTEXTO, justo cuando el
     // usuario activa los recordatorios, no de golpe al abrir la app.
@@ -69,7 +91,7 @@ fun SettingsScreen(onBack: () -> Unit = {}) {
         // El nombre va en su propio idioma para que el usuario lo reconozca aunque
         // la app esté en un idioma que no entiende. Cambiarlo recarga los strings.
         SectionTitle(I18nStore.t("settings.language", "Idioma de la interfaz"))
-        InterfaceLanguages.SUPPORTED.forEach { lang ->
+        languages.forEach { lang ->
             val selected = lang.code == uiLang.lowercase().take(2)
             Card(
                 onClick = {

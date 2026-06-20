@@ -413,6 +413,13 @@ data class UiStringsResponse(
     val strings: Map<String, String>?,
 )
 
+// Registro server-driven de idiomas de INTERFAZ (alimenta el selector de Ajustes).
+// Permite escalar a 20-30+ idiomas sin publicar update: el backend gobierna qué
+// idiomas de UI están vivos. El cliente cae a InterfaceLanguages.SUPPORTED si falla.
+// `nativeName`/`flag` son opcionales: si faltan, el cliente completa desde su registro.
+data class InterfaceLangDto(val code: String?, val nativeName: String?, val flag: String?)
+data class InterfaceLanguagesResponse(val languages: List<InterfaceLangDto>?)
+
 // ── Conversación de voz abierta (el wedge) ──────────────────────────────────
 data class ConvoStartBody(val lessonId: String? = null, val scenario: String? = null, val goal: String? = null)
 data class GuestConvoStartBody(val l1: String, val l2: String, val scenario: String? = null, val goal: String? = null)
