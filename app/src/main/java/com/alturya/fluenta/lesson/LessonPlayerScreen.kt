@@ -1062,7 +1062,8 @@ private fun WordOrderExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) 
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 selected.forEachIndexed { pos, tokenIdx ->
-                    TokenChip(tokens[tokenIdx], filled = true) {
+                    TokenChip(tokens[tokenIdx], filled = true,
+                        reading = ex.tokenTransliteration?.getOrNull(tokenIdx)) {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         selected.removeAt(pos)
                     }
@@ -1078,7 +1079,8 @@ private fun WordOrderExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) 
         ) {
             tokens.indices.forEach { idx ->
                 if (idx !in selected) {
-                    TokenChip(tokens[idx], filled = false) {
+                    TokenChip(tokens[idx], filled = false,
+                        reading = ex.tokenTransliteration?.getOrNull(idx)) {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         selected.add(idx)
                     }
@@ -1095,19 +1097,25 @@ private fun WordOrderExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) 
 }
 
 @Composable
-private fun TokenChip(text: String, filled: Boolean, onClick: () -> Unit) {
+private fun TokenChip(text: String, filled: Boolean, reading: String? = null, onClick: () -> Unit) {
+    val fg = if (filled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.small,
         color = if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         tonalElevation = if (filled) 0.dp else 2.dp,
     ) {
-        Text(
-            text,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-            style = MaterialTheme.typography.bodyLarge,
-            color = if (filled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-        )
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            // Pinyin/romaji ENCIMA del L2: se lee la guía y luego el carácter, como en
+            // material didáctico de chino. Solo aparece si el backend manda la lectura.
+            reading?.takeIf { it.isNotBlank() }?.let {
+                Text(it, style = MaterialTheme.typography.labelSmall, color = fg.copy(alpha = 0.75f))
+            }
+            Text(text, style = MaterialTheme.typography.bodyLarge, color = fg)
+        }
     }
 }
 

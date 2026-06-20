@@ -255,6 +255,10 @@ data class PlayableExercise(
     val transliteration: String? = null,
     // match_pairs — lecturas latinas alineadas 1:1 con `left`
     val leftTransliteration: List<String?>? = null,
+    // word_order — lectura latina (pinyin/romaji) por TOKEN, alineada 1:1 con `tokens`.
+    // Va por token a propósito: la transliteración de la frase completa delataría el orden.
+    // Opcional: si el backend no la envía, el chip muestra solo el L2 (degradación limpia).
+    val tokenTransliteration: List<String?>? = null,
 )
 
 // Guest lesson (no auth) — play-first onboarding
