@@ -49,7 +49,8 @@ fun FluentaButton(
     val cs = MaterialTheme.colorScheme
     val (face, base, content) = when (style) {
         FluentaButtonStyle.Primary -> Triple(cs.primary, cs.primary.darken(), cs.onPrimary)
-        FluentaButtonStyle.Success -> Triple(Color(0xFF22C55E), Color(0xFF15803D), Color.White)
+        // a11y: cara verde profundizada (#22C55E daba 2.28:1 con texto blanco) -> #178640 = 4.65:1
+        FluentaButtonStyle.Success -> Triple(Color(0xFF178640), Color(0xFF15803D), Color.White)
         FluentaButtonStyle.Danger  -> Triple(cs.error, cs.error.darken(), cs.onError)
         FluentaButtonStyle.Neutral -> Triple(cs.surfaceVariant, FluentaSlate.copy(alpha = 0.5f), cs.onSurface)
     }
