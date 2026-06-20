@@ -24,6 +24,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -65,7 +67,8 @@ private fun IntroPanel(onStart: () -> Unit, onSkip: () -> Unit = {}) {
     ) {
         Icon(Icons.Default.GpsFixed, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(80.dp))
         Spacer(Modifier.height(16.dp))
-        Text(I18nStore.t("diagnostic.title", "Test de nivel"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Text(I18nStore.t("diagnostic.title", "Test de nivel"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
+            modifier = Modifier.semantics { heading() })
         Spacer(Modifier.height(8.dp))
         Text(
             I18nStore.t("diagnostic.intro", "6 preguntas adaptativas que ajustan su dificultad a tu nivel real. Tarda menos de 2 minutos."),

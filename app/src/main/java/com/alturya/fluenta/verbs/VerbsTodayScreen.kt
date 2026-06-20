@@ -18,6 +18,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -62,7 +64,8 @@ fun VerbsTodayScreen(previewState: VerbsTodayState? = null) {
     ) {
         item {
             Column {
-                Text(I18nStore.t("verbs.title", "Verbos del día"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text(I18nStore.t("verbs.title", "Verbos del día"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.semantics { heading() })
                 Text(
                     I18nStore.t("verbs.intro", "Mínimo 10 verbos diarios con sus variantes. Domina 3 veces y se marca completo."),
                     style = MaterialTheme.typography.bodyMedium,

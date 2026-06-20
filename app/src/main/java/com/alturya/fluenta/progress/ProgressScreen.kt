@@ -19,6 +19,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -60,7 +62,8 @@ fun ProgressScreen(previewState: ProgressState? = null) {
         contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item { Text(I18nStore.t("progress.title", "Tu progreso"), style = MaterialTheme.typography.headlineMedium) }
+        item { Text(I18nStore.t("progress.title", "Tu progreso"), style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.semantics { heading() }) }
 
         // Weekly league leaderboard (retention mechanic) — backend ranks Sundays.
         item { LeagueCard() }

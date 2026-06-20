@@ -12,6 +12,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -48,7 +50,8 @@ fun MatchScreen(onDone: () -> Unit = {}, previewState: MatchState? = null) {
 @Composable
 private fun GameBoard(state: MatchState, vm: MatchViewModel) {
     Column(Modifier.fillMaxSize()) {
-        Text(I18nStore.t("match.title", "Empareja"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Text(I18nStore.t("match.title", "Empareja"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
+            modifier = Modifier.semantics { heading() })
         Text(I18nStore.t("match.subtitle", "Une cada frase con su significado"), style = MaterialTheme.typography.bodyMedium)
         Spacer(Modifier.height(8.dp))
         val progress by animateFloatAsState(
