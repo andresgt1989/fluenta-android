@@ -345,6 +345,13 @@ private fun MainScaffold(
                     lessonId = lessonId,
                     onDone = { nav.popBackStack() },
                     onConversation = { nav.navigate("conversation") { launchSingleTop = true } },
+                    // Siguiente lección reemplaza la actual en el back stack: "atrás"
+                    // desde ella vuelve al mapa, no acumula lecciones completadas.
+                    onNextLesson = { nextId ->
+                        nav.navigate("lesson/$nextId") {
+                            popUpTo("lesson/$lessonId") { inclusive = true }
+                        }
+                    },
                 )
             }
             composable("map") {

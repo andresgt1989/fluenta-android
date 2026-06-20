@@ -93,7 +93,7 @@ import org.json.JSONObject
 import java.io.File
 
 @Composable
-fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit, onConversation: () -> Unit = {}, previewState: LessonPlayerState? = null) {
+fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit, onConversation: () -> Unit = {}, onNextLesson: (String) -> Unit = {}, previewState: LessonPlayerState? = null) {
     val appContext = LocalContext.current.applicationContext as android.app.Application
     val vm: LessonPlayerViewModel = viewModel(
         key = "lesson_$lessonId",
@@ -151,6 +151,8 @@ fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit, onConversation: () 
                 // Independencia de WhatsApp: "aplica lo aprendido" ahora abre la
                 // Conversación IN-APP (el reemplazo del bot), no WhatsApp.
                 onPracticeConversation = onConversation,
+                nextLessonId = state.nextLessonId,
+                onNextLesson = onNextLesson,
                 onDone = onDone,
             )
             state.exercises.isEmpty() -> ErrorView(I18nStore.t("lesson.noExercises", "Esta lección aún no tiene ejercicios disponibles."), onRetry = vm::retry, onBack = onDone)
@@ -1146,6 +1148,8 @@ private fun TokenChip(text: String, filled: Boolean, onClick: () -> Unit) {
 private fun ResultView(
     result: com.alturya.fluenta.network.LessonSubmitResponse,
     onPracticeConversation: () -> Unit,
+    nextLessonId: String? = null,
+    onNextLesson: (String) -> Unit = {},
     onDone: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -1354,6 +1358,17 @@ private fun ResultView(
             }
         }
 
+        // Retención: si aprobó y hay una lección pendiente por delante, ofrecer
+        // continuar AQUÍ mantiene el momentum (no soltar al menú). Acción primaria;
+        // "Volver al inicio" pasa a secundaria. Si no hay siguiente, solo está volver.
+        if (result.passed && nextLessonId != null) {
+            com.alturya.fluenta.ui.FluentaButton(
+                text = I18nStore.t("result.nextLesson", "Siguiente lección →"),
+                onClick = { onNextLesson(nextLessonId) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(6.dp))
+        }
         OutlinedButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
             Text(I18nStore.t("common.backHome", "Volver al inicio"))
         }

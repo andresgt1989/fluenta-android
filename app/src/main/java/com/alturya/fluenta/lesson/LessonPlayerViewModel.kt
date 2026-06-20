@@ -37,6 +37,26 @@ internal fun unitCompletedBy(
 }
 
 /**
+ * Siguiente lección (función pura, testeable en JVM): aplana el currículo en su
+ * orden real (unidad.number, luego lección.number) y devuelve la PRIMERA lección
+ * aún no completada que viene DESPUÉS de la recién terminada. Es el destino de
+ * "Siguiente lección →" en la pantalla de resultados: mantiene el momentum en vez
+ * de soltar al usuario al menú. `null` si la actual no está en el mapa o si ya no
+ * quedan lecciones pendientes por delante (terminó todo lo disponible).
+ */
+internal fun nextLessonAfter(
+    map: com.alturya.fluenta.network.CurriculumMapResponse,
+    currentLessonId: String,
+): String? {
+    val flat = map.map
+        .sortedBy { it.number }
+        .flatMap { u -> u.lessons.sortedBy { it.number } }
+    val idx = flat.indexOfFirst { it.id == currentLessonId }
+    if (idx < 0) return null
+    return flat.drop(idx + 1).firstOrNull { !it.completed }?.id
+}
+
+/**
  * leccion_abandonada (predicado puro, testeable en JVM): dado el estado de la
  * lección y si ya se emitió un evento de salida, decide si el abandono debe
  * dispararse. Solo cuenta como abandono si la lección estaba EN CURSO (cargada,
@@ -67,6 +87,7 @@ data class LessonPlayerState(
     val startedAtMs: Long = 0L,
     val submitting: Boolean = false,
     val result: LessonSubmitResponse? = null,
+    val nextLessonId: String? = null,   // destino de "Siguiente lección →" tras completar (retención)
 )
 
 class LessonPlayerViewModel(savedState: SavedStateHandle, private val app: Application? = null) : ViewModel() {
@@ -229,7 +250,11 @@ class LessonPlayerViewModel(savedState: SavedStateHandle, private val app: Appli
         if (!res.passed) return
         viewModelScope.launch {
             try {
-                val unit = unitCompletedBy(ApiClient.api.getCurriculumMap(), lessonId) ?: return@launch
+                // Una sola lectura del mapa sirve para dos cosas: el evento de
+                // unidad completada y el destino de "Siguiente lección →".
+                val map = ApiClient.api.getCurriculumMap()
+                _state.update { it.copy(nextLessonId = nextLessonAfter(map, lessonId)) }
+                val unit = unitCompletedBy(map, lessonId) ?: return@launch
                 Analytics.track(ctx, Analytics.UNIT_COMPLETE, mapOf(
                     "unitId" to unit.id,
                     "unitNumber" to unit.number.toString(),
