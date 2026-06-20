@@ -6,6 +6,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -95,6 +98,17 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         pendingLessonId.value = intent.lessonIdFromDeepLink()
+
+        // sesion_iniciada (retención): un disparo por foreground del proceso. ON_START
+        // del ProcessLifecycleOwner ocurre al traer la app al frente y NO en
+        // recreaciones de Activity (rotación), evitando doble conteo. Usa el
+        // applicationContext para no retener la Activity.
+        val appCtx = applicationContext
+        ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onStart(owner: LifecycleOwner) {
+                Analytics.track(appCtx, Analytics.SESSION_START)
+            }
+        })
         setContent {
             FluentaTheme {
                 val context = LocalContext.current

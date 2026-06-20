@@ -15,6 +15,10 @@ import kotlinx.coroutines.launch
 object Analytics {
     // Funnel event names — must match the backend whitelist in /api/events.
     const val APP_OPEN = "app_open"
+    // sesion_iniciada (retención): se dispara cada vez que el proceso vuelve a
+    // foreground (ProcessLifecycleOwner ON_START), no solo en el arranque frío.
+    // Distinto de APP_OPEN, que es one-shot por arranque de proceso.
+    const val SESSION_START = "session_start"
     const val ONBOARDING_START = "onboarding_start"
     const val ONBOARDING_DONE = "onboarding_done"
     const val WEDGE_START = "wedge_start"
