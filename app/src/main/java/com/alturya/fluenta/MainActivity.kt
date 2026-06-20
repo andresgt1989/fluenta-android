@@ -116,14 +116,12 @@ class MainActivity : ComponentActivity() {
                 val sfxOn by com.alturya.fluenta.data.SettingsStore.sfxEnabled(context).collectAsState(initial = true)
                 LaunchedEffect(sfxOn) { com.alturya.fluenta.audio.Sfx.enabled = sfxOn }
 
-                // Capa 1 — Detección L1 + 30 pares: cargar strings UI en idioma nativo.
-                // Si el usuario tiene perfil cargado, el L1 del perfil manda. Sin perfil:
-                // device locale como fallback razonable. Backend cachea 30d, app cachea 24h.
-                LaunchedEffect(token) {
-                    val deviceLang = java.util.Locale.getDefault().language
-                        .takeIf { it.length == 2 } ?: "es"
-                    I18nStore.ensureLoaded(context, deviceLang)
-                }
+                // Capa 1 — i18n: en el primer arranque el idioma de interfaz se siembra del
+                // locale del dispositivo; a partir de ahí MANDA la elección del usuario
+                // (Ajustes → Idioma). La carga de strings reacciona a `uiLang` (no solo al
+                // token), así cambiar idioma recarga de inmediato. Backend 30d, app 24h.
+                LaunchedEffect(Unit) { I18nStore.initLangFromDeviceIfUnset(context) }
+                LaunchedEffect(uiLang) { I18nStore.ensureLoaded(context, uiLang) }
 
                 // First-run routing, decided ONCE from a single atomic prefs read so
                 // there's no token/onboarding race, then frozen (changing a NavHost

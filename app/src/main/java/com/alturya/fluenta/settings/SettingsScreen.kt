@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.alturya.fluenta.audio.Sfx
 import com.alturya.fluenta.data.GoalStore
 import com.alturya.fluenta.data.I18nStore
+import com.alturya.fluenta.data.InterfaceLanguages
 import com.alturya.fluenta.data.SettingsStore
 import kotlinx.coroutines.launch
 
@@ -36,6 +37,7 @@ fun SettingsScreen(onBack: () -> Unit = {}) {
     val hapticsOn by SettingsStore.hapticsEnabled(context).collectAsState(initial = true)
     val remindersOn by SettingsStore.remindersEnabled(context).collectAsState(initial = true)
     val goalXp by GoalStore.flow(context).collectAsState(initial = 50)
+    val uiLang by I18nStore.currentLangFlow(context).collectAsState(initial = "es")
 
     // Permiso de notificaciones (Android 13+): se pide CON CONTEXTO, justo cuando el
     // usuario activa los recordatorios, no de golpe al abrir la app.
@@ -62,6 +64,38 @@ fun SettingsScreen(onBack: () -> Unit = {}) {
             fontWeight = FontWeight.Bold,
         )
         Spacer(Modifier.height(4.dp))
+
+        // ── Idioma de la interfaz ─────────────────────────────────────────────
+        // El nombre va en su propio idioma para que el usuario lo reconozca aunque
+        // la app esté en un idioma que no entiende. Cambiarlo recarga los strings.
+        SectionTitle(I18nStore.t("settings.language", "Idioma de la interfaz"))
+        InterfaceLanguages.SUPPORTED.forEach { lang ->
+            val selected = lang.code == uiLang.lowercase().take(2)
+            Card(
+                onClick = {
+                    if (!selected) scope.launch {
+                        I18nStore.setLang(context, lang.code)
+                        I18nStore.ensureLoaded(context, lang.code)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.surfaceVariant,
+                ),
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(lang.flag, style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.width(12.dp))
+                    Text(lang.nativeName, fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                    if (selected) RadioButton(selected = true, onClick = null)
+                }
+            }
+        }
 
         // ── Sonido y vibración ────────────────────────────────────────────────
         SectionTitle(I18nStore.t("settings.feedback", "Sonido y vibración"))

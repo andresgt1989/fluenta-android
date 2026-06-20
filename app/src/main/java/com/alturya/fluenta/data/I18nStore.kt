@@ -38,8 +38,32 @@ object I18nStore {
     fun currentLangFlow(context: Context): Flow<String> =
         context.i18nDataStore.data.map { it[LANG_KEY] ?: "es" }
 
+    /**
+     * User picks the interface language manually. Persists the choice AND invalidates the
+     * cached strings: they belong to the previous language, so the next [ensureLoaded] must
+     * refetch. Without this, the stale JSON would be served mislabeled as the new language.
+     */
     suspend fun setLang(context: Context, lang: String) {
-        context.i18nDataStore.edit { it[LANG_KEY] = lang }
+        context.i18nDataStore.edit {
+            it[LANG_KEY] = lang
+            it.remove(STRINGS_KEY)
+            it.remove(FETCHED_AT_KEY)
+        }
+        memCache = emptyMap()
+        memLang = ""
+    }
+
+    /**
+     * First run only: seed the persisted interface language from the device locale, so the
+     * UI (and RTL mirroring, which reads [currentLangFlow]) matches the phone out of the box.
+     * No-op once the user has a stored preference — manual choice always wins.
+     */
+    suspend fun initLangFromDeviceIfUnset(context: Context) {
+        val prefs = context.i18nDataStore.data.first()
+        if (prefs[LANG_KEY] == null) {
+            val device = java.util.Locale.getDefault().language.takeIf { it.length == 2 } ?: "es"
+            context.i18nDataStore.edit { it[LANG_KEY] = device }
+        }
     }
 
     /** Read a string by key. Returns the key itself if not yet loaded. */
