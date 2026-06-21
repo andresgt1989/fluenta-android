@@ -2,6 +2,12 @@
 
 > Al entrar a **modo admin Fluenta**: lee este archivo + `CLAUDE.md` + `EVALUACION_UNICORNIO.md`, recrea las tareas como TaskCreate, y **continúa el LOOP** desde "Próximo paso" sin esperar instrucciones. Mantén este archivo actualizado al avanzar.
 
+## 📍 ITER 8 (T3 · 2026-06-21) — Acción primaria del Home con CTA 3D + gradiente hero
+- 🎨 **UX**: la acción #1 de toda la app (CTA del coach IA en Home) era el ÚLTIMO botón primario PLANO. Ahora usa `FluentaRaisedCta` (nuevo, en `ui/FluentaButton.kt`): "tecla" 3D reutilizable para tarjetas hero de color — la "ChunkyButton" del kit de Claude Design. La tarjeta del coach pasa a **gradiente de marca** (`primary → FluentaTealDeep`, ambos extremos pasan WCAG AA con blanco). Fallback offline también gana CTA 3D. Commit `f8b1847` en `admin/t3-instrumentation`.
+- ✅ Verificado: `compileDebugKotlin` + `testDebugUnitTest` **VERDES**.
+- ⏳ **Pendiente Regla de oro**: NO subo la nota de UX todavía — falta screenshot de dispositivo real (robo/instrumentation) que muestre el CTA 3D + gradiente. Correr `./testlab.sh` para cerrar el gate y recalificar UX.
+- 📋 **Entregado al usuario**: roadmap completo Claude Design pantalla-por-pantalla (20 pantallas × 3 idiomas base → 20 meta) para regenerar TODA la app bajo un solo design system.
+
 ## 📍 DÓNDE QUEDAMOS (última sesión: 2026-06-18, iter 3)
 Score honesto **~50/100**. **PR #1 MERGEADO a master.** Trabajo nuevo en rama `admin/*` (PR).
 **Hecho esta sesión (iter 3):**
