@@ -17,6 +17,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -93,11 +95,17 @@ private fun SourceLanguageStep(selected: String, onPick: (String) -> Unit, onBac
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             items(SOURCE_LANGS) { code ->
+                // a11y: expone el estado "seleccionado" semanticamente (WCAG 4.1.2); antes solo
+                // se veia por color + checkmark, invisible para un lector de pantalla. `isSelected`
+                // se calcula fuera del lambda semantics para no chocar con la propiedad `selected`.
+                val isSelected = code == selected
                 Card(
                     onClick = { onPick(code) },
-                    modifier = Modifier.fillMaxWidth(),
+                    // `this.selected` (no `selected`) para apuntar a la propiedad del receiver
+                    // de semantics y no a la variable externa `selected` (el codigo elegido).
+                    modifier = Modifier.fillMaxWidth().semantics { this.selected = isSelected },
                     colors = CardDefaults.cardColors(
-                        containerColor = if (code == selected) MaterialTheme.colorScheme.primaryContainer
+                        containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
                         else MaterialTheme.colorScheme.surfaceVariant,
                     ),
                 ) {
