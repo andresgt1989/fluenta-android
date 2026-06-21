@@ -15,7 +15,9 @@ data class DeviceAuthBody(val deviceId: String, val l1: String? = null, val l2: 
 
 // Google Sign-In (un toque, sin Meta, sin OTP). El idToken viene de Credential Manager.
 data class GoogleAuthBody(val idToken: String, val l1: String? = null, val l2: String? = null)
-data class AuthConfig(val googleClientId: String?)
+// whatsappAuth: el backend congela el bot de WhatsApp (app-first). Cuando llega
+// false, el login por teléfono/WhatsApp se oculta. null/ausente => se mantiene.
+data class AuthConfig(val googleClientId: String?, val whatsappAuth: Boolean? = null)
 
 // Analítica de embudo (fire-and-forget). anonId enlaza el funnel guest con la cuenta.
 data class EventBody(val event: String, val anonId: String? = null, val props: Map<String, String>? = null)

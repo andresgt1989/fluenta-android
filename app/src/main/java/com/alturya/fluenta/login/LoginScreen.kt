@@ -44,11 +44,17 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
     var showSecondary by remember { mutableStateOf(false) }
     // Google Web client ID — lo trae el backend (fuente única). Vacío = Google off.
     var googleClientId by remember { mutableStateOf("") }
+    // WhatsApp/teléfono como canal de login. El backend lo congela (app-first) con
+    // whatsappAuth=false; por defecto visible para no romper si la config no carga.
+    var whatsappAuthEnabled by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        runCatching { ApiClient.apiNoAuth.getAuthConfig().googleClientId }
-            .getOrNull()?.let { googleClientId = it }
+        runCatching { ApiClient.apiNoAuth.getAuthConfig() }.getOrNull()?.let { cfg ->
+            cfg.googleClientId?.let { googleClientId = it }
+            // Solo ocultamos ante un false explícito; null/ausente => mantener visible.
+            if (cfg.whatsappAuth == false) { whatsappAuthEnabled = false; mode = "email" }
+        }
     }
 
     LaunchedEffect(state) {
@@ -165,8 +171,10 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
             Spacer(Modifier.height(12.dp))
         }
 
-        // Selector de canal: Email (primario) / Teléfono. Solo tras revelar "guardar progreso".
-        if (showSecondary && state !is LoginState.OtpSent) {
+        // Selector de canal: Email (primario) / Teléfono. Solo tras revelar "guardar
+        // progreso". Con WhatsApp congelado (whatsappAuth=false) queda solo Email, así
+        // que ocultamos el selector entero — no tiene sentido un toggle de una opción.
+        if (showSecondary && whatsappAuthEnabled && state !is LoginState.OtpSent) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ModeButton(Icons.Default.Email, "Email", mode == "email", { mode = "email"; vm.reset() }, Modifier.weight(1f))
                 ModeButton(Icons.Default.Phone, I18nStore.t("login.phone", "Teléfono"), mode == "phone", { mode = "phone"; vm.reset() }, Modifier.weight(1f))
