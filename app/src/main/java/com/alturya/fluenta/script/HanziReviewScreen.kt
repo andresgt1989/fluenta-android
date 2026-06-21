@@ -105,7 +105,7 @@ fun HanziReviewScreen(l2: String, onDone: () -> Unit = {}, previewQueue: List<Ha
 
         if (revealed) {
             // Trazo a trazo del carácter correcto (orden + radicales).
-            StrokeWriter(glyph = current.glyph)
+            StrokeWriter(glyph = current.glyph, modifier = Modifier.height(360.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 com.alturya.fluenta.ui.FluentaButton(
                     text = I18nStore.t("repaso.failed", "Fallé"),

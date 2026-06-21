@@ -362,6 +362,7 @@ private fun MainScaffold(
                     l2 = sl2,
                     onDone = { nav.popBackStack() },
                     onReviewChars = { nav.navigate("hanzi_review/$sl2") { launchSingleTop = true } },
+                    onWrite = { glyph -> nav.navigate("hanzi_writer/$sl2/${Uri.encode(glyph)}") { launchSingleTop = true } },
                 )
             }
             composable(
@@ -370,6 +371,19 @@ private fun MainScaffold(
             ) { entry ->
                 com.alturya.fluenta.script.HanziReviewScreen(
                     l2 = entry.arguments?.getString("l2") ?: "zh",
+                    onDone = { nav.popBackStack() },
+                )
+            }
+            composable(
+                route = "hanzi_writer/{l2}/{glyph}",
+                arguments = listOf(
+                    navArgument("l2") { type = NavType.StringType },
+                    navArgument("glyph") { type = NavType.StringType },
+                ),
+            ) { entry ->
+                com.alturya.fluenta.script.HanziWriterScreen(
+                    l2 = entry.arguments?.getString("l2") ?: "zh",
+                    startGlyph = entry.arguments?.getString("glyph")?.let { Uri.decode(it) },
                     onDone = { nav.popBackStack() },
                 )
             }

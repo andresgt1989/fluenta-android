@@ -22,7 +22,7 @@ import com.alturya.fluenta.network.ScriptItem
 // LEER (lección método nativo) + ESCRIBIR (trazo a trazo) + examen de lectura
 // que actualiza el dominio (scriptMastery) y va apagando la transliteración.
 @Composable
-fun ScriptScreen(l2: String, onDone: () -> Unit = {}, onReviewChars: () -> Unit = {}, previewState: ScriptUiState? = null) {
+fun ScriptScreen(l2: String, onDone: () -> Unit = {}, onReviewChars: () -> Unit = {}, onWrite: (String) -> Unit = {}, previewState: ScriptUiState? = null) {
     val vm: ScriptViewModel = viewModel()
     val vmState by vm.state.collectAsState()
     val state = previewState ?: vmState
@@ -66,7 +66,7 @@ fun ScriptScreen(l2: String, onDone: () -> Unit = {}, onReviewChars: () -> Unit 
                     state.info?.let { info ->
                         ReadingMeter(info.readingScore)
                     }
-                    l.items.forEach { item -> GlyphCard(item, writingSupported = l.writingSupported) }
+                    l.items.forEach { item -> GlyphCard(item, writingSupported = l.writingSupported, onWrite = onWrite) }
                     Spacer(Modifier.height(4.dp))
                     Surface(
                         color = MaterialTheme.colorScheme.secondaryContainer,
@@ -183,8 +183,7 @@ private fun ReadingMeter(score: Int) {
 }
 
 @Composable
-private fun GlyphCard(item: ScriptItem, writingSupported: Boolean = true) {
-    var writing by remember { mutableStateOf(false) }
+private fun GlyphCard(item: ScriptItem, writingSupported: Boolean = true, onWrite: (String) -> Unit = {}) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -206,10 +205,11 @@ private fun GlyphCard(item: ScriptItem, writingSupported: Boolean = true) {
             }
             if (writingSupported) {
                 Spacer(Modifier.height(8.dp))
-                OutlinedButton(onClick = { writing = !writing }) {
+                // Abre la práctica de trazos a PANTALLA COMPLETA (sin scroll-trap).
+                OutlinedButton(onClick = { onWrite(item.glyph) }) {
                     Icon(Icons.Default.Create, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text(if (writing) I18nStore.t("script.hideStrokes", "Ocultar trazos") else I18nStore.t("script.write", "Escribir"))
+                    Text(I18nStore.t("script.write", "Escribir"))
                 }
             } else {
                 Spacer(Modifier.height(6.dp))
@@ -218,10 +218,6 @@ private fun GlyphCard(item: ScriptItem, writingSupported: Boolean = true) {
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-            }
-            if (writing && writingSupported) {
-                Spacer(Modifier.height(8.dp))
-                StrokeWriter(glyph = item.glyph)
             }
         }
     }
