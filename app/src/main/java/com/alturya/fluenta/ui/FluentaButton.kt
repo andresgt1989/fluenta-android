@@ -109,6 +109,73 @@ fun FluentaButton(
     }
 }
 
+/**
+ * CTA 3D reutilizable para usar SOBRE tarjetas hero de color (p.ej. el coach IA del
+ * Home, que es teal). A diferencia de [FluentaButton] (que asume fondo claro), aquí
+ * la "cara" es clara y la "base" es una versión un poco más oscura de la misma cara,
+ * para que el efecto de tecla física se lea bien sobre un fondo de marca saturado.
+ *
+ * Es la "ChunkyButton" del kit de Claude Design (variante A · Camino Clásico): un
+ * único botón ancho, inconfundible como LA acción primaria de la pantalla.
+ */
+@Composable
+fun FluentaRaisedCta(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    faceColor: Color = Color.White,
+    textColor: Color = MaterialTheme.colorScheme.primary,
+    leading: (@Composable () -> Unit)? = null,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val depth = 4.dp
+    val offsetY by animateDpAsState(
+        targetValue = if (pressed) 0.dp else depth,
+        animationSpec = spring(stiffness = 1200f),
+        label = "raised3d",
+    )
+    val base = faceColor.darken(0.86f)
+
+    Box(modifier = modifier.height(50.dp + depth)) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+                .align(Alignment.BottomCenter)
+                .clip(RoundedCornerShape(16.dp))
+                .background(base),
+        )
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+                .align(Alignment.TopCenter)
+                .padding(top = offsetY)
+                .clip(RoundedCornerShape(16.dp))
+                .background(faceColor)
+                .clickable(
+                    interactionSource = interaction,
+                    indication = null,
+                    onClick = onClick,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (leading != null) {
+                    CompositionLocalProvider(LocalContentColor provides textColor) { leading() }
+                }
+                Text(
+                    text,
+                    color = textColor,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                )
+            }
+        }
+    }
+}
+
 // Oscurece un color para la "base" 3D del botón.
 private fun Color.darken(factor: Float = 0.78f): Color =
     Color(red * factor, green * factor, blue * factor, alpha)

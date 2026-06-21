@@ -8,6 +8,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -41,6 +42,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -51,7 +54,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alturya.fluenta.data.Analytics
 import com.alturya.fluenta.data.GoalStore
 import com.alturya.fluenta.data.I18nStore
+import com.alturya.fluenta.ui.FluentaRaisedCta
 import com.alturya.fluenta.ui.ShimmerCard
+import com.alturya.fluenta.ui.theme.FluentaTealDeep
 import com.alturya.fluenta.network.CoachAction
 import com.alturya.fluenta.progress.LeagueViewModel
 import com.alturya.fluenta.util.flag
@@ -263,13 +268,20 @@ fun HomeScreen(
             }
         }
         val coach = state.coach
+        // Gradiente hero de marca (primary → teal profundo). Ambos extremos pasan WCAG
+        // AA con texto/íconos blancos, así que es seguro para a11y. Da profundidad estilo
+        // Claude Design sin perder contraste.
+        val heroBrush = Brush.verticalGradient(
+            listOf(MaterialTheme.colorScheme.primary, FluentaTealDeep)
+        )
         if (coach != null) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
+            Surface(
                 onClick = { runCoachAction(coach.action) },
+                shape = MaterialTheme.shapes.large,
+                color = Color.Transparent,
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                Column(Modifier.padding(20.dp)) {
+                Column(Modifier.background(heroBrush).padding(20.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.School, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f), modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
@@ -295,30 +307,35 @@ fun HomeScreen(
                         trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f),
                     )
                     Spacer(Modifier.height(16.dp))
-                    Surface(color = MaterialTheme.colorScheme.onPrimary, shape = MaterialTheme.shapes.large) {
-                        Text(
-                            "▶ ${coach.action.label}",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
-                        )
-                    }
+                    // Acción primaria #1 de la app: ahora con la "tecla" 3D del design system,
+                    // ancha e inconfundible (antes era un Surface plano).
+                    FluentaRaisedCta(
+                        text = "▶ ${coach.action.label}",
+                        onClick = { runCoachAction(coach.action) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
         } else {
             // Fallback (sin conexión / coach no disponible): no dejar al usuario sin acción.
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
+            Surface(
                 onClick = onSeeMap,
+                shape = MaterialTheme.shapes.large,
+                color = Color.Transparent,
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                Column(Modifier.padding(20.dp)) {
+                Column(Modifier.background(heroBrush).padding(20.dp)) {
                     Text(
                         I18nStore.t("home.startHereTitle", "Empieza tu lección"),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    FluentaRaisedCta(
+                        text = "▶ ${I18nStore.t("home.startHereCta", "Empezar")}",
+                        onClick = onSeeMap,
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }

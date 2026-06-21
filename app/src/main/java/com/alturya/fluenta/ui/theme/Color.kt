@@ -9,6 +9,9 @@ val FluentaTealDark = Color(0xFF0E8C80)    // deep / pressed
 val FluentaTealLight = Color(0xFF7FDCCF)   // bright accent (on dark)
 val FluentaTealContainer = Color(0xFFD2F2EC) // primary container (light)
 val FluentaTealContainerDark = Color(0xFF06302C)
+// Tono profundo para el gradiente hero (coach IA). Va de primary (#138378, blanco
+// 4.62:1) a este, MÁS oscuro, así que el texto/íconos blancos siguen pasando WCAG AA.
+val FluentaTealDeep = Color(0xFF0C6F65)
 
 val FluentaCoral = Color(0xFFFF6F5E)       // secondary / energy
 val FluentaCoralDark = Color(0xFFE8513F)
