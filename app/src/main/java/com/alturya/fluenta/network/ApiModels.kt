@@ -257,6 +257,10 @@ data class PlayableExercise(
     val transliteration: String? = null,
     // match_pairs — lecturas latinas alineadas 1:1 con `left`
     val leftTransliteration: List<String?>? = null,
+    // word_order — lectura latina (pinyin/romaji) por TOKEN, alineada 1:1 con `tokens`.
+    // Va por token a propósito: la transliteración de la frase completa delataría el orden.
+    // Opcional: si el backend no la envía, el chip muestra solo el L2 (degradación limpia).
+    val tokenTransliteration: List<String?>? = null,
 )
 
 // Guest lesson (no auth) — play-first onboarding
@@ -410,6 +414,13 @@ data class UiStringsResponse(
     val lang: String,
     val strings: Map<String, String>?,
 )
+
+// Registro server-driven de idiomas de INTERFAZ (alimenta el selector de Ajustes).
+// Permite escalar a 20-30+ idiomas sin publicar update: el backend gobierna qué
+// idiomas de UI están vivos. El cliente cae a InterfaceLanguages.SUPPORTED si falla.
+// `nativeName`/`flag` son opcionales: si faltan, el cliente completa desde su registro.
+data class InterfaceLangDto(val code: String?, val nativeName: String?, val flag: String?)
+data class InterfaceLanguagesResponse(val languages: List<InterfaceLangDto>?)
 
 // ── Conversación de voz abierta (el wedge) ──────────────────────────────────
 data class ConvoStartBody(val lessonId: String? = null, val scenario: String? = null, val goal: String? = null)

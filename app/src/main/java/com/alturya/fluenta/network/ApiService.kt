@@ -139,6 +139,11 @@ interface ApiService {
     @GET("api/i18n/ui")
     suspend fun getUiStrings(@Query("lang") lang: String): UiStringsResponse
 
+    // Lista de idiomas de INTERFAZ disponibles (selector de Ajustes), server-driven
+    // para añadir idiomas sin release. El cliente cae a la lista curada si falla.
+    @GET("api/i18n/languages")
+    suspend fun getInterfaceLanguages(): InterfaceLanguagesResponse
+
     @GET("api/user/badges")
     suspend fun getBadges(): BadgesResponse
 

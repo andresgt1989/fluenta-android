@@ -24,6 +24,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -65,7 +68,8 @@ private fun IntroPanel(onStart: () -> Unit, onSkip: () -> Unit = {}) {
     ) {
         Icon(Icons.Default.GpsFixed, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(80.dp))
         Spacer(Modifier.height(16.dp))
-        Text(I18nStore.t("diagnostic.title", "Test de nivel"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Text(I18nStore.t("diagnostic.title", "Test de nivel"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
+            modifier = Modifier.semantics { heading() })
         Spacer(Modifier.height(8.dp))
         Text(
             I18nStore.t("diagnostic.intro", "6 preguntas adaptativas que ajustan su dificultad a tu nivel real. Tarda menos de 2 minutos."),
@@ -257,8 +261,18 @@ private fun OptionCard(text: String, state: OptionUiState, onClick: () -> Unit, 
         OptionUiState.Correct, OptionUiState.Wrong, OptionUiState.ChosenWaiting -> Color.White
         else -> MaterialTheme.colorScheme.onSurface
     }
+    // a11y: la corrección se señala visualmente con color + icono; sin esto un lector de
+    // pantalla solo oiría el texto de la opción (fallo WCAG 1.1.1 y 1.4.1 "uso del color").
+    // stateDescription en la Card (que fusiona a sus hijos) lo anuncia: "Pekín. Correcto".
+    val answerState = when (state) {
+        OptionUiState.Correct -> I18nStore.t("diagnostic.answerCorrect", "Correcto")
+        OptionUiState.Wrong -> I18nStore.t("diagnostic.answerWrong", "Incorrecto")
+        else -> null
+    }
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().then(
+            if (answerState != null) Modifier.semantics { stateDescription = answerState } else Modifier
+        ),
         colors = CardDefaults.cardColors(containerColor = container, contentColor = on),
         onClick = onClick,
         enabled = enabled

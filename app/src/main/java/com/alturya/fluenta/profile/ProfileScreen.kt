@@ -17,6 +17,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -76,7 +78,8 @@ fun ProfileScreen(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(I18nStore.t("profile.title", "Mi perfil"), style = MaterialTheme.typography.headlineMedium)
+        Text(I18nStore.t("profile.title", "Mi perfil"), style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.semantics { heading() })
 
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(20.dp)) {

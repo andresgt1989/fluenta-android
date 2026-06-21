@@ -13,6 +13,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -46,7 +48,8 @@ fun PronunciationScreen(previewState: PronState? = null) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Text(I18nStore.t("pronunciation.title", "Pronunciación"), style = MaterialTheme.typography.headlineMedium)
+                Text(I18nStore.t("pronunciation.title", "Pronunciación"), style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.semantics { heading() })
                 if (state.source == "top_error") {
                     Text(
                         I18nStore.t("pronunciation.workingWeak", "Trabajando tu fonema más débil"),

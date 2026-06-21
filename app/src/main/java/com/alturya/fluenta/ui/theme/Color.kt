@@ -26,7 +26,7 @@ val FluentaSuccess = Color(0xFF22C55E)
 val FluentaInk = Color(0xFF27313F)         // text on light
 val FluentaCream = Color(0xFFFFF6E9)       // warm surface accent
 val FluentaMist = Color(0xFFF3F4F6)        // surface variant (light)
-val FluentaSlate = Color(0xFF6B7280)       // muted text
+val FluentaSlate = Color(0xFF636A77)       // muted text — a11y: 4.95:1 sobre surfaceVariant (#6B7280 quedaba en 4.39, bajo el mínimo 4.5:1)
 val FluentaError = Color(0xFFDC2626)
 
 // Dark scheme surfaces (teal-tinted night)

@@ -157,9 +157,11 @@ fun ConversationScreen(
                             }
                             Spacer(Modifier.height(6.dp))
                             Text(
-                                I18nStore.t("convo.guestSummary", "Dijiste {n} {plural}. Crea tu cuenta gratis para guardar tu racha y seguir practicando.")
-                                    .replace("{n}", "${state.spokenPhrases}")
-                                    .replace("{plural}", if (state.spokenPhrases == 1) I18nStore.t("convo.phraseSingular", "frase") else I18nStore.t("convo.phrasePlural", "frases")),
+                                I18nStore.plural(
+                                    "convo.guestSummary", state.spokenPhrases,
+                                    one = "Dijiste {n} frase. Crea tu cuenta gratis para guardar tu racha y seguir practicando.",
+                                    other = "Dijiste {n} frases. Crea tu cuenta gratis para guardar tu racha y seguir practicando.",
+                                ),
                                 style = MaterialTheme.typography.bodyMedium,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             )

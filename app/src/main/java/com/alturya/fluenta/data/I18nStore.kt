@@ -38,13 +38,62 @@ object I18nStore {
     fun currentLangFlow(context: Context): Flow<String> =
         context.i18nDataStore.data.map { it[LANG_KEY] ?: "es" }
 
+    /**
+     * User picks the interface language manually. Persists the choice AND invalidates the
+     * cached strings: they belong to the previous language, so the next [ensureLoaded] must
+     * refetch. Without this, the stale JSON would be served mislabeled as the new language.
+     */
     suspend fun setLang(context: Context, lang: String) {
-        context.i18nDataStore.edit { it[LANG_KEY] = lang }
+        context.i18nDataStore.edit {
+            it[LANG_KEY] = lang
+            it.remove(STRINGS_KEY)
+            it.remove(FETCHED_AT_KEY)
+        }
+        memCache = emptyMap()
+        memLang = ""
+    }
+
+    /**
+     * First run only: seed the persisted interface language from the device locale, so the
+     * UI (and RTL mirroring, which reads [currentLangFlow]) matches the phone out of the box.
+     * No-op once the user has a stored preference — manual choice always wins.
+     */
+    suspend fun initLangFromDeviceIfUnset(context: Context) {
+        val prefs = context.i18nDataStore.data.first()
+        if (prefs[LANG_KEY] == null) {
+            val device = java.util.Locale.getDefault().language.takeIf { it.length == 2 } ?: "es"
+            context.i18nDataStore.edit { it[LANG_KEY] = device }
+        }
     }
 
     /** Read a string by key. Returns the key itself if not yet loaded. */
     fun t(key: String, fallback: String = key): String =
         memCache[key] ?: fallback
+
+    /**
+     * Plural-aware lookup. Picks the CLDR category for [count] in the current interface
+     * language and resolves `"$key.<category>"` from the backend strings, e.g.
+     * `progress.reviewedCount.one` / `.other` / (Arabic) `.few` / `.many`.
+     *
+     * The call-site NEVER branches on the language — it only supplies the two Spanish
+     * fallbacks ([one], [other]), which are correct for the source language (es has just
+     * one/other). Languages with richer rules (ar, ru, pl…) supply the extra forms from
+     * the backend JSON; if a needed form is missing we fall back to `.other`, then to the
+     * inline fallback. `{n}` is substituted with the locale-formatted number.
+     */
+    fun plural(key: String, count: Int, one: String, other: String, lang: String = memLang): String {
+        val cat = PluralRules.select(lang, count)
+        val template = memCache["$key.${cat.tag}"]
+            ?: memCache["$key.${PluralCategory.OTHER.tag}"]
+            ?: if (cat == PluralCategory.ONE) one else other
+        return template.replace("{n}", formatNumber(count, lang))
+    }
+
+    /** Locale-aware integer formatting (grouping separators differ: es "1.000" vs en "1,000"). */
+    fun formatNumber(n: Int, lang: String = memLang): String =
+        runCatching {
+            java.text.NumberFormat.getIntegerInstance(java.util.Locale.forLanguageTag(lang)).format(n.toLong())
+        }.getOrDefault(n.toString())
 
     /** Right-to-left interface languages (layout must mirror for these). */
     private val RTL_LANGS = setOf("ar", "fa", "ur", "he")
