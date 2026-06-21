@@ -22,7 +22,7 @@ import com.alturya.fluenta.network.ScriptItem
 // LEER (lección método nativo) + ESCRIBIR (trazo a trazo) + examen de lectura
 // que actualiza el dominio (scriptMastery) y va apagando la transliteración.
 @Composable
-fun ScriptScreen(l2: String, onDone: () -> Unit = {}, previewState: ScriptUiState? = null) {
+fun ScriptScreen(l2: String, onDone: () -> Unit = {}, onReviewChars: () -> Unit = {}, previewState: ScriptUiState? = null) {
     val vm: ScriptViewModel = viewModel()
     val vmState by vm.state.collectAsState()
     val state = previewState ?: vmState
@@ -158,6 +158,9 @@ fun ScriptScreen(l2: String, onDone: () -> Unit = {}, previewState: ScriptUiStat
                     onClick = { vm.backToLearn() },
                     modifier = Modifier.fillMaxWidth(),
                 )
+                TextButton(onClick = onReviewChars, modifier = Modifier.fillMaxWidth()) {
+                    Text(I18nStore.t("hanzi.review.cta", "Repasar caracteres (SRS) →"))
+                }
                 TextButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) { Text(I18nStore.t("common.done", "Listo")) }
             }
         }

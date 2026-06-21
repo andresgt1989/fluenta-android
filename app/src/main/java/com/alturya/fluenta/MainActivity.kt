@@ -359,7 +359,21 @@ private fun MainScaffold(
                 route = "script/{l2}",
                 arguments = listOf(navArgument("l2") { type = NavType.StringType }),
             ) { entry ->
-                ScriptScreen(l2 = entry.arguments?.getString("l2") ?: "ja", onDone = { nav.popBackStack() })
+                val sl2 = entry.arguments?.getString("l2") ?: "ja"
+                ScriptScreen(
+                    l2 = sl2,
+                    onDone = { nav.popBackStack() },
+                    onReviewChars = { nav.navigate("hanzi_review/$sl2") { launchSingleTop = true } },
+                )
+            }
+            composable(
+                route = "hanzi_review/{l2}",
+                arguments = listOf(navArgument("l2") { type = NavType.StringType }),
+            ) { entry ->
+                com.alturya.fluenta.script.HanziReviewScreen(
+                    l2 = entry.arguments?.getString("l2") ?: "zh",
+                    onDone = { nav.popBackStack() },
+                )
             }
             composable("match") { MatchScreen(onDone = { nav.popBackStack() }) }
             composable(
