@@ -320,7 +320,16 @@ private fun MainScaffold(
                                 contentDescription = tab.defaultLabel,
                             )
                         },
-                        label = { Text(I18nStore.t(tab.labelKey, tab.defaultLabel)) }
+                        alwaysShowLabel = true,
+                        label = {
+                            Text(
+                                I18nStore.t(tab.labelKey, tab.defaultLabel),
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        }
                     )
                 }
             }

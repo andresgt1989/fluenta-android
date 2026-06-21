@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.MicNone
 import androidx.compose.material3.*
@@ -66,30 +67,61 @@ fun OnboardingScreen(onPicked: (l1: String, l2: String) -> Unit) {
     }
 }
 
+// Scaffold común de los pasos de elección: barra con flecha atrás estándar +
+// INDICADOR DE PROGRESO ("Paso X de N") + cabecera consistente. El progreso es el
+// arreglo UX #1: el usuario siempre sabe dónde está y cuánto falta.
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun BackBar(onBack: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(start = 8.dp, top = 8.dp)) {
-        TextButton(onClick = onBack) { Text("‹ ${I18nStore.t("common.back", "Atrás")}") }
+private fun OnboardingStepScaffold(
+    step: Int,
+    total: Int,
+    title: String,
+    subtitle: String,
+    onBack: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    Scaffold(
+        topBar = {
+            Column {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "${I18nStore.t("onboarding.step", "Paso")} $step ${I18nStore.t("common.of", "de")} $total",
+                            style = MaterialTheme.typography.labelLarge,
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = I18nStore.t("common.back", "Atrás"))
+                        }
+                    },
+                )
+                LinearProgressIndicator(
+                    progress = { step.toFloat() / total.toFloat() },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+    ) { pad ->
+        Column(Modifier.fillMaxSize().padding(pad)) {
+            Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 12.dp, bottom = 8.dp)) {
+                Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(6.dp))
+                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            content()
+        }
     }
 }
 
 @Composable
 private fun SourceLanguageStep(selected: String, onPick: (String) -> Unit, onBack: () -> Unit) {
-    Column(Modifier.fillMaxSize()) {
-        BackBar(onBack)
-        Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp)) {
-            Text(
-                I18nStore.t("onboarding.sourceTitle", "¿Qué idioma hablas?"),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                I18nStore.t("onboarding.sourceSubtitle", "Te enseñaremos desde tu idioma."),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+    OnboardingStepScaffold(
+        step = 1, total = 3,
+        title = I18nStore.t("onboarding.sourceTitle", "¿Qué idioma hablas?"),
+        subtitle = I18nStore.t("onboarding.sourceSubtitle", "Te enseñaremos desde tu idioma."),
+        onBack = onBack,
+    ) {
         LazyColumn(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -192,21 +224,12 @@ private fun Bullet(text: String) {
 
 @Composable
 private fun MotivationStep(onPick: (String) -> Unit, onBack: () -> Unit) {
-    Column(Modifier.fillMaxSize()) {
-        BackBar(onBack)
-        Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp)) {
-            Text(
-                I18nStore.t("onboarding.motivationTitle", "¿Para qué quieres aprender?"),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                I18nStore.t("onboarding.motivationSubtitle", "Personalizamos tu experiencia según tu meta."),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+    OnboardingStepScaffold(
+        step = 3, total = 3,
+        title = I18nStore.t("onboarding.motivationTitle", "¿Para qué quieres aprender?"),
+        subtitle = I18nStore.t("onboarding.motivationSubtitle", "Personalizamos tu experiencia según tu meta."),
+        onBack = onBack,
+    ) {
         LazyColumn(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -243,21 +266,12 @@ private fun MotivationStep(onPick: (String) -> Unit, onBack: () -> Unit) {
 @Composable
 private fun LanguagePickStep(l1: String, onPick: (String) -> Unit, onBack: () -> Unit) {
     val targets = remember(l1) { TARGET_LANGS.filter { it != l1 } }
-    Column(Modifier.fillMaxSize()) {
-        BackBar(onBack)
-        Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp)) {
-            Text(
-                I18nStore.t("onboarding.pickTitle", "¿Qué idioma quieres aprender?"),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                I18nStore.t("onboarding.pickSubtitle", "Empieza ahora mismo, sin crear cuenta."),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+    OnboardingStepScaffold(
+        step = 2, total = 3,
+        title = I18nStore.t("onboarding.pickTitle", "¿Qué idioma quieres aprender?"),
+        subtitle = I18nStore.t("onboarding.pickSubtitle", "Empieza ahora mismo, sin crear cuenta."),
+        onBack = onBack,
+    ) {
         LazyColumn(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
