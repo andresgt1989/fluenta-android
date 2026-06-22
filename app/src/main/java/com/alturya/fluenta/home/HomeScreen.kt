@@ -453,40 +453,43 @@ fun HomeScreen(
             }
         }
 
-        // ── Repaso (SRS) — acción diaria primaria de retención ────────────────
+        // ── PARA HOY (Claude Design P1) — acciones diarias agrupadas ──────────
         val dueCount = state.progress?.cardsDueToday ?: 0
-        Card(
-            onClick = onRepaso,
+        val showHanzi = state.scriptInfo != null
+        Text(
+            I18nStore.t("home.today", "PARA HOY"),
+            color = Color(0xFF6B746F), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.6.sp,
+        )
+        Spacer(Modifier.height(2.dp))
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = Color.White,
+            border = BorderStroke(1.dp, Color(0xFFEAF0ED)),
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = if (dueCount > 0) MaterialTheme.colorScheme.tertiaryContainer
-                else MaterialTheme.colorScheme.secondaryContainer
-            ),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.Default.Refresh, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(28.dp))
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        if (dueCount > 0)
-                            I18nStore.t("home.reviewDue", "Repasar ($dueCount vencen hoy)")
-                                .replace("\$dueCount", "$dueCount")
-                        else I18nStore.t("home.reviewTitle", "Repasar tus errores"),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    )
-                    Text(
-                        if (dueCount > 0) I18nStore.t("home.reviewUrgent", "¡No dejes que se olviden! Toca aquí")
-                        else I18nStore.t("home.reviewSubtitle", "Refuerza lo que se te olvida (SRS)"),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+            Column {
+                TodayRow(
+                    Color(0xFFFFE9C2), Icons.Default.Refresh, Color(0xFFE08A00),
+                    I18nStore.t("home.reviewVocab", "Repasar vocabulario"), null,
+                    if (dueCount > 0) I18nStore.t("home.reviewVocabDue", "{n} palabras listas para repasar").replace("{n}", "$dueCount")
+                    else I18nStore.t("home.reviewSubtitle", "Refuerza lo que se te olvida (SRS)"),
+                    if (dueCount > 0) "$dueCount" else null, true, onRepaso,
+                )
+                TodayRow(
+                    Color(0xFFDDF3EE), Icons.AutoMirrored.Filled.Chat, Color(0xFF0A6F64),
+                    I18nStore.t("home.convHoot", "Conversación con Hoot"), null,
+                    I18nStore.t("home.convHootSub", "Habla 2 min · corrección al instante"),
+                    null, showHanzi, onConversation,
+                )
+                if (showHanzi) {
+                    TodayRow(
+                        Color(0xFFDDF3EE), Icons.Default.Edit, Color(0xFF0A6F64),
+                        I18nStore.t("home.writeChars", "Escribir caracteres"),
+                        if (p?.l2 == "zh") "写汉字" else null,
+                        I18nStore.t("home.writeCharsSub", "Trazos nuevos hoy"),
+                        null, false, { onScript(p?.l2 ?: "") },
                     )
                 }
-                Text("›", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
             }
         }
 
@@ -611,6 +614,46 @@ fun HomeScreen(
     }  // Column
     PullToRefreshContainer(state = pullState, modifier = Modifier.align(Alignment.TopCenter))
     }  // Box
+}
+
+@Composable
+private fun TodayRow(
+    iconBg: Color,
+    icon: ImageVector,
+    iconTint: Color,
+    title: String,
+    titleL2: String?,
+    subtitle: String,
+    badge: String?,
+    divider: Boolean,
+    onClick: () -> Unit,
+) {
+    Column {
+        Row(
+            Modifier.fillMaxWidth().clickable(onClick = onClick).padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(44.dp).clip(RoundedCornerShape(13.dp)).background(iconBg), contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(23.dp))
+            }
+            Spacer(Modifier.width(13.dp))
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                    Text(title, color = Color(0xFF15201D), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    if (!titleL2.isNullOrBlank()) Text(titleL2, color = Color(0xFF0E9D8E), fontSize = 14.sp)
+                }
+                Text(subtitle, color = Color(0xFF5C6562), fontSize = 13.sp)
+            }
+            if (badge != null) {
+                Box(Modifier.clip(RoundedCornerShape(999.dp)).background(Color(0xFFE08A00)).padding(horizontal = 7.dp, vertical = 2.dp), contentAlignment = Alignment.Center) {
+                    Text(badge, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
+                }
+            } else {
+                Text("›", color = Color(0xFFB6BFBA), fontSize = 22.sp)
+            }
+        }
+        if (divider) Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F4F2)))
+    }
 }
 
 @Composable
