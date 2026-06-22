@@ -2,6 +2,13 @@
 
 > Al entrar a **modo admin Fluenta**: lee este archivo + `CLAUDE.md` + `EVALUACION_UNICORNIO.md`, recrea las tareas como TaskCreate, y **continúa el LOOP** desde "Próximo paso" sin esperar instrucciones. Mantén este archivo actualizado al avanzar.
 
+## 📍 ITER 9 (T3 · 2026-06-22) — APK integrada con las 4 pantallas rediseñadas de T3b
+- 🔀 **Integración**: T3b tenía 4 rediseños SIN COMMITEAR (onboarding, selector de idioma, lección invitado, lesson player). Commiteados en `admin/t3b-onboarding` (`ed26daa`) y **mergeados a `admin/t3-instrumentation`** (`9474480`) sin conflictos. Antes de esto, una APK desde T3 era idéntica a la anterior; ahora sí trae pantallas nuevas.
+- 🔌 **Cableado verificado**: las 4 son rediseños de pantallas EXISTENTES, ya referenciadas en `MainActivity.kt` (Onboarding @181, GuestLesson @218, LessonPlayer @405, LanguageSelector @455). No quedan composables colgando.
+- ✅ Verificado: `compileDebugKotlin` + `testDebugUnitTest` + `assembleDebug` **VERDES**.
+- 📦 **APK publicada** (20.9 MB): `https://fluenta.alturya.com/download/fluenta-ux-pantallas.apk` (HTTP 200 confirmado).
+- ⏳ **Pendiente Regla de oro**: sigue sin screenshot de dispositivo real; no subo la nota de UX. Correr `./testlab.sh` para cerrar el gate. Falta integrar daily quests de `admin/design-system-pipeline`.
+
 ## 📍 ITER 8 (T3 · 2026-06-21) — Acción primaria del Home con CTA 3D + gradiente hero
 - 🎨 **UX**: la acción #1 de toda la app (CTA del coach IA en Home) era el ÚLTIMO botón primario PLANO. Ahora usa `FluentaRaisedCta` (nuevo, en `ui/FluentaButton.kt`): "tecla" 3D reutilizable para tarjetas hero de color — la "ChunkyButton" del kit de Claude Design. La tarjeta del coach pasa a **gradiente de marca** (`primary → FluentaTealDeep`, ambos extremos pasan WCAG AA con blanco). Fallback offline también gana CTA 3D. Commit `f8b1847` en `admin/t3-instrumentation`.
 - ✅ Verificado: `compileDebugKotlin` + `testDebugUnitTest` **VERDES**.
