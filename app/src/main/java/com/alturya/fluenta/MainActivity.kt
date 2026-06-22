@@ -423,7 +423,11 @@ private fun MainScaffold(
                     onDone = { nav.popBackStack() },
                 )
             }
-            composable("match") { MatchScreen(onDone = { nav.popBackStack() }) }
+            composable("match") {
+                // Al terminar, aterriza en la ESPINA (ruta de lecciones) con el
+                // siguiente paso, no en un callejón. (Loop UX: no "solo repetir".)
+                MatchScreen(onDone = { nav.navigate("map") { popUpTo("match") { inclusive = true }; launchSingleTop = true } })
+            }
             composable(
                 route = "lesson/{lessonId}",
                 arguments = listOf(navArgument("lessonId") { type = NavType.StringType }),
