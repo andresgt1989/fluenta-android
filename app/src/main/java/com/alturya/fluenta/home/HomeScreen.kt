@@ -9,6 +9,9 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -44,6 +47,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -122,30 +128,18 @@ fun HomeScreen(
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // ── Header: saludo + chip de idioma (tap para cambiar) ─────────────────
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter = painterResource(com.alturya.fluenta.R.drawable.ic_fluenta_hola),
-                    contentDescription = null,
-                    modifier = Modifier.size(52.dp),
-                )
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    I18nStore.t("home.greeting", "Hola"),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-            Spacer(Modifier.height(8.dp))
+        // ── Header: chip de idioma + pills de racha/XP (Claude Design P1) ──────
+        val streakTop = state.progress?.streakDays ?: 0
+        val xpTop = state.progress?.totalXp ?: 0
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Surface(
                 onClick = onChangeLanguage,
-                shape = MaterialTheme.shapes.large,
-                color = if (p?.l2 == null) MaterialTheme.colorScheme.primaryContainer
-                        else MaterialTheme.colorScheme.surfaceVariant,
+                shape = RoundedCornerShape(999.dp),
+                color = if (p?.l2 == null) MaterialTheme.colorScheme.primaryContainer else Color.White,
+                border = if (p?.l2 == null) null else BorderStroke(1.dp, Color(0xFFDCE5E2)),
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (p?.l2 == null) {
@@ -159,18 +153,32 @@ fun HomeScreen(
                         Text(
                             "${flag(p.l2)} ${langName(p.l2)} · ${levelLabel(p.level, p.levelSystem)}",
                             style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            "⇄ ${I18nStore.t("home.changeLanguage", "cambiar")}",
-                            style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = Color(0xFF15201D),
                         )
+                        Spacer(Modifier.width(4.dp))
+                        Text("▾", color = Color(0xFF9AA39E), fontWeight = FontWeight.Bold)
                     }
                 }
             }
+            Spacer(Modifier.weight(1f))
+            if (p?.l2 != null) {
+                HeaderPill(Color(0xFFFFE9C2), Icons.Default.LocalFireDepartment, Color(0xFFE08A00), "$streakTop", Color(0xFF9A5E00))
+                Spacer(Modifier.width(8.dp))
+                HeaderPill(Color(0xFFDDF3EE), Icons.Default.Star, Color(0xFF0A6F64), "$xpTop", Color(0xFF0A6F64))
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+        // Saludo + cuánto falta para la meta de hoy
+        Text("¡${I18nStore.t("home.greeting", "Hola")}!", color = Color(0xFF15201D), fontSize = 23.sp, fontWeight = FontWeight.ExtraBold)
+        run {
+            val todayXpHdr = state.progress?.todayXp ?: 0
+            val remain = (localGoalXp - todayXpHdr).coerceAtLeast(0)
+            Text(
+                if (remain > 0) I18nStore.t("home.xpToGoal", "Te faltan {n} XP para tu meta de hoy").replace("{n}", "$remain")
+                else I18nStore.t("home.goalReachedShort", "¡Meta de hoy lograda!"),
+                color = Color(0xFF5C6562), fontSize = 14.sp, modifier = Modifier.padding(top = 2.dp),
+            )
         }
 
         // ── Fallo total de carga (perfil + coach nulos): no fallar en silencio ─
@@ -268,77 +276,28 @@ fun HomeScreen(
             }
         }
         val coach = state.coach
-        // Gradiente hero de marca (primary → teal profundo). Ambos extremos pasan WCAG
-        // AA con texto/íconos blancos, así que es seguro para a11y. Da profundidad estilo
-        // Claude Design sin perder contraste.
-        val heroBrush = Brush.verticalGradient(
-            listOf(MaterialTheme.colorScheme.primary, FluentaTealDeep)
-        )
         if (coach != null) {
-            Surface(
+            HeroContinueCard(
+                kicker = I18nStore.t("home.continueKicker", "CONTINUAR") +
+                    (state.nextLesson?.lessonNumber?.let { " · " + I18nStore.t("home.unit", "UNIDAD").uppercase() + " $it" } ?: ""),
+                title = coach.message,
+                sampleL2 = coach.l2Name,
+                sampleRoman = null,
+                progressPct = coach.progressPct,
+                ctaText = coach.action.label,
                 onClick = { runCoachAction(coach.action) },
-                shape = MaterialTheme.shapes.large,
-                color = Color.Transparent,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(Modifier.background(heroBrush).padding(20.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.School, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f), modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text(I18nStore.t("home.yourTutor", "Tu tutor"), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f))
-                    }
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        coach.message,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
-                    Spacer(Modifier.height(14.dp))
-                    Text(
-                        "${I18nStore.t("home.progressTo", "Progreso a")} ${(coach.goal ?: "c1").uppercase()} · ${coach.progressPct}%",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    LinearProgressIndicator(
-                        progress = { (coach.progressPct / 100f).coerceIn(0f, 1f) },
-                        modifier = Modifier.fillMaxWidth().height(8.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f),
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    // Acción primaria #1 de la app: ahora con la "tecla" 3D del design system,
-                    // ancha e inconfundible (antes era un Surface plano).
-                    FluentaRaisedCta(
-                        text = "▶ ${coach.action.label}",
-                        onClick = { runCoachAction(coach.action) },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
+            )
         } else {
             // Fallback (sin conexión / coach no disponible): no dejar al usuario sin acción.
-            Surface(
+            HeroContinueCard(
+                kicker = I18nStore.t("home.startHereKicker", "EMPIEZA AQUÍ"),
+                title = I18nStore.t("home.startHereTitle", "Empieza tu lección"),
+                sampleL2 = null,
+                sampleRoman = null,
+                progressPct = 0,
+                ctaText = I18nStore.t("home.startHereCta", "Empezar"),
                 onClick = onSeeMap,
-                shape = MaterialTheme.shapes.large,
-                color = Color.Transparent,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(Modifier.background(heroBrush).padding(20.dp)) {
-                    Text(
-                        I18nStore.t("home.startHereTitle", "Empieza tu lección"),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    FluentaRaisedCta(
-                        text = "▶ ${I18nStore.t("home.startHereCta", "Empezar")}",
-                        onClick = onSeeMap,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
+            )
         }
 
         // ── Viaje de nivel (CEFR/HSK/JLPT) — dónde estás y a dónde vas ─────────
@@ -375,7 +334,7 @@ fun HomeScreen(
                 }
             }
         } else {
-            StatsHero(streak = streak, xp = totalXp, lessons = completedLessons)
+            // Racha/XP ya viven en los pills del header (Claude Design) — sin duplicar.
         }
 
         // ── Meta diaria (daily goal ring) ─────────────────────────────────────
@@ -652,6 +611,89 @@ fun HomeScreen(
     }  // Column
     PullToRefreshContainer(state = pullState, modifier = Modifier.align(Alignment.TopCenter))
     }  // Box
+}
+
+@Composable
+private fun HeaderPill(bg: Color, icon: ImageVector, iconTint: Color, value: String, valueColor: Color) {
+    Row(
+        Modifier.clip(RoundedCornerShape(999.dp)).background(bg).padding(horizontal = 9.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(4.dp))
+        Text(value, color = valueColor, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+    }
+}
+
+/* ── Hero "Continuar" · Claude Design (P1 HOME) — la ÚNICA acción primaria ──────
+ * Valores exactos del kit de Claude Design (compose/ui/theme/FluentaTheme.kt):
+ * gradiente mint E4F6F1→CDEEE6, texto teal oscuro, progreso segmentado, botón
+ * 3D primary 0E9D8E con relieve 0A6F64. Mascota Hoot arriba a la derecha.
+ */
+private val HeroMintTop = Color(0xFFE4F6F1)
+private val HeroMintBottom = Color(0xFFCDEEE6)
+private val HeroKickerInk = Color(0xFF0A6F64)
+private val HeroTitleInk = Color(0xFF0A4039)
+private val HeroTeal = Color(0xFF0E9D8E)
+private val HeroTealDark = Color(0xFF0A6F64)
+private val HeroSegEmpty = Color(0xFFAFD9D1)
+private val HeroPinyin = Color(0xFF5D7A74)
+
+@Composable
+private fun HeroContinueCard(
+    kicker: String,
+    title: String,
+    sampleL2: String?,
+    sampleRoman: String?,
+    progressPct: Int,
+    ctaText: String,
+    onClick: () -> Unit,
+) {
+    Box(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp))
+            .background(Brush.verticalGradient(listOf(HeroMintTop, HeroMintBottom)))
+            .padding(18.dp),
+    ) {
+        Image(
+            painter = painterResource(com.alturya.fluenta.R.drawable.ic_fluenta_hola),
+            contentDescription = null,
+            modifier = Modifier.size(64.dp).align(Alignment.TopEnd),
+        )
+        Column(Modifier.fillMaxWidth()) {
+            Text(kicker, color = HeroKickerInk, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+            Spacer(Modifier.height(8.dp))
+            Text(title, color = HeroTitleInk, fontSize = 23.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 27.sp, modifier = Modifier.padding(end = 56.dp))
+            if (!sampleL2.isNullOrBlank()) {
+                Spacer(Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(sampleL2, color = HeroTeal, fontSize = 20.sp, fontWeight = FontWeight.Medium)
+                    if (!sampleRoman.isNullOrBlank()) Text(sampleRoman, color = HeroPinyin, fontSize = 13.sp)
+                }
+            }
+            Spacer(Modifier.height(14.dp))
+            // progreso segmentado (6 segmentos)
+            val total = 6
+            val filled = ((progressPct / 100f) * total).roundToInt().coerceIn(0, total)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    repeat(total) { i ->
+                        Box(Modifier.weight(1f).height(6.dp).clip(RoundedCornerShape(99.dp)).background(if (i < filled) HeroTeal else HeroSegEmpty))
+                    }
+                }
+                Text("$filled/$total", color = HeroTealDark, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.height(14.dp))
+            // botón primario 3D (relieve duro)
+            val depth = 4.dp
+            Box(Modifier.fillMaxWidth().height(50.dp + depth)) {
+                Box(Modifier.fillMaxWidth().height(50.dp).align(Alignment.BottomCenter).clip(RoundedCornerShape(16.dp)).background(HeroTealDark))
+                Box(
+                    Modifier.fillMaxWidth().height(50.dp).align(Alignment.TopCenter).clip(RoundedCornerShape(16.dp)).background(HeroTeal).clickable(onClick = onClick),
+                    contentAlignment = Alignment.Center,
+                ) { Text("▶  $ctaText", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold) }
+            }
+        }
+    }
 }
 
 @Composable
