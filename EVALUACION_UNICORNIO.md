@@ -144,3 +144,8 @@ Cada nota se sube SOLO con evidencia real (Firebase Test Lab / código verificad
 - **UX 62→66** (+4). Evidencia REAL (shot 9): "Mi perfil" con avatar búho Hoot dibujado, chip de nivel, 3 stats (Racha/XP/Nivel), tarjeta gradiente "Estás aprendiendo · Cambiar", compartir logro, Fluenta Pro, fila test de nivel; NavBar Perfil teal. Cableado intacto (checkout/badges/referral/logout).
 - Polish menor pendiente: el "nombre" muestra el id de dispositivo (d:...) en cuentas demo; ocultar ids crudos para cuentas sin teléfono/email.
 - Falta para 100: Ajustes (otro lado del mock) aún viejo; auto-avance universal; Login 2ª bienvenida; Test de Nivel viejo; esqueleto gris sin marca.
+
+### Iteración 5 (2026-06-23) — Ajustes al kit (implementado; pendiente confirmación visual)
+- Ajustes reescrito al kit (secciones blancas, icon-box, toggles teal, idioma/meta plegables). compile + tests verdes (picker test actualizado). El robo NO entró a Ajustes esta corrida → NO se sube nota hasta captura.
+- HALLAZGO (shot 7, run 235847): estado vacío de Repasar usa búho EMOJI MARRÓN, no el Hoot teal. Reemplazar por mascota de marca en TODOS los estados vacíos (Repasar, Match, etc.).
+- UX se mantiene en 66 (sin señal visual nueva). Próximo: Hoot de marca en estados vacíos (verificable) + confirmar Ajustes.
