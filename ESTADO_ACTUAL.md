@@ -2,6 +2,13 @@
 
 > Al entrar a **modo admin Fluenta**: lee este archivo + `CLAUDE.md` + `EVALUACION_UNICORNIO.md`, recrea las tareas como TaskCreate, y **continúa el LOOP** desde "Próximo paso" sin esperar instrucciones. Mantén este archivo actualizado al avanzar.
 
+## 📍 ITER 10 (T3 · 2026-06-22) — APK "lo más completa posible": consolidación de ramas
+- 🔀 Integradas a `admin/t3-instrumentation` 4 ramas user-facing que faltaban: `ux-login-3d` (botones 3D Login), `ux-paywall-3d` (CTA 3D Paywall), `a11y-i18n` (SpeakerButton 48dp WCAG + test), `onboarding-meta` (paso META). Conflicto en `OnboardingScreen.kt` resuelto a favor del rediseño T3b (scaffold "Paso X de 3" + i18n) — el paso META ya estaba en ambos lados, no se perdió nada.
+- 🔎 Verificado que `admin/design-system-pipeline` es un ANCESTRO viejo: T3 ya tiene daily quests (`DailyMissionsCard`/`DailyMissions`, wired @393), mascota con personalidad, hanzi rearquitectura, reminders y tests que a design le FALTAN. Mergearlo regresaría → NO se mergea.
+- ✅ `compileDebugKotlin` + `testDebugUnitTest` + `assembleDebug` **VERDES**. APK republicada en `https://fluenta.alturya.com/download/fluenta-ux-pantallas.apk` (HTTP 200).
+- 🟢 T3 es ahora el ápice del árbol: todas las ramas user-facing consolidadas. Solo quedan `motor-*` (tooling admin, no entra al APK).
+- ⏳ Regla de oro sigue pendiente: falta screenshot de dispositivo real (`./testlab.sh`).
+
 ## 📍 ITER 9 (T3 · 2026-06-22) — APK integrada con las 4 pantallas rediseñadas de T3b
 - 🔀 **Integración**: T3b tenía 4 rediseños SIN COMMITEAR (onboarding, selector de idioma, lección invitado, lesson player). Commiteados en `admin/t3b-onboarding` (`ed26daa`) y **mergeados a `admin/t3-instrumentation`** (`9474480`) sin conflictos. Antes de esto, una APK desde T3 era idéntica a la anterior; ahora sí trae pantallas nuevas.
 - 🔌 **Cableado verificado**: las 4 son rediseños de pantallas EXISTENTES, ya referenciadas en `MainActivity.kt` (Onboarding @181, GuestLesson @218, LessonPlayer @405, LanguageSelector @455). No quedan composables colgando.
