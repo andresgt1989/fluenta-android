@@ -2,6 +2,16 @@
 
 > Al entrar a **modo admin Fluenta**: lee este archivo + `CLAUDE.md` + `EVALUACION_UNICORNIO.md`, recrea las tareas como TaskCreate, y **continúa el LOOP** desde "Próximo paso" sin esperar instrucciones. Mantén este archivo actualizado al avanzar.
 
+## 📍 ITER 11 (T3 · 2026-06-22) — Ports FIELES de Claude Design (código real, no mockups)
+- 🎨 Implementadas en Compose desde los `.dc.html` de `/opt/fluenta-claude-design/project/` + tokens oficiales `FluentaTheme.kt` (leídos por el MCP claude_design):
+  - **P13 HanziReview** (`script/HanziReviewScreen.kt`): recall sin glifo → revelar → Fallé/Lo recordé; estados completado/vacío/cargando; paleta esmeralda + 3D. Cableado HanziSrsStore intacto.
+  - **P1 HOME** (`home/HomeScreen.kt`): header chip + pills racha/XP, hero "Continuar" mint (E4F6F1→CDEEE6, progreso segmentado, botón 3D 0E9D8E/0A6F64), sección "PARA HOY" agrupada. Datos reales coach/progress.
+  - **P11 Repaso SRS** (`repaso/RepasoScreen.kt`): error previo → mostrar respuesta → corrección verde + tip; fin(XP)/vacío/cargando/error con mascota. Cableado RepasoViewModel intacto, respeta RTL.
+- ✅ Verificado de verdad: `compileDebugKotlin` + `testDebugUnitTest` VERDES, y **dex del APK contiene** los strings nuevos (`RECUERDA EL CAR`, `home.continueKicker`, `repaso.recallLabel`, clases `HeroContinueCard/TodayRow`).
+- 📦 APK: `https://fluenta.alturya.com/download/fluenta-ux-pantallas.apk`. Commits `8dee745`, `9dd874e`, `8d7ca9b`.
+- 🔀 Reparto: T3 = HOME + HanziReview + (sin asignar: Match/Progress/Repaso→Repaso hecho). T3b = Onboarding/LanguageSelector/GuestLesson/Paywall. T3c = Conversation/Script/LessonPlayer. APK final = merge de las 3 ramas cuando T3b/T3c terminen.
+- ⏳ Pendientes T3: **7 Match, 10 Progress**.
+
 ## 📍 ITER 10 (T3 · 2026-06-22) — APK "lo más completa posible": consolidación de ramas
 - 🔀 Integradas a `admin/t3-instrumentation` 4 ramas user-facing que faltaban: `ux-login-3d` (botones 3D Login), `ux-paywall-3d` (CTA 3D Paywall), `a11y-i18n` (SpeakerButton 48dp WCAG + test), `onboarding-meta` (paso META). Conflicto en `OnboardingScreen.kt` resuelto a favor del rediseño T3b (scaffold "Paso X de 3" + i18n) — el paso META ya estaba en ambos lados, no se perdió nada.
 - 🔎 Verificado que `admin/design-system-pipeline` es un ANCESTRO viejo: T3 ya tiene daily quests (`DailyMissionsCard`/`DailyMissions`, wired @393), mascota con personalidad, hanzi rearquitectura, reminders y tests que a design le FALTAN. Mergearlo regresaría → NO se mergea.
