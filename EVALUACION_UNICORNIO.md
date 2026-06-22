@@ -129,3 +129,13 @@ Carril dedicado de Accesibilidad/i18n (rama `a11y-i18n`), en paralelo a CONTENID
 
 ## Honestidad de método
 Cada nota se sube SOLO con evidencia real (Firebase Test Lab / código verificado), nunca con datos falsos. Si una mejora no se puede verificar en dispositivo real, no cuenta para subir la nota.
+
+### Iteración 3 (2026-06-22) — Entrada Claude Design + ESPINA de progresión (verificado en Firebase run 224414)
+- **UX 45→62** (+17). Evidencia REAL (capturas dispositivo, galería /download/firebase.html):
+  - Bienvenida Claude Design como 1ª pantalla (búho Hoot dibujado, CTA 3D) — shot 1.
+  - **NavBar teal**: pestaña activa con pill mint #CDEEE6 + ícono teal #0A6F64 (ya no rojo) — shots 3,5.
+  - **ESPINA: Mapa de Lecciones** con kit — "Mi mapa de lecciones", anillo de unidad 0/5, nodo actual ▶ con burbuja "Empezar ▸", bloqueados 🔒, conector — shot 4. (Resuelve "no hay camino fijo".)
+  - Progress/Match/Repaso/Perfil/Conversación portados al kit.
+  - Onboarding sin bienvenida duplicada (arranca en paso idioma).
+- Falta para 100 (sigue): (a) Login es una 2ª bienvenida (sin mock Claude Design); (b) auto-avance tras CADA ejercicio (solo Match→ruta hecho); (c) Home con UNA acción primaria (hoy disperso); (d) esqueleto de carga gris sin marca (sin Hoot); (e) Perfil/Ajustes y Test de Nivel aún con diseño viejo (mocks ya disponibles en el zip).
+- Global estimado ≈ 48/100 (UX deja de ser el tapón absoluto; siguiente cuello: Retención/auto-avance + Onboarding entrada).
