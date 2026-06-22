@@ -288,7 +288,7 @@ private fun cleanTitle(t: String) = t.removePrefix("Conversación: ").removePref
 @Composable
 private fun EmptyMap(l1: String?, l2: String?) {
     Column(Modifier.fillMaxSize().padding(36.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("🦉", fontSize = 96.sp)
+        com.alturya.fluenta.ui.HootMascot(Modifier.size(112.dp))
         Spacer(Modifier.height(20.dp))
         Text(I18nStore.t("curriculum.emptyTitle", "Tu mapa está vacío"), fontSize = 23.sp, fontWeight = FontWeight.ExtraBold, color = Cz.TealDark, textAlign = TextAlign.Center)
         Text(I18nStore.t("curriculum.emptyHint", "Elige un idioma para empezar tu camino de aprendizaje."), fontSize = 15.sp, color = Cz.Sub, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp).widthIn(max = 280.dp))
@@ -302,7 +302,7 @@ private fun EmptyMap(l1: String?, l2: String?) {
 @Composable
 private fun ErrorMap(msg: String, onRetry: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(36.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("🦉", fontSize = 84.sp)
+        com.alturya.fluenta.ui.HootMascot(Modifier.size(96.dp), sad = true)
         Spacer(Modifier.height(18.dp))
         Text(I18nStore.t("curriculum.errTitle", "No pudimos cargar tu mapa"), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Cz.TealDark, textAlign = TextAlign.Center)
         Text(msg, fontSize = 15.sp, color = Cz.Sub, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp))

@@ -242,7 +242,7 @@ private fun LockedState(onDone: () -> Unit) {
 @Composable
 private fun ErrorState(msg: String, onRetry: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(horizontal = 40.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        Text("🦉", fontSize = 84.sp)
+        com.alturya.fluenta.ui.HootMascot(Modifier.size(96.dp), sad = true)
         Spacer(Modifier.height(16.dp))
         Text(I18nStore.t("match.errorTitle", "No se pudo iniciar el juego"), fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = Mz.Ink, textAlign = TextAlign.Center)
         Text(msg, fontSize = 15.sp, color = Mz.Muted, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp))

@@ -316,7 +316,7 @@ private fun StatRz(emoji: String, value: String, label: String, valueColor: Colo
 @Composable
 private fun CenteredMascotState(title: String, body: String, ctaText: String, ctaFilled: Boolean, onCta: () -> Unit) {
     Column(Modifier.fillMaxSize().background(Rz.Bg).padding(horizontal = 40.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        Text("🦉", fontSize = 84.sp)
+        com.alturya.fluenta.ui.HootMascot(Modifier.size(104.dp))
         Spacer(Modifier.height(18.dp))
         Text(title, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Rz.Ink, textAlign = TextAlign.Center)
         Text(body, fontSize = 15.sp, color = Rz.Muted, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp))
