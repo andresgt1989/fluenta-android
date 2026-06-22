@@ -2,6 +2,18 @@
 
 > Al entrar a **modo admin Fluenta**: lee este archivo + `CLAUDE.md` + `EVALUACION_UNICORNIO.md`, recrea las tareas como TaskCreate, y **continúa el LOOP** desde "Próximo paso" sin esperar instrucciones. Mantén este archivo actualizado al avanzar.
 
+## 📍 ITER 13 (T3 · 2026-06-22) — Bienvenida Claude Design + limpieza de entrada (VERIFICADO en Firebase)
+> Reglas reforzadas por el usuario esta sesión: (1) **toda la UI sale de Claude Design** — cada pantalla/botón/elemento; nada lo inventa Claude. (2) **Nunca reportar "hecho" sin confirmar en Firebase** (capturas en dispositivo real). (3) Revisar **cada esquina** de la app y completar con Claude Design hasta 100/100.
+- 📦 Handoff nuevo del usuario (Google Drive zip) con 5 diseños → copiados a `/opt/fluenta-claude-design/project/`: **Bienvenida, NavBar, Perfil y Ajustes, Test de Nivel, Mapa de Lecciones**. (El proyecto MCP `d5329d95` "Fluenta Language Learning App" NO los tenía; el link `6d313316` daba 404.)
+- ✅ Implementado + **verificado en Firebase Test Lab** (run `ci-local-20260622_213605`, robo exit 0, capturas en `/var/www/fluenta/download/shots/`):
+  - **WelcomeScreen** (`welcome/WelcomeScreen.kt`) = primera pantalla real: búho Hoot dibujado en Canvas (port del SVG), CTA 3D "Empezar", "Ya tengo cuenta · Entrar". (shot 1) Wired en MainActivity: nuevo usuario → `welcome`.
+  - **Onboarding sin bienvenida duplicada**: arranca en paso 1; back del paso 1 → Welcome. Va directo a "Paso 1/2/3 ¿Qué idioma hablas/aprender?" (shots 5,7).
+  - **NavBar** restilada (pill activa mint `#CDEEE6` / teal `#0A6F64`, no rojo) — *en código, NO verificado en este robo (no inicia sesión, no llega a `main`)*.
+  - **Sin prueba de nivel forzada**: login de usuario nuevo → `main` directo (antes `level_test`). *En código; no verificable por robo sin login.*
+  - Ports previos restilados al kit: **Match** (`exercises/MatchScreen.kt`) y **Progress** (`progress/ProgressScreen.kt`).
+- ⚠️ HALLAZGO REAL (shots 2,3): la **pantalla de Login es una SEGUNDA bienvenida** ("Fluenta / Habla un idioma nuevo / Probar una lección / Empezar gratis") — duplica el value-prop del Welcome = la "página de empezar gratis" que molesta al usuario. **Falta mock de Login/Crear-cuenta en Claude Design** (es la única pantalla de entrada sin diseño). Decisión pendiente del usuario: generar mock o recortar el héroe duplicado.
+- Commits: `a5d4a5d` (Welcome), `dd366c7` (dedup welcome + NavBar + sin test forzado). Pendientes de implementar del zip: Perfil/Ajustes, Test de Nivel, Mapa de Lecciones.
+
 ## 📍 ITER 12 (T3 · 2026-06-22) — APK FINAL UNIFICADO (T3+T3a+T3b+T3c, las 3 ramas)
 - 🔀 Mergeadas a `admin/t3-instrumentation`: `t3b-onboarding` (`53cecaa`) + `t3c-conversacion` (`433dc54`). Conflictos en ConversationScreen/LessonPlayerScreen resueltos a favor de T3c (sus ports fieles).
 - ✅ Verificado en el **dex del APK publicado** (md5 `1f9e62cf…`): clases de Claude Design presentes — Onboarding, LanguageSelector, GuestLesson, Paywall (T3b), Conversation, Script, LessonPlayer (T3c), HOME, HanziReview, Repaso (T3), + FluentaTokens/Autonyms (T3a). `compileDebugKotlin` + `testDebugUnitTest` + `assembleDebug` VERDES.
