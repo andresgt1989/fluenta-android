@@ -74,6 +74,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -1246,43 +1247,48 @@ private fun ResultView(
         label = "pulse",
     )
 
-    Box(Modifier.fillMaxSize()) {
+    val passed = result.passed
+    // Aprobado: gradiente hero (primary→mint→surface). No aprobado: superficie mint.
+    val heroBg = Brush.verticalGradient(listOf(MaterialTheme.colorScheme.primary, DcMint, DcSurface))
+    Box(Modifier.fillMaxSize().then(if (passed) Modifier.background(heroBg) else Modifier)) {
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(28.dp))
         AnimatedVisibility(visible = visible, enter = fadeIn() + scaleIn()) {
-            if (result.passed) {
+            if (passed) {
                 Image(
                     painter = painterResource(R.drawable.ic_fluenta_celebra),
                     contentDescription = I18nStore.t("result.celebrateAlt", "¡Lección completada!"),
                     modifier = Modifier.size(150.dp).scale(pulse),
                 )
             } else {
-                Icon(
-                    Icons.AutoMirrored.Filled.TrendingUp,
+                // Mascota que anima (no celebra) cuando aún no aprueba.
+                Image(
+                    painter = painterResource(R.drawable.ic_fluenta_saluda),
                     contentDescription = I18nStore.t("result.keepGoing", "Sigue practicando"),
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(100.dp),
+                    modifier = Modifier.size(132.dp),
                 )
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(10.dp))
         Text(
-            if (result.passed) I18nStore.t("lesson.result.passed", "¡Lección completada!") else I18nStore.t("lesson.result.keepGoing", "Sigue practicando"),
+            if (passed) I18nStore.t("lesson.result.passed", "¡Lección superada!") else I18nStore.t("lesson.result.almost", "¡Casi lo logras!"),
             style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.ExtraBold,
+            color = if (passed) Color.White else DcInk,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
         Spacer(Modifier.height(16.dp))
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.scale(if (result.passed) xpScale.value else 1f),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth().scale(if (passed) xpScale.value else 1f),
         ) {
-            Stat(Icons.Default.CheckCircle, "${result.correctCount}/${result.total}", I18nStore.t("result.correct", "Correctos"))
-            Stat(Icons.Default.Star, "+${result.xpEarned}", "XP")
-            result.newStreakDays?.let { Stat(Icons.Default.LocalFireDepartment, "$it", I18nStore.t("result.streak", "Racha")) }
+            ResultStat("✅", "${result.correctCount}/${result.total}", I18nStore.t("result.correct", "Correctos"), if (passed) Color(0xFF0B7B53) else DcCoral, Modifier.weight(1f), onGradient = passed)
+            ResultStat("⚡", "+${result.xpEarned}", "XP", DcAmber, Modifier.weight(1f), onGradient = passed)
+            result.newStreakDays?.let { ResultStat(if (passed) "🔥" else "💔", "$it", I18nStore.t("result.streak", "Racha"), DcInk, Modifier.weight(1f), onGradient = passed) }
         }
 
         Spacer(Modifier.height(24.dp))
@@ -1520,15 +1526,22 @@ private fun ConfettiOverlay() {
 }
 
 @Composable
-private fun Stat(icon: ImageVector, value: String, label: String) {
-    Card(modifier = Modifier.width(96.dp)) {
+private fun ResultStat(emoji: String, value: String, label: String, valueColor: Color, modifier: Modifier = Modifier, onGradient: Boolean = false) {
+    Surface(
+        color = if (onGradient) Color.White.copy(alpha = 0.95f) else Color.White,
+        shape = RoundedCornerShape(18.dp),
+        shadowElevation = if (onGradient) 0.dp else 1.dp,
+        border = if (onGradient) null else androidx.compose.foundation.BorderStroke(2.dp, DcHairline),
+        modifier = modifier,
+    ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp, horizontal = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
-            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text(label, style = MaterialTheme.typography.labelSmall)
+            Text(emoji, style = MaterialTheme.typography.titleLarge)
+            Spacer(Modifier.height(4.dp))
+            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = valueColor)
+            Text(label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = DcSlate, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         }
     }
 }
