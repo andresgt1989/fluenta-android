@@ -192,18 +192,16 @@ class MainActivity : ComponentActivity() {
                                 rootNav.navigate("guest_conversation/$l1/$l2")
                             },
                             onLogin = { rootNav.navigate("login") },
+                            onBack = { rootNav.popBackStack() },
                         )
                     }
                     composable("login") {
                         LoginScreen(
-                            onSuccess = { isNewUser ->
-                                if (isNewUser) {
-                                    // New account → detect CEFR level so the whole curriculum
-                                    // (lessons, coach, path) turns on at the right level.
-                                    rootNav.navigate("level_test") { popUpTo("login") { inclusive = true } }
-                                } else {
-                                    rootNav.navigate("main") { popUpTo("login") { inclusive = true } }
-                                }
+                            onSuccess = { _ ->
+                                // Sin prueba de nivel forzada al entrar (se sentía como un
+                                // "test de inglés random"). Va directo a la app; el test de
+                                // nivel queda disponible luego desde Inicio/Perfil.
+                                rootNav.navigate("main") { popUpTo("login") { inclusive = true } }
                             },
                             onTryGuest = {
                                 rootNav.navigate("onboarding")
@@ -312,7 +310,11 @@ private fun MainScaffold(
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
+            // NavBar Claude Design: contenedor blanco, pill activa mint #CDEEE6,
+            // ícono/etiqueta activos en teal #0A6F64, inactivos gris #7C857F.
+            NavigationBar(
+                containerColor = androidx.compose.ui.graphics.Color.White,
+            ) {
                 TABS.forEach { tab ->
                     NavigationBarItem(
                         selected = currentRoute == tab.route,
@@ -330,6 +332,13 @@ private fun MainScaffold(
                             )
                         },
                         alwaysShowLabel = true,
+                        colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
+                            selectedIconColor = androidx.compose.ui.graphics.Color(0xFF0A6F64),
+                            selectedTextColor = androidx.compose.ui.graphics.Color(0xFF0A6F64),
+                            indicatorColor = androidx.compose.ui.graphics.Color(0xFFCDEEE6),
+                            unselectedIconColor = androidx.compose.ui.graphics.Color(0xFF7C857F),
+                            unselectedTextColor = androidx.compose.ui.graphics.Color(0xFF7C857F),
+                        ),
                         label = {
                             Text(
                                 I18nStore.t(tab.labelKey, tab.defaultLabel),

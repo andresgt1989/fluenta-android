@@ -65,7 +65,7 @@ private val MOTIVATION_TILES = listOf(
 )
 
 @Composable
-fun OnboardingScreen(onPicked: (l1: String, l2: String) -> Unit, onLogin: () -> Unit = {}) {
+fun OnboardingScreen(onPicked: (l1: String, l2: String) -> Unit, onLogin: () -> Unit = {}, onBack: () -> Unit = {}) {
     // Device locale is just the DEFAULT — the user confirms/changes their
     // language explicitly (es/en/pt) instead of being locked to the detection.
     val detected = remember {
@@ -75,11 +75,12 @@ fun OnboardingScreen(onPicked: (l1: String, l2: String) -> Unit, onLogin: () -> 
     val scope = rememberCoroutineScope()
     var l1 by remember { mutableStateOf(detected) }
     var l2 by remember { mutableStateOf("") }
-    var step by remember { mutableStateOf(0) }
+    // La bienvenida vive ahora en WelcomeScreen (Claude Design), antes del onboarding.
+    // Por eso arrancamos en el paso 1 — sin una segunda bienvenida duplicada.
+    var step by remember { mutableStateOf(1) }
 
     when (step) {
-        0 -> WelcomeStep(onStart = { step = 1 }, onLogin = onLogin)
-        1 -> SourceLanguageStep(selected = l1, onContinue = { l1 = it; step = 2 }, onBack = { step = 0 })
+        1 -> SourceLanguageStep(selected = l1, onContinue = { l1 = it; step = 2 }, onBack = onBack)
         2 -> LanguagePickStep(l1 = l1, onContinue = { l2 = it; step = 3 }, onBack = { step = 1 })
         // Paso de META / "por qué": personaliza la experiencia y crea compromiso
         // antes del primer minuto (lo que pedía el scorecard de onboarding).
