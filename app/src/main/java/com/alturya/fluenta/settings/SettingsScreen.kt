@@ -119,8 +119,9 @@ fun SettingsScreen(onBack: () -> Unit = {}) {
                             if (!selected) scope.launch { I18nStore.setLang(context, lang.code); I18nStore.ensureLoaded(context, lang.code) }
                             langExpanded = false
                         }.padding(horizontal = 56.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically) {
-                        Text("${lang.flag}  ${lang.nativeName}", fontSize = 14.sp, fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium,
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(lang.flag, fontSize = 16.sp)
+                        Text(lang.nativeName, fontSize = 14.sp, fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium,
                             color = if (selected) Sz.TealDark else Sz.RowInk, modifier = Modifier.weight(1f))
                         if (selected) Text("✓", color = Sz.Teal, fontWeight = FontWeight.ExtraBold)
                     }

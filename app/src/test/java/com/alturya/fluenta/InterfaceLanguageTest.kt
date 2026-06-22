@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.data.InterfaceLanguages
@@ -46,7 +47,9 @@ class InterfaceLanguageTest {
 
     @Test fun settings_screen_renders_language_picker() {
         compose.setContent { SettingsScreen() }
-        compose.onNodeWithText("Idioma de la interfaz").assertIsDisplayed()
+        // Kit Claude Design: el idioma vive en la fila "Idioma de la app"; se despliega al tocarla.
+        compose.onNodeWithText("Idioma de la app").assertIsDisplayed()
+        compose.onNodeWithText("Idioma de la app").performClick()
         compose.onNodeWithText("Español").assertIsDisplayed()
         compose.onNodeWithText("English").assertIsDisplayed()
         compose.onNodeWithText("Português").assertIsDisplayed()
