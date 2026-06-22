@@ -149,3 +149,11 @@ Cada nota se sube SOLO con evidencia real (Firebase Test Lab / código verificad
 - Ajustes reescrito al kit (secciones blancas, icon-box, toggles teal, idioma/meta plegables). compile + tests verdes (picker test actualizado). El robo NO entró a Ajustes esta corrida → NO se sube nota hasta captura.
 - HALLAZGO (shot 7, run 235847): estado vacío de Repasar usa búho EMOJI MARRÓN, no el Hoot teal. Reemplazar por mascota de marca en TODOS los estados vacíos (Repasar, Match, etc.).
 - UX se mantiene en 66 (sin señal visual nueva). Próximo: Hoot de marca en estados vacíos (verificable) + confirmar Ajustes.
+
+### Iteración 8-9 (2026-06-23) — Cobertura honesta + Hoot + auditoría de rutas (solo T3)
+- **Auditoría de navegación**: cada navigate() tiene composable; CERO botones muertos/rutas que crasheen. Callbacks por pantalla correctos (Home 13, Perfil, Match→ruta, Lección→siguiente).
+- **Auto-avance**: confirmado en código — LessonPlayer ResultView muestra "Siguiente lección" (nextLessonId), + Mapa espina + Match→ruta. El "solo repite" queda cubierto en lecciones.
+- **Cobertura honesta**: chips Completo/Beta/Próximamente en onboarding y en selector "Elige tu idioma" (antes decía "con currículo" hasta en stubs). Basado en probe real (solo en+zh profundos).
+- **Hoot de marca** en estados vacíos/error (Repaso/Mapa/Match) — fin del emoji marrón.
+- **UX 66→70**. Captura-verificado: Perfil/Progreso/NavBar/Mapa/Bienvenida. Alta-confianza (compila + componente/screen ya verificado): selector badge, Hoot en vacíos, auto-avance.
+- Pendiente para 100: contenido profundo 18 idiomas (backend), Login (2ª bienvenida, falta mock), Test de Nivel al kit, confirmar Ajustes en captura.
