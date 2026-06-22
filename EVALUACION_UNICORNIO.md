@@ -17,7 +17,7 @@ Lentes: **PhD Pedagogía de idiomas · PhD UX · Builder de unicornios · CEO de
 | 7 | **Tecnología / fiabilidad** | **55** | Sin crashes en logcat (bien). Pero 65 fallos silenciosos (mejorando), offline parcial, sin tests que bloqueen regresiones. |
 | 8 | **Negocio / monetización** | **50** | Stripe + planes + paywall existen. Paywall día-1 spam, sin precios localizados (PPP), prueba sin recordatorio de cobro. |
 | 9 | **Viralidad / growth loops** | **40** | Referidos + share card existen, pero referidos fallaba/oculto; sin loop fuerte ni k-factor medido. |
-| 10 | **Accesibilidad / i18n** | **40** | i18n mejorando (era hardcodeado), RTL parcial, contraste/targets/contentDescription con huecos. |
+| 10 | **Accesibilidad / i18n** | **42** | 1er touch-target arreglado+verificado (botón audio 32→48dp, `SpeakerButton`, test dirigido verde). i18n mejorando (era hardcodeado), RTL parcial, contraste y ~108 `contentDescription=null` aún con huecos. |
 
 ### Nota global honesta: **~43/100**
 Lectura de CEO: en el mercado, **el eslabón más débil (UX 25) tapa todo** — el usuario percibe ~4/100 como dices, porque churnea antes de descubrir la pedagogía. Por eso UX es la prioridad #1 absoluta.
@@ -114,6 +114,13 @@ Foco reorientado por decisión del CEO: **el contenido es lo crítico, el resto 
 - ✅ **VERIFICADO con LLM real** (`verify-evaluator.ts`): unidad B2 buena `passed, score 82`; basura principiante `rechazada, score 30` (fuga + palabras sueltas). El gate anti-basura funciona end-to-end. **27 tests de contenido verdes, tsc 0 errores.**
 - **Contenido 35→42** (+7): C2 alcanzable + meta anclada en exámenes reales + gate de calidad probado. NO sube más: falta generar el currículo a escala (20×6 pasando el gate) y wirear a la app.
 → **Global ~54/100**.
+
+### Iteración 8 (TERMINAL 4 — a11y: 1er touch-target accesible verificado)
+Carril dedicado de Accesibilidad/i18n (rama `a11y-i18n`), en paralelo a CONTENIDO. Hallazgo real de a11y: el botón de audio "Escuchar" en `ConversationScreen` tenía `Modifier.size(32.dp)` → área táctil **32dp, por debajo del mínimo WCAG de 48dp** (toque difícil para motricidad reducida). Arreglo + evidencia dura:
+- ✅ Nuevo componente `ui/SpeakerButton.kt`: `IconButton` que mantiene el área táctil en **48dp** (vía `minimumInteractiveComponentSize`) aunque el ícono visual sea de 16dp; etiqueta traducible `contentDescription = I18nStore.t("convo.hear","Escuchar")`. Reemplaza el botón de 32dp en `ConversationScreen`.
+- ✅ Test dirigido `A11ySpeakerButtonTest.speakerButton_isLabeled_andHasMinTouchTarget` (Robolectric) **VERDE** — `tests=1 skipped=0 failures=0`. Ejerce el composable REAL y hace assert de: etiqueta presente, `assertHasClickAction`, y **área táctil** `assertTouchWidthIsEqualTo(48.dp)` + `assertTouchHeightIsEqualTo(48.dp)` (mide el touch target, no los bounds visuales — el error que destapó la 1ª versión del test). `assembleDebug` compila.
+- **a11y 40→42** (+2): un touch-target real arreglado y verificado por el camino de producción. NO sube más porque: ~108 íconos con `contentDescription=null` sin etiquetar, contraste/escala de fuente/RTL real sin auditar, y **falta el gate de instrumentation en dispositivo real** (este assert corre en JVM/Robolectric, no en hardware — mismo techo que tuvo Retención en iter 3 antes de la iter 6). Próximo: barrer touch-targets <48dp restantes + `contentDescription` de íconos interactivos.
+→ **Global ~54/100** (el +2 de a11y es real pero pequeño; no mueve el global redondeado).
 
 ## Próximo objetivo del loop = CONTENIDO (prioridad #1) + nota más baja
 **Contenido (42)** sigue siendo lo más bajo y es la PRIORIDAD. → **Siguiente:**
