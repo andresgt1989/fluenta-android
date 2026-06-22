@@ -159,7 +159,7 @@ class MainActivity : ComponentActivity() {
                         startDest = when {
                             tok != null -> "main"
                             onboardingDone -> "login"
-                            else -> "onboarding"
+                            else -> "welcome"
                         }
                     }
                 }
@@ -177,6 +177,12 @@ class MainActivity : ComponentActivity() {
                     navController = rootNav,
                     startDestination = dest
                 ) {
+                    composable("welcome") {
+                        com.alturya.fluenta.welcome.WelcomeScreen(
+                            onStart = { rootNav.navigate("onboarding") },
+                            onLogin = { rootNav.navigate("login") },
+                        )
+                    }
                     composable("onboarding") {
                         OnboardingScreen(
                             onPicked = { l1, l2 ->
