@@ -157,3 +157,10 @@ Cada nota se sube SOLO con evidencia real (Firebase Test Lab / código verificad
 - **Hoot de marca** en estados vacíos/error (Repaso/Mapa/Match) — fin del emoji marrón.
 - **UX 66→70**. Captura-verificado: Perfil/Progreso/NavBar/Mapa/Bienvenida. Alta-confianza (compila + componente/screen ya verificado): selector badge, Hoot en vacíos, auto-avance.
 - Pendiente para 100: contenido profundo 18 idiomas (backend), Login (2ª bienvenida, falta mock), Test de Nivel al kit, confirmar Ajustes en captura.
+
+### Iteración 10-11 (2026-06-23) — Contenido profundo (medido por API) + Test de Nivel al kit
+- **CONTENIDO 42→54** (señal real = conteo API, no opinión). Generación con gate PhD desde T3:
+  es→fr 30u/180l, es→de 28u/168l, es→it 27u/162l, es→pt 26u/156l, es→ja 27u/162l (es→ko en curso). Antes todos en 5u.
+  → 5 de 6 pares top L1=español pasaron de stub a profundidad A1→B1. (en+zh ya eran profundos.)
+- **Test de Nivel** portado al kit (intro Hoot + tarjeta ejemplo, pregunta con progreso, cargando, error Hoot triste, resultado con escalera CEFR) — compila + tests verdes; captura Firebase en curso.
+- Falta: es→ko terminar; deepen para L1=en y L1=pt; Login (mock pendiente); confirmar Ajustes/Test en captura.
