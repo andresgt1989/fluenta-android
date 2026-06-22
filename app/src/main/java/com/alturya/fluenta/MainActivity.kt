@@ -426,13 +426,24 @@ private fun MainScaffold(
             }
             composable("verbs") { VerbsTodayScreen() }
             composable("pronunciation") { PronunciationScreen() }
-            composable("conversation") { ConversationScreen(onDone = { nav.popBackStack() }) }
+            composable("conversation") {
+                ConversationScreen(
+                    l1 = com.alturya.fluenta.data.Session.l1 ?: "es",
+                    l2 = com.alturya.fluenta.data.Session.l2 ?: "en",
+                    onDone = { nav.popBackStack() },
+                )
+            }
             composable(
                 route = "conversation_lesson/{lessonId}",
                 arguments = listOf(navArgument("lessonId") { type = NavType.StringType }),
             ) { entry ->
                 val lessonId = entry.arguments?.getString("lessonId") ?: ""
-                ConversationScreen(lessonId = lessonId, onDone = { nav.popBackStack() })
+                ConversationScreen(
+                    lessonId = lessonId,
+                    l1 = com.alturya.fluenta.data.Session.l1 ?: "es",
+                    l2 = com.alturya.fluenta.data.Session.l2 ?: "en",
+                    onDone = { nav.popBackStack() },
+                )
             }
             composable("repaso") {
                 RepasoScreen(onDone = {
