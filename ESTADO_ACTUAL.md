@@ -2,6 +2,11 @@
 
 > Al entrar a **modo admin Fluenta**: lee este archivo + `CLAUDE.md` + `EVALUACION_UNICORNIO.md`, recrea las tareas como TaskCreate, y **continúa el LOOP** desde "Próximo paso" sin esperar instrucciones. Mantén este archivo actualizado al avanzar.
 
+## 📍 ITER 12 (T3 · 2026-06-22) — APK FINAL UNIFICADO (T3+T3a+T3b+T3c, las 3 ramas)
+- 🔀 Mergeadas a `admin/t3-instrumentation`: `t3b-onboarding` (`53cecaa`) + `t3c-conversacion` (`433dc54`). Conflictos en ConversationScreen/LessonPlayerScreen resueltos a favor de T3c (sus ports fieles).
+- ✅ Verificado en el **dex del APK publicado** (md5 `1f9e62cf…`): clases de Claude Design presentes — Onboarding, LanguageSelector, GuestLesson, Paywall (T3b), Conversation, Script, LessonPlayer (T3c), HOME, HanziReview, Repaso (T3), + FluentaTokens/Autonyms (T3a). `compileDebugKotlin` + `testDebugUnitTest` + `assembleDebug` VERDES.
+- 📦 `https://fluenta.alturya.com/download/fluenta-ux-pantallas.apk` — TODA la app se ve Claude Design desde la primera pantalla.
+
 ## 📍 ITER 11 (T3 · 2026-06-22) — Ports FIELES de Claude Design (código real, no mockups)
 - 🎨 Implementadas en Compose desde los `.dc.html` de `/opt/fluenta-claude-design/project/` + tokens oficiales `FluentaTheme.kt` (leídos por el MCP claude_design):
   - **P13 HanziReview** (`script/HanziReviewScreen.kt`): recall sin glifo → revelar → Fallé/Lo recordé; estados completado/vacío/cargando; paleta esmeralda + 3D. Cableado HanziSrsStore intacto.
