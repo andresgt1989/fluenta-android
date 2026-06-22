@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,13 +13,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MicNone
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.Translate
@@ -28,7 +30,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -39,8 +45,26 @@ import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.CurriculumUnit
 import com.alturya.fluenta.network.Lesson
 
-// Zigzag column offsets (as fraction of available width, centred on 0.5)
-private val ZIGZAG = listOf(0.15f, 0.35f, 0.5f, 0.65f, 0.85f, 0.65f, 0.5f, 0.35f, 0.15f, 0.35f)
+/* Paleta del kit Claude Design (Fluenta Mapa de Lecciones.dc.html) */
+private object Cz {
+    val BgTop = Color(0xFFF2FBF8)
+    val BgMid = Color(0xFFE4F6F1)
+    val BgBot = Color(0xFFCDEEE6)
+    val Teal = Color(0xFF0E9D8E)
+    val TealDark = Color(0xFF0A6F64)
+    val Teal2 = Color(0xFF13B0A0)
+    val Muted = Color(0xFF7C857F)
+    val Sub = Color(0xFF5E726C)
+    val NodeLocked = Color(0xFFE3ECE8)
+    val LockBorder = Color(0xFFD2DED9)
+    val LockInk = Color(0xFF9AA9A2)
+    val ConnReached = Color(0xFF13B0A0)
+    val ConnLocked = Color(0xFFCFDDD7)
+    val Track = Color(0xFFD7EBE5)
+    val Amber = Color(0xFFF6A623)
+}
+
+private val ZIGZAG = listOf(0.5f, 0.74f, 0.84f, 0.66f, 0.36f, 0.16f, 0.26f, 0.5f, 0.74f, 0.66f)
 
 @Composable
 fun CurriculumMapScreen(
@@ -52,85 +76,74 @@ fun CurriculumMapScreen(
     val vmState by vm.state.collectAsState()
     val state = previewState ?: vmState
     val listState = rememberLazyListState()
-    // Rebuild the path when the learning language changes elsewhere.
     val reloadSignal by com.alturya.fluenta.data.Session.reloadSignal.collectAsState()
     LaunchedEffect(reloadSignal) {
         if (previewState == null && reloadSignal > 0) vm.load()
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Header
-        Surface(
-            color = MaterialTheme.colorScheme.primaryContainer,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(Modifier.padding(horizontal = 20.dp, vertical = 14.dp)) {
+    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Cz.BgTop, 0.55f to Cz.BgMid, 1f to Cz.BgBot))) {
+        Column(Modifier.fillMaxSize()) {
+            // App bar
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 22.dp).padding(top = 16.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
-                    I18nStore.t("curriculum.title", "Tu camino de aprendizaje"),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
+                    I18nStore.t("curriculum.title", "Mi mapa de lecciones"),
+                    fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Cz.TealDark,
+                    modifier = Modifier.weight(1f),
                 )
                 if (state.l1 != null && state.l2 != null) {
-                    Text(
-                        "${state.l1?.uppercase()} → ${state.l2?.uppercase()}",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f),
-                    )
-                }
-            }
-        }
-
-        when {
-            state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-            state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(56.dp))
-                    Spacer(Modifier.height(8.dp))
-                    Text(state.error!!, style = MaterialTheme.typography.bodyLarge)
-                    Spacer(Modifier.height(16.dp))
-                    com.alturya.fluenta.ui.FluentaButton(text = I18nStore.t("common.retry", "Reintentar"), onClick = { vm.load() })
-                }
-            }
-            state.units.isEmpty() -> EmptyMap(state.l1, state.l2)
-            else -> {
-                // Flatten all lessons with their unit info, then render as zigzag path
-                val allLessons = state.units.flatMap { unit ->
-                    buildList {
-                        add(UnitMarker(unit))
-                        unit.lessons.forEach { add(LessonEntry(it, unit)) }
+                    Surface(shape = RoundedCornerShape(999.dp), color = Color.White, shadowElevation = 2.dp) {
+                        Text(
+                            "${state.l1?.uppercase()} → ${state.l2?.uppercase()}",
+                            fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Cz.TealDark,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        )
                     }
                 }
-                // Only the FIRST incomplete lesson is "active" (pulses). Otherwise every
-                // pending node pulsed at once — visual noise with no clear next step.
-                val activeLessonId = state.units.flatMap { it.lessons }
-                    .firstOrNull { !it.completed }?.id
+            }
 
-                LazyColumn(
-                    state = listState,
-                    contentPadding = PaddingValues(top = 20.dp, bottom = 80.dp),
-                ) {
-                    allLessons.forEachIndexed { globalIdx, item ->
-                        item {
-                            when (item) {
-                                is UnitMarker -> UnitSectionHeader(item.unit)
-                                is LessonEntry -> {
-                                    val lessonIdx = allLessons.take(globalIdx + 1)
-                                        .filterIsInstance<LessonEntry>().size - 1
-                                    val xFraction = ZIGZAG[lessonIdx % ZIGZAG.size]
-                                    PathLessonNode(
-                                        lesson = item.lesson,
-                                        xFraction = xFraction,
-                                        isActive = item.lesson.id == activeLessonId,
-                                        onClick = {
-                                            // Una lección de roleplay/free_chat ES conversación,
-                                            // no un quiz: enrutamos al motor de conversación real.
-                                            if (item.lesson.type == "roleplay" || item.lesson.type == "free_chat")
-                                                onConversationLesson(item.lesson.id)
-                                            else onStartLesson(item.lesson.id)
-                                        },
-                                    )
+            when {
+                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Cz.Teal, trackColor = Cz.BgBot)
+                }
+                state.error != null -> ErrorMap(state.error!!, onRetry = { vm.load() })
+                state.units.isEmpty() -> EmptyMap(state.l1, state.l2)
+                else -> {
+                    val items = state.units.flatMap { unit ->
+                        buildList {
+                            add(UnitMarker(unit))
+                            unit.lessons.forEach { add(LessonEntry(it, unit)) }
+                        }
+                    }
+                    val activeLessonId = state.units.flatMap { it.lessons }.firstOrNull { !it.completed }?.id
+
+                    LazyColumn(state = listState, contentPadding = PaddingValues(top = 8.dp, bottom = 90.dp)) {
+                        items.forEachIndexed { globalIdx, item ->
+                            item {
+                                when (item) {
+                                    is UnitMarker -> UnitHeaderCard(item.unit)
+                                    is LessonEntry -> {
+                                        val lessonIdx = items.take(globalIdx + 1).filterIsInstance<LessonEntry>().size - 1
+                                        val xFraction = ZIGZAG[lessonIdx % ZIGZAG.size]
+                                        val st = when {
+                                            item.lesson.completed -> NodeState.DONE
+                                            item.lesson.id == activeLessonId -> NodeState.CURRENT
+                                            else -> NodeState.LOCKED
+                                        }
+                                        PathLessonNode(
+                                            lesson = item.lesson,
+                                            xFraction = xFraction,
+                                            nodeState = st,
+                                            onClick = {
+                                                if (st == NodeState.LOCKED) return@PathLessonNode
+                                                if (item.lesson.type == "roleplay" || item.lesson.type == "free_chat")
+                                                    onConversationLesson(item.lesson.id)
+                                                else onStartLesson(item.lesson.id)
+                                            },
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -141,154 +154,165 @@ fun CurriculumMapScreen(
     }
 }
 
+private enum class NodeState { DONE, CURRENT, LOCKED }
+
 private sealed class MapItem
 private data class UnitMarker(val unit: CurriculumUnit) : MapItem()
 private data class LessonEntry(val lesson: Lesson, val unit: CurriculumUnit) : MapItem()
 
 @Composable
-private fun UnitSectionHeader(unit: CurriculumUnit) {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+private fun UnitHeaderCard(unit: CurriculumUnit) {
+    val done = unit.lessons.count { it.completed }
+    val total = unit.lessons.size
+    Surface(
+        Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(22.dp),
+        color = Color.White,
+        shadowElevation = 4.dp,
     ) {
-        Surface(
-            color = MaterialTheme.colorScheme.tertiary,
-            shape = MaterialTheme.shapes.extraLarge,
-        ) {
-            Text(
-                "${I18nStore.t("curriculum.unit", "Unidad")} ${unit.number} · ${unit.title}",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onTertiary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                textAlign = TextAlign.Center,
-            )
-        }
-        // Per-unit completion progress — shows how far along this unit the user is.
-        val doneCount = unit.lessons.count { it.completed }
-        val totalCount = unit.lessons.size
-        if (totalCount > 0) {
-            Spacer(Modifier.height(6.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                LinearProgressIndicator(
-                    progress = { doneCount.toFloat() / totalCount },
-                    modifier = Modifier.width(96.dp).height(6.dp),
-                    color = MaterialTheme.colorScheme.tertiary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                )
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
                 Text(
-                    "$doneCount/$totalCount",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    "${I18nStore.t("curriculum.unit", "Unidad")} ${unit.number}".uppercase(),
+                    fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = Cz.Teal,
                 )
+                Text(unit.title, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Cz.TealDark, lineHeight = 22.sp, modifier = Modifier.padding(top = 2.dp))
+                unit.description?.takeIf { it.isNotBlank() }?.let {
+                    Text(it, fontSize = 12.sp, color = Cz.Muted, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 3.dp))
+                }
             }
-        }
-        unit.description?.let {
-            Spacer(Modifier.height(4.dp))
-            Text(it, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (total > 0) {
+                Spacer(Modifier.width(12.dp))
+                UnitProgressRing(done, total)
+            }
         }
     }
 }
 
 @Composable
-private fun PathLessonNode(lesson: Lesson, xFraction: Float, isActive: Boolean = false, onClick: () -> Unit) {
-    val isCompleted = lesson.completed
-    // Only the active (first incomplete) lesson pulses — clear single "next step".
-    val transition = rememberInfiniteTransition(label = "pulse_$xFraction")
+private fun UnitProgressRing(done: Int, total: Int) {
+    val pct = if (total == 0) 0f else done.toFloat() / total
+    Box(Modifier.size(50.dp), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.size(50.dp)) {
+            val stroke = 6.dp.toPx()
+            drawArc(Cz.Track, -90f, 360f, false, style = Stroke(stroke, cap = StrokeCap.Round),
+                size = Size(size.width - stroke, size.height - stroke),
+                topLeft = androidx.compose.ui.geometry.Offset(stroke / 2, stroke / 2))
+            drawArc(Cz.Teal, -90f, 360f * pct, false, style = Stroke(stroke, cap = StrokeCap.Round),
+                size = Size(size.width - stroke, size.height - stroke),
+                topLeft = androidx.compose.ui.geometry.Offset(stroke / 2, stroke / 2))
+        }
+        Text("$done/$total", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Cz.TealDark)
+    }
+}
+
+@Composable
+private fun PathLessonNode(lesson: Lesson, xFraction: Float, nodeState: NodeState, onClick: () -> Unit) {
+    val transition = rememberInfiniteTransition(label = "pulse")
     val pulse by transition.animateFloat(
-        initialValue = 1f, targetValue = 1.08f,
-        animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse),
-        label = "scale",
+        initialValue = 1f, targetValue = 1.10f,
+        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "scale",
     )
+    val reached = nodeState != NodeState.LOCKED
+    val rowHeight = if (nodeState == NodeState.CURRENT) 132.dp else 104.dp
 
-    val nodeColor = when {
-        isCompleted -> Color(0xFF1BB6A6)  // teal — completed
-        isActive -> MaterialTheme.colorScheme.primary  // active/available — next step
-        else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)  // locked-looking, upcoming
-    }
-    val nodeIcon = when {
-        isCompleted -> Icons.Default.CheckCircle
-        else -> lessonIconVector(lesson.type)
-    }
-
-    BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(96.dp),
-    ) {
+    BoxWithConstraints(Modifier.fillMaxWidth().height(rowHeight)) {
         val maxW = maxWidth
-        val offsetX = (maxW * xFraction) - 36.dp  // centre 72dp circle on xFraction
+        val nodeSize = if (nodeState == NodeState.CURRENT) 76.dp else 64.dp
+        val offsetX = (maxW * xFraction) - nodeSize / 2
 
-        // Connecting path line (background, drawn behind node)
+        // Conector vertical (detrás del nodo)
         Box(
-            modifier = Modifier
-                .width(4.dp)
-                .height(96.dp)
-                .align(Alignment.Center)
-                .background(MaterialTheme.colorScheme.outlineVariant),
+            Modifier.width(6.dp).fillMaxHeight().align(Alignment.TopCenter)
+                .padding(top = 0.dp)
+                .background(if (reached) Cz.ConnReached else Cz.ConnLocked),
         )
 
-        // Lesson node circle
         Column(
-            modifier = Modifier
-                .offset(x = offsetX.coerceIn(4.dp, maxW - 76.dp))
-                .align(Alignment.CenterStart)
-                .scale(if (isActive) pulse else 1f),
+            Modifier.offset(x = offsetX.coerceIn(8.dp, maxW - nodeSize - 8.dp)).align(Alignment.CenterStart),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(72.dp)
-                    .clip(CircleShape)
-                    .background(nodeColor)
-                    .border(3.dp, MaterialTheme.colorScheme.surface, CircleShape)
-                    .clickable(onClick = onClick),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(nodeIcon, contentDescription = lesson.type, tint = Color.White, modifier = Modifier.size(32.dp))
+            // Burbuja "Empezar ▸" sobre el nodo actual
+            if (nodeState == NodeState.CURRENT) {
+                Surface(shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 8.dp) {
+                    Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(cleanTitle(lesson.title), fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = Cz.TealDark, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text("${I18nStore.t("common.start", "Empezar")} ▸", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Cz.Teal, modifier = Modifier.padding(top = 2.dp))
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
             }
-            Spacer(Modifier.height(2.dp))
-            // El icono ya indica que es conversación → quitamos el prefijo redundante
-            // "Conversación:" para que el título quepa sin truncarse.
-            val displayTitle = lesson.title
-                .removePrefix("Conversación: ")
-                .removePrefix("Conversation: ")
-                .trim()
-            Text(
-                displayTitle,
-                style = MaterialTheme.typography.labelSmall,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.width(112.dp),
-            )
+
+            // Nodo 3D
+            Box(
+                Modifier.size(nodeSize + 5.dp).scale(if (nodeState == NodeState.CURRENT) pulse else 1f),
+                contentAlignment = Alignment.TopCenter,
+            ) {
+                // sombra 3D
+                if (nodeState != NodeState.LOCKED) {
+                    Box(Modifier.size(nodeSize).align(Alignment.BottomCenter).clip(CircleShape).background(Cz.TealDark))
+                }
+                val face = when (nodeState) {
+                    NodeState.DONE -> Cz.Teal
+                    NodeState.CURRENT -> Cz.Teal2
+                    NodeState.LOCKED -> Cz.NodeLocked
+                }
+                Box(
+                    Modifier.size(nodeSize).align(Alignment.TopCenter).clip(CircleShape).background(face)
+                        .then(if (nodeState == NodeState.CURRENT) Modifier.border(3.dp, Color.White, CircleShape)
+                              else if (nodeState == NodeState.LOCKED) Modifier.border(2.dp, Cz.LockBorder, CircleShape)
+                              else Modifier)
+                        .clickable(enabled = nodeState != NodeState.LOCKED, onClick = onClick),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    when (nodeState) {
+                        NodeState.DONE -> Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(30.dp))
+                        NodeState.CURRENT -> Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
+                        NodeState.LOCKED -> Icon(Icons.Default.Lock, contentDescription = null, tint = Cz.LockInk, modifier = Modifier.size(22.dp))
+                    }
+                }
+            }
+
+            // Caption (título) para nodos completados
+            if (nodeState == NodeState.DONE) {
+                Text(cleanTitle(lesson.title), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Cz.TealDark,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 4.dp).width(110.dp))
+            }
         }
     }
 }
+
+private fun cleanTitle(t: String) = t.removePrefix("Conversación: ").removePrefix("Conversation: ").trim()
 
 @Composable
 private fun EmptyMap(l1: String?, l2: String?) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(Icons.Default.Map, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(64.dp))
-        Spacer(Modifier.height(12.dp))
-        Text(I18nStore.t("curriculum.emptyTitle", "Tu mapa se irá llenando"),
-            style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
-        Text("${(l1 ?: "?").uppercase()} → ${(l2 ?: "?").uppercase()}",
-            style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.height(8.dp))
-        Text(
-            I18nStore.t("curriculum.emptyHint", "Completa tu primera lección para ver el camino completo."),
-            style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center,
-        )
+    Column(Modifier.fillMaxSize().padding(36.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("🦉", fontSize = 96.sp)
+        Spacer(Modifier.height(20.dp))
+        Text(I18nStore.t("curriculum.emptyTitle", "Tu mapa está vacío"), fontSize = 23.sp, fontWeight = FontWeight.ExtraBold, color = Cz.TealDark, textAlign = TextAlign.Center)
+        Text(I18nStore.t("curriculum.emptyHint", "Elige un idioma para empezar tu camino de aprendizaje."), fontSize = 15.sp, color = Cz.Sub, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp).widthIn(max = 280.dp))
+        if (l1 != null && l2 != null) {
+            Spacer(Modifier.height(6.dp))
+            Text("${l1.uppercase()} → ${l2.uppercase()}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Cz.Teal)
+        }
+    }
+}
+
+@Composable
+private fun ErrorMap(msg: String, onRetry: () -> Unit) {
+    Column(Modifier.fillMaxSize().padding(36.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("🦉", fontSize = 84.sp)
+        Spacer(Modifier.height(18.dp))
+        Text(I18nStore.t("curriculum.errTitle", "No pudimos cargar tu mapa"), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Cz.TealDark, textAlign = TextAlign.Center)
+        Text(msg, fontSize = 15.sp, color = Cz.Sub, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp))
+        Spacer(Modifier.height(24.dp))
+        Box(Modifier.fillMaxWidth().height(56.dp)) {
+            Box(Modifier.fillMaxWidth().height(52.dp).align(Alignment.BottomCenter).clip(RoundedCornerShape(18.dp)).background(Cz.TealDark))
+            Box(Modifier.fillMaxWidth().height(52.dp).align(Alignment.TopCenter).clip(RoundedCornerShape(18.dp)).background(Cz.Teal).clickable(onClick = onRetry), contentAlignment = Alignment.Center) {
+                Text(I18nStore.t("common.retry", "Reintentar"), color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            }
+        }
     }
 }
 
@@ -299,13 +323,4 @@ private fun lessonIconVector(type: String): androidx.compose.ui.graphics.vector.
     "listening" -> Icons.AutoMirrored.Filled.VolumeUp
     "pronunciation" -> Icons.Default.MicNone
     else -> Icons.Default.School
-}
-
-private fun lessonTypeLabel(type: String): String = when (type) {
-    "roleplay" -> I18nStore.t("lessonType.roleplay", "Juego de roles")
-    "translation" -> I18nStore.t("lessonType.translation", "Traducción")
-    "free_chat" -> I18nStore.t("lessonType.free_chat", "Conversación libre")
-    "listening" -> I18nStore.t("lessonType.listening", "Comprensión auditiva")
-    "pronunciation" -> I18nStore.t("lessonType.pronunciation", "Pronunciación")
-    else -> type
 }
