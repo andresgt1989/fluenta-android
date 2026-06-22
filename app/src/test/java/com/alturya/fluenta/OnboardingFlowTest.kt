@@ -43,10 +43,12 @@ class OnboardingFlowTest {
     @Test fun onboarding_then_asks_target_language() {
         compose.setContent { OnboardingScreen(onPicked = { _, _ -> }) }
         compose.onNodeWithText("Empezar").performClick()
+        // Kit Claude Design: seleccionar idioma de origen → confirmar con "Continuar".
         compose.onNodeWithText("Español").performClick()
+        compose.onNodeWithText("Continuar").performClick()
 
         // Paso 2: pregunta qué aprender (el default NO es chino — Inglés está disponible)
-        compose.onNodeWithText("¿Qué idioma quieres aprender?").assertIsDisplayed()
+        compose.onNodeWithText("¿Qué quieres aprender?").assertIsDisplayed()
         compose.onNodeWithText("Inglés").assertIsDisplayed()
     }
 
@@ -54,10 +56,12 @@ class OnboardingFlowTest {
         compose.setContent { OnboardingScreen(onPicked = { _, _ -> }) }
         compose.onNodeWithText("Empezar").performClick()
         compose.onNodeWithText("Español").performClick()
+        compose.onNodeWithText("Continuar").performClick()
         compose.onNodeWithText("Inglés").performClick()
+        compose.onNodeWithText("Continuar").performClick()
 
         // Paso 3: DEBE preguntar la META / el "por qué" (gap del scorecard de onboarding)
-        compose.onNodeWithText("¿Para qué quieres aprender?").assertIsDisplayed()
+        compose.onNodeWithText("¿Por qué aprendes", substring = true).assertIsDisplayed()
         compose.onNodeWithText("Viajar").assertIsDisplayed()
         compose.onNodeWithText("Trabajo y carrera").assertIsDisplayed()
     }

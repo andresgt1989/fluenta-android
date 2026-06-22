@@ -33,9 +33,10 @@ import com.alturya.fluenta.ui.theme.FluentaSlate
  * base (sensación de tecla física). Eleva el look de toda la app con un solo
  * componente reutilizable.
  *
- * Variantes: primary (relleno marca), success (verde), danger (rojo), neutral (gris).
+ * Variantes: primary (relleno marca), success (verde), danger (rojo), neutral (gris),
+ * ink (verde abeto oscuro #0F2E27 — para CTAs sobre fondos claros/hero del kit).
  */
-enum class FluentaButtonStyle { Primary, Success, Danger, Neutral }
+enum class FluentaButtonStyle { Primary, Success, Danger, Neutral, Ink }
 
 @Composable
 fun FluentaButton(
@@ -53,6 +54,8 @@ fun FluentaButton(
         FluentaButtonStyle.Success -> Triple(Color(0xFF178640), Color(0xFF15803D), Color.White)
         FluentaButtonStyle.Danger  -> Triple(cs.error, cs.error.darken(), cs.onError)
         FluentaButtonStyle.Neutral -> Triple(cs.surfaceVariant, FluentaSlate.copy(alpha = 0.5f), cs.onSurface)
+        // Verde abeto del kit (#0F2E27): texto blanco = 14:1, muy por encima de AA.
+        FluentaButtonStyle.Ink     -> Triple(Color(0xFF0F2E27), Color(0xFF06231D), Color.White)
     }
 
     val interaction = remember { MutableInteractionSource() }

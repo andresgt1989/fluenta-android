@@ -5,32 +5,52 @@ package com.alturya.fluenta.lesson
 // (no auth). The guest endpoint does NOT return correct answers, so we do NOT
 // fake a "correct/wrong" verdict — this is an honest guided taste of the product.
 // After it, postLessonCta drives registration. Max 3 lessons per IP/hour (server).
+//
+// Diseño: kit Claude Design (GuestLesson.dc.html) — barra ✕ + progreso, prompt CJK
+// grande con pinyin ámbar, panel de acierto con mascota, muro de registro con
+// gradiente hero. Cableado (GuestLessonViewModel) intacto.
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lightbulb
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alturya.fluenta.R
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.network.GuestPostLessonCta
 import com.alturya.fluenta.network.LessonHeader
 import com.alturya.fluenta.network.PlayableExercise
+import com.alturya.fluenta.ui.FluentaButton
+import com.alturya.fluenta.ui.FluentaButtonStyle
+import com.alturya.fluenta.ui.theme.FluentaTokens
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -76,6 +96,11 @@ class GuestLessonViewModel(
         }
     }
 
+    fun retry() {
+        _state.value = GuestLessonState(loading = true)
+        loadLesson()
+    }
+
     // No server-side grading for guests (the endpoint doesn't expose answers), so
     // we simply advance — the value is accepted as the user's attempt.
     fun submit(@Suppress("UNUSED_PARAMETER") value: String) {
@@ -104,31 +129,12 @@ fun GuestLessonScreen(l1: String, l2: String, onSignUp: () -> Unit, onBack: () -
     )
     val state by vm.state.collectAsState()
 
-    Box(Modifier.fillMaxSize()) {
+    Box(Modifier.fillMaxSize().background(FluentaTokens.Surface)) {
         when {
-            state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-            state.error != null -> Column(
-                Modifier.fillMaxSize().padding(32.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp))
-                Spacer(Modifier.height(8.dp))
-                Text(state.error!!, style = MaterialTheme.typography.bodyLarge, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                Spacer(Modifier.height(20.dp))
-                com.alturya.fluenta.ui.FluentaButton(
-                    text = I18nStore.t("common.back", "Volver"),
-                    onClick = onBack,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            state.done -> GuestResultView(
-                cta = state.cta,
-                onSignUp = onSignUp,
-                onBack = onBack,
-            )
+            state.loading -> LoadingView()
+            state.error != null -> ErrorView(message = state.error!!, onRetry = vm::retry, onBack = onBack)
+            state.done -> GuestResultWall(cta = state.cta, onSignUp = onSignUp, onBack = onBack)
+            state.exercises.isEmpty() -> EmptyView(onBack = onBack)
             else -> GuestQuizView(state, vm::submit, vm::continueLesson, onBack)
         }
     }
@@ -143,199 +149,361 @@ private fun GuestQuizView(
 ) {
     val ex = state.exercises.getOrNull(state.currentIndex) ?: return
     val total = state.exercises.size
-    val progressFraction = state.currentIndex.toFloat() / total.toFloat()
+    val progressFraction = (state.currentIndex + if (state.answered) 1 else 0).toFloat() / total.toFloat()
 
-    Column(Modifier.fillMaxSize().padding(20.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.Default.Close, contentDescription = I18nStore.t("common.back", "Volver"), modifier = Modifier.size(20.dp)) }
+    Column(Modifier.fillMaxSize().statusBarsPadding()) {
+        // ── Barra: ✕ + progreso ───────────────────────────────────────────────
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Default.Close, contentDescription = I18nStore.t("common.back", "Volver"), tint = FluentaTokens.Muted)
+            }
+            Spacer(Modifier.width(4.dp))
             LinearProgressIndicator(
-                progress = { progressFraction },
-                modifier = Modifier.weight(1f).height(8.dp),
-            )
-            Text(
-                "${state.currentIndex + 1}/$total",
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.padding(start = 8.dp),
+                progress = { progressFraction.coerceIn(0f, 1f) },
+                modifier = Modifier.weight(1f).height(14.dp).clip(RoundedCornerShape(99.dp)),
+                color = FluentaTokens.Primary,
+                trackColor = FluentaTokens.Container,
             )
         }
-        Spacer(Modifier.height(8.dp))
-        state.introMessage?.let {
-            Text(it, style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(12.dp))
+
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 26.dp)) {
+            Spacer(Modifier.height(20.dp))
+            GuestExercise(ex = ex, onSubmit = onSubmit, answered = state.answered)
         }
-
-        GuestExercise(ex = ex, onSubmit = onSubmit)
-
-        Spacer(Modifier.weight(1f))
 
         if (state.answered) {
-            Surface(
-                color = MaterialTheme.colorScheme.tertiaryContainer,
-                shape = MaterialTheme.shapes.large,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    Text(
-                        "👍 ${I18nStore.t("guest.keepGoing", "¡Bien! Sigamos")}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    com.alturya.fluenta.ui.FluentaButton(
-                        text = I18nStore.t("common.continue", "Continuar"),
-                        onClick = onContinue,
-                        style = com.alturya.fluenta.ui.FluentaButtonStyle.Success,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
+            SuccessPanel(onContinue = onContinue)
         }
     }
 }
 
 @Composable
-private fun GuestExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) {
+private fun GuestExercise(ex: PlayableExercise, onSubmit: (String) -> Unit, answered: Boolean) {
     var selected by remember(ex.index) { mutableStateOf(-1) }
     var textInput by remember(ex.index) { mutableStateOf("") }
 
     when (ex.kind) {
         "multiple_choice", "listen_select" -> {
             val options = ex.options ?: emptyList()
-            Text(
-                ex.prompt ?: ex.audioText ?: "",
-                style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
-            )
-            GuestTransliteration(ex.transliteration)
-            Spacer(Modifier.height(16.dp))
-            options.forEachIndexed { idx, opt ->
-                Card(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (selected == idx) MaterialTheme.colorScheme.tertiaryContainer
-                        else MaterialTheme.colorScheme.surfaceVariant,
-                    ),
-                    onClick = { selected = idx },
-                ) { Text(opt, Modifier.padding(16.dp), style = MaterialTheme.typography.bodyLarge) }
+            SectionLabel(I18nStore.t("guest.chooseTranslation", "Elige la traducción"))
+            Spacer(Modifier.height(18.dp))
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    ex.prompt ?: ex.audioText ?: "",
+                    style = MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = FluentaTokens.Ink,
+                    textAlign = TextAlign.Center,
+                )
+                Pinyin(ex.transliteration)
             }
-            Spacer(Modifier.height(20.dp))
-            com.alturya.fluenta.ui.FluentaButton(
+            Spacer(Modifier.height(26.dp))
+            options.forEachIndexed { idx, opt ->
+                OptionCard(text = opt, selected = selected == idx, enabled = !answered) { selected = idx }
+                Spacer(Modifier.height(13.dp))
+            }
+            Spacer(Modifier.height(8.dp))
+            FluentaButton(
                 text = I18nStore.t("lesson.check", "Comprobar"),
                 onClick = { onSubmit(selected.toString()) },
-                enabled = selected >= 0,
+                enabled = selected >= 0 && !answered,
                 modifier = Modifier.fillMaxWidth(),
             )
+            Spacer(Modifier.height(20.dp))
         }
         "translate_l1_to_l2", "translate_l2_to_l1", "fill_blank" -> {
-            Text(ex.prompt ?: "", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            GuestTransliteration(ex.transliteration)
-            ex.hint?.let { hint ->
-                Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Lightbulb, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(hint, style = MaterialTheme.typography.bodySmall)
+            SectionLabel(I18nStore.t("guest.translatePhrase", "Traduce esta frase"))
+            Spacer(Modifier.height(16.dp))
+            Surface(shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(FluentaTokens.Container),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, tint = FluentaTokens.BrandText, modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(ex.prompt ?: "", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = FluentaTokens.Ink)
+                        Pinyin(ex.transliteration)
+                    }
                 }
             }
-            Spacer(Modifier.height(16.dp))
-            OutlinedTextField(
-                value = textInput,
-                onValueChange = { textInput = it },
-                label = { Text(I18nStore.t("lesson.yourAnswer", "Tu respuesta")) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-            )
+            ex.hint?.let { hint ->
+                Spacer(Modifier.height(10.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Lightbulb, contentDescription = null, tint = FluentaTokens.Amber, modifier = Modifier.size(15.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(hint, style = MaterialTheme.typography.bodySmall, color = FluentaTokens.Muted)
+                }
+            }
             Spacer(Modifier.height(20.dp))
-            com.alturya.fluenta.ui.FluentaButton(
+            Surface(shape = RoundedCornerShape(16.dp), color = Color.White, border = BorderStroke(2.dp, FluentaTokens.Border), modifier = Modifier.fillMaxWidth()) {
+                Box(Modifier.padding(16.dp)) {
+                    if (textInput.isEmpty()) {
+                        Text(I18nStore.t("lesson.yourAnswer", "Tu respuesta"), style = MaterialTheme.typography.bodyLarge, color = FluentaTokens.Muted)
+                    }
+                    BasicTextField(
+                        value = textInput,
+                        onValueChange = { textInput = it },
+                        singleLine = true,
+                        enabled = !answered,
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(color = FluentaTokens.Ink),
+                        cursorBrush = SolidColor(FluentaTokens.Primary),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+            Spacer(Modifier.height(20.dp))
+            FluentaButton(
                 text = I18nStore.t("lesson.check", "Comprobar"),
                 onClick = { onSubmit(textInput.trim()) },
-                enabled = textInput.isNotBlank(),
+                enabled = textInput.isNotBlank() && !answered,
                 modifier = Modifier.fillMaxWidth(),
             )
+            Spacer(Modifier.height(20.dp))
         }
         else -> {
-            Text(ex.prompt ?: ex.audioText ?: "", style = MaterialTheme.typography.titleLarge)
-            GuestTransliteration(ex.transliteration)
+            Text(ex.prompt ?: ex.audioText ?: "", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = FluentaTokens.Ink)
+            Pinyin(ex.transliteration)
             Spacer(Modifier.height(20.dp))
-            com.alturya.fluenta.ui.FluentaButton(
+            FluentaButton(
                 text = I18nStore.t("common.continue", "Continuar"),
                 onClick = { onSubmit("ok") },
+                enabled = !answered,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(20.dp))
+        }
+    }
+}
+
+@Composable
+private fun OptionCard(text: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(16.dp),
+        color = if (selected) FluentaTokens.Container else Color.White,
+        border = BorderStroke(2.dp, if (selected) FluentaTokens.Primary else FluentaTokens.Border),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(
+            text,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 17.dp),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = FluentaTokens.Ink,
+        )
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text.uppercase(),
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.ExtraBold,
+        letterSpacing = 0.5.sp,
+        color = FluentaTokens.BrandText,
+    )
+}
+
+// Pinyin/romaji bajo el prompt para scripts no latinos (zh/ja/ko/ar…). Solo
+// aparece si el backend manda la lectura.
+@Composable
+private fun Pinyin(reading: String?) {
+    if (reading.isNullOrBlank()) return
+    Spacer(Modifier.height(6.dp))
+    Text(
+        reading,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.SemiBold,
+        color = FluentaTokens.AmberInk,
+    )
+}
+
+@Composable
+private fun SuccessPanel(onContinue: () -> Unit) {
+    Surface(
+        color = FluentaTokens.SuccessBg,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(start = 26.dp, end = 26.dp, top = 22.dp, bottom = 26.dp).navigationBarsPadding()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Image(
+                    painter = painterResource(R.drawable.ic_fluenta_celebra),
+                    contentDescription = null,
+                    modifier = Modifier.size(58.dp),
+                )
+                Spacer(Modifier.width(14.dp))
+                Column {
+                    Text(
+                        I18nStore.t("guest.wellDone", "¡Bien hecho!"),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = FluentaTokens.SuccessInk,
+                    )
+                    Text(
+                        I18nStore.t("guest.keepGoing", "Sigamos aprendiendo."),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = FluentaTokens.SuccessInk,
+                    )
+                }
+            }
+            Spacer(Modifier.height(18.dp))
+            FluentaButton(
+                text = I18nStore.t("common.continue", "Continuar"),
+                onClick = onContinue,
+                style = FluentaButtonStyle.Success,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
     }
 }
 
-// Pinyin/romaji bajo el prompt para scripts no latinos (zh/ja/ko/ar…). Solo
-// aparece si el backend manda la lectura; reúne el patrón del LessonPlayer.
 @Composable
-private fun GuestTransliteration(reading: String?) {
-    if (reading.isNullOrBlank()) return
-    Spacer(Modifier.height(2.dp))
-    Text(
-        reading,
-        style = MaterialTheme.typography.bodyMedium,
-        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-}
-
-@Composable
-private fun GuestResultView(
-    cta: GuestPostLessonCta?,
-    onSignUp: () -> Unit,
-    onBack: () -> Unit,
-) {
+private fun GuestResultWall(cta: GuestPostLessonCta?, onSignUp: () -> Unit, onBack: () -> Unit) {
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
 
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        Modifier
+            .fillMaxSize()
+            .background(
+                androidx.compose.ui.graphics.Brush.verticalGradient(
+                    0f to FluentaTokens.Primary,
+                    0.7f to FluentaTokens.Container,
+                    1f to FluentaTokens.Surface,
+                )
+            )
+            .statusBarsPadding(),
     ) {
-        Spacer(Modifier.height(24.dp))
-        AnimatedVisibility(visible = visible, enter = fadeIn() + scaleIn()) {
-            androidx.compose.foundation.Image(
-                painter = androidx.compose.ui.res.painterResource(com.alturya.fluenta.R.drawable.ic_fluenta_celebra),
-                contentDescription = null,
-                modifier = Modifier.size(120.dp),
+        Column(
+            Modifier.weight(1f).fillMaxWidth().padding(horizontal = 32.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            AnimatedVisibility(visible = visible, enter = fadeIn() + scaleIn()) {
+                Image(
+                    painter = painterResource(R.drawable.ic_fluenta_celebra),
+                    contentDescription = null,
+                    modifier = Modifier.size(132.dp),
+                )
+            }
+            Spacer(Modifier.height(22.dp))
+            Text(
+                cta?.title ?: I18nStore.t("guest.done", "¡Tu primera lección completada!"),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = FluentaTokens.Ink,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(10.dp))
+            Text(
+                cta?.body ?: I18nStore.t("guest.ctaBody", "Crea una cuenta gratis para guardar tu progreso y seguir aprendiendo."),
+                style = MaterialTheme.typography.titleMedium,
+                color = FluentaTokens.Ink.copy(alpha = 0.78f),
+                textAlign = TextAlign.Center,
             )
         }
-        Spacer(Modifier.height(12.dp))
-        Text(
-            cta?.title ?: I18nStore.t("guest.done", "¡Primera lección completada!"),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            I18nStore.t("guest.tasteSubtitle", "Así se siente aprender con Fluenta."),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-        )
-        Spacer(Modifier.height(24.dp))
-
-        Card(
-            Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-        ) {
-            Column(Modifier.padding(20.dp)) {
+        Column(Modifier.padding(26.dp).navigationBarsPadding()) {
+            FluentaButton(
+                text = cta?.ctaLabel ?: I18nStore.t("guest.ctaButton", "Crear cuenta gratis"),
+                onClick = onSignUp,
+                style = FluentaButtonStyle.Ink,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(8.dp))
+            TextButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    cta?.body ?: I18nStore.t("guest.ctaBody", "Crea tu cuenta gratis para guardar tu progreso y seguir aprendiendo."),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Spacer(Modifier.height(16.dp))
-                com.alturya.fluenta.ui.FluentaButton(
-                    text = cta?.ctaLabel ?: I18nStore.t("guest.ctaButton", "Crear cuenta gratis →"),
-                    onClick = onSignUp,
-                    modifier = Modifier.fillMaxWidth(),
+                    I18nStore.t("guest.maybeLater", "Quizás más tarde"),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = FluentaTokens.BrandText,
                 )
             }
         }
-        Spacer(Modifier.height(12.dp))
-        TextButton(onClick = onBack) {
-            Text(I18nStore.t("common.back", "Volver"))
+    }
+}
+
+@Composable
+private fun LoadingView() {
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        CircularProgressIndicator(color = FluentaTokens.Primary, trackColor = FluentaTokens.Container, strokeWidth = 5.dp, modifier = Modifier.size(54.dp))
+        Spacer(Modifier.height(22.dp))
+        Text(
+            I18nStore.t("guest.preparing", "Preparando tu lección…"),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = FluentaTokens.Muted,
+        )
+    }
+}
+
+@Composable
+private fun EmptyView(onBack: () -> Unit) {
+    CenteredMessage(
+        emoji = "📭",
+        title = I18nStore.t("guest.emptyTitle", "Aún no hay ejercicios"),
+        body = I18nStore.t("guest.emptyBody", "Esta lección de prueba todavía no está disponible. Vuelve pronto."),
+    ) {
+        FluentaButton(
+            text = I18nStore.t("guest.chooseOther", "Elegir otro idioma"),
+            onClick = onBack,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun ErrorView(message: String, onRetry: () -> Unit, onBack: () -> Unit) {
+    CenteredMessage(
+        image = R.drawable.ic_fluenta_hola,
+        title = I18nStore.t("guest.errorTitle", "No pudimos cargar la lección"),
+        body = message,
+    ) {
+        FluentaButton(
+            text = I18nStore.t("common.retry", "Reintentar"),
+            onClick = onRetry,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(8.dp))
+        TextButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
+            Text(I18nStore.t("common.back", "Volver"), color = FluentaTokens.Muted)
         }
+    }
+}
+
+@Composable
+private fun CenteredMessage(
+    emoji: String? = null,
+    image: Int? = null,
+    title: String,
+    body: String,
+    actions: @Composable ColumnScope.() -> Unit,
+) {
+    Column(
+        Modifier.fillMaxSize().padding(horizontal = 40.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        when {
+            image != null -> Image(painterResource(image), contentDescription = null, modifier = Modifier.size(104.dp))
+            emoji != null -> Box(
+                Modifier.size(96.dp).clip(CircleShape).background(Color(0xFFE3EFEA)),
+                contentAlignment = Alignment.Center,
+            ) { Text(emoji, fontSize = 42.sp) }
+        }
+        Spacer(Modifier.height(20.dp))
+        Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = FluentaTokens.Ink, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(8.dp))
+        Text(body, style = MaterialTheme.typography.bodyMedium, color = FluentaTokens.Muted, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(24.dp))
+        actions()
     }
 }
