@@ -178,9 +178,18 @@ class MainActivity : ComponentActivity() {
                     startDestination = dest
                 ) {
                     composable("welcome") {
+                        val demoVm: com.alturya.fluenta.login.LoginViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+                        val demoState by demoVm.state.collectAsState()
+                        LaunchedEffect(demoState) {
+                            if (demoState is com.alturya.fluenta.login.LoginState.Success) {
+                                rootNav.navigate("main") { popUpTo("welcome") { inclusive = true } }
+                            }
+                        }
                         com.alturya.fluenta.welcome.WelcomeScreen(
                             onStart = { rootNav.navigate("onboarding") },
                             onLogin = { rootNav.navigate("login") },
+                            // Build de prueba: acceso directo a toda la app (cuenta de dispositivo).
+                            onDemo = { demoVm.signInWithDevice(context) },
                         )
                     }
                     composable("onboarding") {

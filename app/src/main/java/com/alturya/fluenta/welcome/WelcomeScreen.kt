@@ -44,7 +44,7 @@ private object Wz {
 }
 
 @Composable
-fun WelcomeScreen(onStart: () -> Unit, onLogin: () -> Unit) {
+fun WelcomeScreen(onStart: () -> Unit, onLogin: () -> Unit, onDemo: (() -> Unit)? = null) {
     Column(
         Modifier.fillMaxSize()
             .background(Brush.verticalGradient(0f to Wz.GradTop, 0.38f to Wz.GradTop, 1f to Wz.GradBottom)),
@@ -104,6 +104,19 @@ fun WelcomeScreen(onStart: () -> Unit, onLogin: () -> Unit) {
             ) {
                 Text(I18nStore.t("welcome.haveAccount", "Ya tengo cuenta ·"), color = Wz.TealDark.copy(alpha = 0.7f), fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 Text(I18nStore.t("welcome.login", "Entrar"), color = Wz.TealDark, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            }
+            // Acceso DEMO (solo build de prueba): entra directo a toda la app con
+            // cuenta de dispositivo, sin login manual — para QA y Firebase robo.
+            if (onDemo != null) {
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
+                        .background(Wz.TealDark.copy(alpha = 0.10f)).clickable(onClick = onDemo)
+                        .padding(horizontal = 18.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("🧪  " + I18nStore.t("welcome.demo", "Entrar a la app (demo)"), color = Wz.TealDark, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
