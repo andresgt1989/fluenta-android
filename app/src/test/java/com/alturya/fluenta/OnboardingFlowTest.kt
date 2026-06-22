@@ -29,10 +29,8 @@ class OnboardingFlowTest {
     @Test fun onboarding_asks_source_language() {
         compose.setContent { OnboardingScreen(onPicked = { _, _ -> }) }
 
-        // Paso 0: bienvenida con CTA "Empezar"
-        compose.onNodeWithText("Empezar").assertIsDisplayed()
-        compose.onNodeWithText("Empezar").performClick()
-
+        // La bienvenida vive ahora en WelcomeScreen; el onboarding arranca directo
+        // en el paso 1 (sin segunda bienvenida duplicada).
         // Paso 1: DEBE preguntar el idioma de origen (es/en/pt) — no saltarse a chino
         compose.onNodeWithText("¿Qué idioma hablas?").assertIsDisplayed()
         compose.onNodeWithText("Español").assertIsDisplayed()
@@ -42,7 +40,6 @@ class OnboardingFlowTest {
 
     @Test fun onboarding_then_asks_target_language() {
         compose.setContent { OnboardingScreen(onPicked = { _, _ -> }) }
-        compose.onNodeWithText("Empezar").performClick()
         // Kit Claude Design: seleccionar idioma de origen → confirmar con "Continuar".
         compose.onNodeWithText("Español").performClick()
         compose.onNodeWithText("Continuar").performClick()
@@ -54,7 +51,6 @@ class OnboardingFlowTest {
 
     @Test fun onboarding_asks_goal_after_language() {
         compose.setContent { OnboardingScreen(onPicked = { _, _ -> }) }
-        compose.onNodeWithText("Empezar").performClick()
         compose.onNodeWithText("Español").performClick()
         compose.onNodeWithText("Continuar").performClick()
         compose.onNodeWithText("Inglés").performClick()
