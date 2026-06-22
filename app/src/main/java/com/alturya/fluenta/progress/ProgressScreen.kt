@@ -1,15 +1,13 @@
 package com.alturya.fluenta.progress
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
@@ -18,19 +16,38 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.ui.ShimmerCard
-import kotlinx.coroutines.launch
 import com.alturya.fluenta.network.ErrorItem
 import com.alturya.fluenta.util.levelLabel
 import com.alturya.fluenta.util.levelSystemName
+
+/* Paleta del kit Claude Design (10 Progress.dc.html) */
+private object Pz {
+    val Bg = Color(0xFFE3EFEA)
+    val Card = Color(0xFFF1FAF6)
+    val Emerald = Color(0xFF10B981)
+    val EmeraldDark = Color(0xFF059669)
+    val Mint = Color(0xFF34C79B)
+    val Ink = Color(0xFF0F2E27)
+    val HeaderInk = Color(0xFF063D32)
+    val Muted = Color(0xFF5B7268)
+    val Amber = Color(0xFFE08A00)
+    val MasteredBg = Color(0xFFD6F4E4)
+    val MasteredInk = Color(0xFF0B7B53)
+    val DueBg = Color(0xFFFFF3DC)
+    val DueInk = Color(0xFFB86E00)
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,217 +64,195 @@ fun ProgressScreen(previewState: ProgressState? = null) {
     }
 
     if (state.loading) {
-        Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            ShimmerCard(height = 80.dp)
-            ShimmerCard(height = 200.dp)
-            ShimmerCard(height = 96.dp)
+        Column(Modifier.fillMaxSize().background(Pz.Bg).padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            ShimmerCard(height = 110.dp)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ShimmerCard(height = 74.dp, modifier = Modifier.weight(1f))
+                ShimmerCard(height = 74.dp, modifier = Modifier.weight(1f))
+                ShimmerCard(height = 74.dp, modifier = Modifier.weight(1f))
+            }
+            ShimmerCard(height = 160.dp)
         }
         return
     }
 
     val p = state.profile
-    Box(Modifier.fillMaxSize().nestedScroll(pullState.nestedScrollConnection)) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item { Text(I18nStore.t("progress.title", "Tu progreso"), style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.semantics { heading() }) }
-
-        // Weekly league leaderboard (retention mechanic) — backend ranks Sundays.
-        item { LeagueCard() }
-
-        item {
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(20.dp)) {
-                    Text(I18nStore.t("progress.currentLevel", "Nivel actual"), style = MaterialTheme.typography.labelMedium)
-                    Text(
-                        "${levelLabel(p?.level, p?.levelSystem)} · ${levelSystemName(p?.levelSystem)}",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
-
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard(Icons.Default.LocalFireDepartment, "${state.progress?.streakDays ?: 0}", I18nStore.t("home.streak", "Racha"), Modifier.weight(1f))
-                StatCard(Icons.Default.Star, "${state.progress?.totalXp ?: 0}", I18nStore.t("home.xp", "XP"), Modifier.weight(1f))
-                StatCard(Icons.AutoMirrored.Filled.MenuBook, "${state.progress?.completedLessons ?: 0}", I18nStore.t("home.lessons", "Lecciones"), Modifier.weight(1f))
-            }
-        }
-
-        // SRS mastery summary — shows how many errors the user has consolidated
-        val masteredCount = state.errors.count { it.masteredAt != null }
-        val totalErrors = state.errors.size
-        if (totalErrors > 0) {
+    Box(Modifier.fillMaxSize().background(Pz.Bg).nestedScroll(pullState.nestedScrollConnection)) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // ── Hero esmeralda: saludo + nivel + 3 stat pills ──
             item {
-                Surface(
-                    color = if (masteredCount > 0) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
-                            else MaterialTheme.colorScheme.surfaceVariant,
-                    shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.fillMaxWidth(),
+                Column(
+                    Modifier.fillMaxWidth()
+                        .background(Brush.verticalGradient(0f to Pz.Emerald, 1f to Pz.Mint))
+                        .padding(horizontal = 24.dp).padding(top = 20.dp, bottom = 22.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            Icons.Default.EmojiEvents,
-                            contentDescription = null,
-                            tint = if (masteredCount > 0) Color(0xFFEAB308) else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp),
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            "$masteredCount/$totalErrors ${I18nStore.t("progress.erroresMastered", "errores dominados")}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                        )
-                        Spacer(Modifier.weight(1f))
-                        LinearProgressIndicator(
-                            progress = { masteredCount.toFloat() / totalErrors },
-                            modifier = Modifier.width(72.dp).height(6.dp),
-                            color = Color(0xFFEAB308),
-                            trackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f),
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Box(Modifier.size(56.dp).clip(RoundedCornerShape(28.dp)).background(Color.White.copy(alpha = 0.25f)), contentAlignment = Alignment.Center) {
+                            Text("🦉", fontSize = 26.sp)
+                        }
+                        Column {
+                            Text(I18nStore.t("progress.title", "Tu progreso"), fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, color = Color.White,
+                                modifier = Modifier.semantics { heading() })
+                            Text(
+                                "${levelLabel(p?.level, p?.levelSystem)} · ${levelSystemName(p?.levelSystem)}",
+                                fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Pz.HeaderInk,
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(18.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        HeroStat("🔥", "${state.progress?.streakDays ?: 0}", I18nStore.t("home.streak", "Racha"), Pz.Ink, Modifier.weight(1f))
+                        HeroStat("⚡", "${state.progress?.totalXp ?: 0}", I18nStore.t("home.xp", "XP total"), Pz.Amber, Modifier.weight(1f))
+                        HeroStat("📚", "${state.progress?.completedLessons ?: 0}", I18nStore.t("home.lessons", "Lecciones"), Pz.Ink, Modifier.weight(1f))
                     }
                 }
             }
-        }
 
-        // Error pattern analysis — shows AI personalisation visibly to the user
-        val unmasteredErrors = state.errors.filter { it.masteredAt == null }
-        val totalReviews = state.errors.sumOf { it.reviewCount ?: 0 }
-        if (unmasteredErrors.size >= 3) {
-            item { ErrorPatternCard(unmasteredErrors) }
-        }
-        if (totalReviews > 0) {
-            item {
-                Text(
-                    I18nStore.t("progress.totalReviews", "Repasos completados: $totalReviews").replace("$totalReviews", "$totalReviews"),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
+            // Weekly league leaderboard (retention mechanic)
+            item { Box(Modifier.padding(horizontal = 20.dp)) { LeagueCard() } }
+
+            // ── SRS: errores dominados / para repasar hoy ──
+            val masteredCount = state.errors.count { it.masteredAt != null }
+            val dueToday = state.errors.count { e ->
+                e.masteredAt == null && run {
+                    val d = e.nextReviewAt
+                    d == null || runCatching {
+                        java.time.temporal.ChronoUnit.DAYS.between(java.time.Instant.now(), java.time.Instant.parse(d)) <= 0
+                    }.getOrDefault(true)
+                }
             }
-        }
+            if (state.errors.isNotEmpty()) {
+                item {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        SrsCard("$masteredCount", I18nStore.t("progress.erroresMastered", "Errores dominados"), Pz.MasteredBg, Pz.MasteredInk, Modifier.weight(1f))
+                        SrsCard("$dueToday", I18nStore.t("progress.dueToday", "Para repasar hoy"), Pz.DueBg, Pz.DueInk, Modifier.weight(1f))
+                    }
+                }
+            }
 
-        // Subskills radar
-        item {
-            Text(I18nStore.t("progress.skillsTitle", "Tus habilidades"), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 8.dp))
-        }
-        val hasSkillData = state.skills.any { (it.total) > 0 } || state.taskSuccessRate > 0
-        if (hasSkillData) {
+            // Error pattern analysis
+            val unmasteredErrors = state.errors.filter { it.masteredAt == null }
+            if (unmasteredErrors.size >= 3) {
+                item { Box(Modifier.padding(horizontal = 20.dp)) { ErrorPatternCard(unmasteredErrors) } }
+            }
+
+            // ── Habilidades (radar) ──
             item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column {
-                        SkillsRadar(state.skills)
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            if (state.wpm > 0) {
-                                MiniMetric("${state.wpm}", I18nStore.t("progress.wpm", "palabras/min"))
+                Text(I18nStore.t("progress.skillsTitle", "Tus habilidades"), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Pz.Ink,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp))
+            }
+            val hasSkillData = state.skills.any { it.total > 0 } || state.taskSuccessRate > 0
+            if (hasSkillData) {
+                item {
+                    Surface(Modifier.fillMaxWidth().padding(horizontal = 20.dp), shape = RoundedCornerShape(18.dp), color = Color.White) {
+                        Column {
+                            SkillsRadar(state.skills)
+                            Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+                                if (state.wpm > 0) MiniMetric("${state.wpm}", I18nStore.t("progress.wpm", "palabras/min"))
+                                MiniMetric("${state.taskSuccessRate}%", I18nStore.t("progress.successRate", "éxito tareas"))
                             }
-                            MiniMetric("${state.taskSuccessRate}%", I18nStore.t("progress.successRate", "éxito tareas"))
                         }
                     }
                 }
-            }
-        } else {
-            item {
-                Card(Modifier.fillMaxWidth()) {
-                    Text(
-                        I18nStore.t("progress.radarEmpty", "Tu radar de habilidades aparecerá aquí cuando completes lecciones. Mide gramática, vocabulario, pronunciación y fluidez."),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(20.dp)
-                    )
+            } else {
+                item {
+                    Surface(Modifier.fillMaxWidth().padding(horizontal = 20.dp), shape = RoundedCornerShape(18.dp), color = Color.White) {
+                        Text(
+                            I18nStore.t("progress.radarEmpty", "Tu radar de habilidades aparecerá aquí cuando completes lecciones. Mide gramática, vocabulario, pronunciación y fluidez."),
+                            fontSize = 14.sp, color = Pz.Muted, modifier = Modifier.padding(20.dp)
+                        )
+                    }
                 }
             }
-        }
 
-        // SRS review board
-        item {
-            Text(I18nStore.t("progress.srsTitle", "Repaso (SRS)"), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 12.dp))
-            Text(
-                I18nStore.t("progress.srsSubtitle", "Errores a consolidar — repaso espaciado."),
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-        if (state.errors.isEmpty()) {
+            // ── SRS review board ──
             item {
-                Text(
-                    I18nStore.t("progress.errorsEmpty", "Aún no hay errores registrados. ¡Sigue practicando en WhatsApp!"),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+                Column(Modifier.padding(horizontal = 20.dp)) {
+                    Text(I18nStore.t("progress.srsTitle", "Repaso inteligente (SRS)"), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Pz.Ink, modifier = Modifier.padding(top = 6.dp))
+                    Text(I18nStore.t("progress.srsSubtitle", "Errores a consolidar — repaso espaciado."), fontSize = 13.sp, color = Pz.Muted)
+                }
             }
-        } else {
-            items(state.errors) { err -> ErrorRow(err) }
+            if (state.errors.isEmpty()) {
+                item {
+                    Text(
+                        I18nStore.t("progress.errorsEmpty", "Aún no hay errores registrados. ¡Sigue practicando!"),
+                        fontSize = 14.sp, color = Pz.Muted, modifier = Modifier.padding(horizontal = 20.dp)
+                    )
+                }
+            } else {
+                items(state.errors) { err -> Box(Modifier.padding(horizontal = 20.dp)) { ErrorRow(err) } }
+            }
         }
-    }  // LazyColumn
-    PullToRefreshContainer(state = pullState, modifier = Modifier.align(Alignment.TopCenter))
-    }  // Box
+        PullToRefreshContainer(state = pullState, modifier = Modifier.align(Alignment.TopCenter))
+    }
 }
 
 @Composable
-private fun StatCard(icon: ImageVector, value: String, label: String, modifier: Modifier = Modifier) {
-    Card(modifier = modifier) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
-            Spacer(Modifier.height(4.dp))
-            Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text(label, style = MaterialTheme.typography.labelSmall)
-        }
+private fun HeroStat(emoji: String, value: String, label: String, valueColor: Color, modifier: Modifier = Modifier) {
+    Column(
+        modifier.clip(RoundedCornerShape(16.dp)).background(Color.White.copy(alpha = 0.95f)).padding(vertical = 12.dp, horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(emoji, fontSize = 22.sp)
+        Text(value, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = valueColor)
+        Text(label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Pz.Muted, textAlign = TextAlign.Center)
+    }
+}
+
+@Composable
+private fun SrsCard(value: String, label: String, bg: Color, ink: Color, modifier: Modifier = Modifier) {
+    Column(modifier.clip(RoundedCornerShape(16.dp)).background(bg).padding(14.dp)) {
+        Text(value, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = ink)
+        Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = ink)
     }
 }
 
 @Composable
 private fun MiniMetric(value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Text(label, style = MaterialTheme.typography.labelSmall)
+        Text(value, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Pz.Ink)
+        Text(label, fontSize = 11.sp, color = Pz.Muted)
     }
 }
 
 @Composable
 private fun ErrorRow(err: ErrorItem) {
     val mastered = err.masteredAt != null
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = Color.White) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 err.errorType?.let {
-                    AssistChip(onClick = {}, label = { Text(skillLabel(it)) })
+                    Surface(shape = RoundedCornerShape(99.dp), color = Pz.MasteredBg) {
+                        Text(skillLabel(it), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Pz.MasteredInk, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                    }
                     Spacer(Modifier.width(8.dp))
                 }
                 Spacer(Modifier.weight(1f))
-                if (mastered) {
-                    Text(I18nStore.t("progress.mastered", "Dominado ✓"), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                } else {
-                    Text(I18nStore.t("progress.toReview", "Por repasar"), style = MaterialTheme.typography.labelSmall)
-                }
+                Text(
+                    if (mastered) I18nStore.t("progress.mastered", "Dominado ✓") else I18nStore.t("progress.toReview", "Por repasar"),
+                    fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+                    color = if (mastered) Pz.EmeraldDark else Pz.Muted,
+                )
             }
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Close, contentDescription = I18nStore.t("progress.wrongAnswer", "Tu respuesta"), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Close, contentDescription = I18nStore.t("progress.wrongAnswer", "Tu respuesta"), tint = Color(0xFFE8554B), modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
-                Text(err.original ?: "", style = MaterialTheme.typography.bodyMedium)
+                Text(err.original ?: "", fontSize = 14.sp, color = Pz.Ink)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.CheckCircle, contentDescription = I18nStore.t("progress.correctAnswer", "Forma correcta"), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.CheckCircle, contentDescription = I18nStore.t("progress.correctAnswer", "Forma correcta"), tint = Pz.Emerald, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
-                Text(err.corrected ?: "", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                Text(err.corrected ?: "", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Pz.Ink)
             }
             val reviews = err.reviewCount ?: 0
             if (reviews > 0) {
                 Spacer(Modifier.height(4.dp))
-                Text(I18nStore.plural("progress.reviewedCount", reviews, one = "Repasado {n} vez", other = "Repasado {n} veces"), style = MaterialTheme.typography.labelSmall)
+                Text(I18nStore.plural("progress.reviewedCount", reviews, one = "Repasado {n} vez", other = "Repasado {n} veces"), fontSize = 11.sp, color = Pz.Muted)
             }
             err.nextReviewAt?.let { dateStr ->
                 val daysLeft = runCatching {
@@ -269,8 +264,8 @@ private fun ErrorRow(err: ErrorItem) {
                     Text(
                         if (daysLeft == 0) I18nStore.t("srs.reviewToday", "Repasar hoy")
                         else I18nStore.t("srs.nextReview", "Próximo repaso en $daysLeft días").replace("$daysLeft", "$daysLeft"),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (daysLeft == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp,
+                        color = if (daysLeft == 0) Pz.Emerald else Pz.Muted,
                     )
                 }
             }
@@ -290,60 +285,30 @@ private fun skillLabel(type: String): String = when (type) {
 private fun ErrorPatternCard(errors: List<com.alturya.fluenta.network.ErrorItem>) {
     val byType = errors.groupBy { it.errorType ?: "other" }
     val total = errors.size
-    Card(Modifier.fillMaxWidth()) {
+    Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp), color = Color.White) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = Pz.Emerald, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(
-                    I18nStore.t("progress.patterns", "Tus patrones de error"),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                )
+                Text(I18nStore.t("progress.patterns", "Tus patrones de error"), fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Pz.Ink)
             }
             Spacer(Modifier.height(10.dp))
-            byType.entries
-                .sortedByDescending { it.value.size }
-                .take(3)
-                .forEach { (type, errs) ->
-                    val pct = (errs.size * 100) / total
-                    val barColor = when (type) {
-                        "grammar" -> MaterialTheme.colorScheme.error
-                        "vocab" -> MaterialTheme.colorScheme.tertiary
-                        "pronunciation" -> MaterialTheme.colorScheme.secondary
-                        else -> MaterialTheme.colorScheme.primary
-                    }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(vertical = 4.dp),
-                    ) {
-                        Text(
-                            skillLabel(type),
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.width(96.dp),
-                        )
-                        LinearProgressIndicator(
-                            progress = { pct / 100f },
-                            modifier = Modifier.weight(1f).height(6.dp),
-                            color = barColor,
-                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            "$pct%",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.width(32.dp),
-                            color = barColor,
-                        )
-                    }
+            byType.entries.sortedByDescending { it.value.size }.take(3).forEach { (type, errs) ->
+                val pct = (errs.size * 100) / total
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+                    Text(skillLabel(type), fontSize = 13.sp, color = Pz.Ink, modifier = Modifier.width(96.dp))
+                    LinearProgressIndicator(
+                        progress = { pct / 100f },
+                        modifier = Modifier.weight(1f).height(6.dp),
+                        color = Pz.Emerald,
+                        trackColor = Pz.MasteredBg,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("$pct%", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Pz.Emerald, modifier = Modifier.width(32.dp))
                 }
+            }
             Spacer(Modifier.height(4.dp))
-            Text(
-                I18nStore.t("progress.patternsHint", "Enfócate en el área con más errores para progresar más rápido"),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Text(I18nStore.t("progress.patternsHint", "Enfócate en el área con más errores para progresar más rápido"), fontSize = 11.sp, color = Pz.Muted)
         }
     }
 }
