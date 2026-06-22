@@ -5,7 +5,11 @@ import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.rotate
 import kotlin.math.sin
@@ -92,6 +96,21 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 
+// ── Tokens del kit Claude Design (locales, sin tocar el theme compartido) ──
+private val DcInk = Color(0xFF0F2E27)
+private val DcSlate = Color(0xFF5B7268)
+private val DcSurface = Color(0xFFF1FAF6)
+private val DcMint = Color(0xFFCDEEE6)
+private val DcMintDeep = Color(0xFF06463A)
+private val DcAmber = Color(0xFFE08A00)
+private val DcAmberBg = Color(0xFFFFF3DC)
+private val DcAmberInk = Color(0xFFB86E00)
+private val DcCoral = Color(0xFFE8554B)
+private val DcCoralDark = Color(0xFFC13B32)
+private val DcCoralBg = Color(0xFFFDE7E4)
+private val DcGreenBg = Color(0xFFD6F4E4)
+private val DcHairline = Color(0xFFE7EFEB)
+
 @Composable
 fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit, onConversation: () -> Unit = {}, onNextLesson: (String) -> Unit = {}, previewState: LessonPlayerState? = null) {
     val appContext = LocalContext.current.applicationContext as android.app.Application
@@ -140,90 +159,139 @@ fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit, onConversation: () 
         )
     }
 
-    Box(Modifier.fillMaxSize()) {
-        when {
-            state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+    // El fondo del estado RESULT aprobado es un gradiente hero; el resto, superficie mint.
+    val passedResult = state.result?.passed == true
+    Surface(color = if (passedResult) Color.Transparent else DcSurface, modifier = Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize()) {
+            when {
+                state.loading -> LessonLoadingState()
+                state.error != null -> ErrorView(state.error!!, onRetry = vm::retry, onBack = onDone)
+                state.result != null -> ResultView(
+                    result = state.result!!,
+                    // Independencia de WhatsApp: "aplica lo aprendido" ahora abre la
+                    // Conversación IN-APP (el reemplazo del bot), no WhatsApp.
+                    onPracticeConversation = onConversation,
+                    nextLessonId = state.nextLessonId,
+                    onNextLesson = onNextLesson,
+                    onDone = onDone,
+                )
+                state.exercises.isEmpty() -> EmptyExercisesState(onBack = onDone)
+                !state.teachDone -> TeachView(state.teach, onDone = vm::finishTeach)
+                else -> QuizView(state, vm)
             }
-            state.error != null -> ErrorView(state.error!!, onRetry = vm::retry, onBack = onDone)
-            state.result != null -> ResultView(
-                result = state.result!!,
-                // Independencia de WhatsApp: "aplica lo aprendido" ahora abre la
-                // Conversación IN-APP (el reemplazo del bot), no WhatsApp.
-                onPracticeConversation = onConversation,
-                nextLessonId = state.nextLessonId,
-                onNextLesson = onNextLesson,
-                onDone = onDone,
-            )
-            state.exercises.isEmpty() -> ErrorView(I18nStore.t("lesson.noExercises", "Esta lección aún no tiene ejercicios disponibles."), onRetry = vm::retry, onBack = onDone)
-            !state.teachDone -> TeachView(state.teach, onDone = vm::finishTeach)
-            else -> QuizView(state, vm)
         }
     }
 }
 
 @Composable
-private fun TeachView(items: List<com.alturya.fluenta.network.TeachItem>, onDone: () -> Unit) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    Column(Modifier.fillMaxSize().padding(20.dp)) {
-        Text(
-            I18nStore.t("lesson.teachTitle", "Vocabulario nuevo"),
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-        )
+private fun LessonLoadingState() {
+    Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        com.alturya.fluenta.ui.ShimmerBox(Modifier.fillMaxWidth().height(14.dp), shape = RoundedCornerShape(7.dp))
         Spacer(Modifier.height(4.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(6.dp))
-            Text(
-                I18nStore.t("lesson.teachSubtitle", "Toca una tarjeta para escucharla. Luego practicamos."),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        com.alturya.fluenta.ui.ShimmerBox(Modifier.fillMaxWidth().height(96.dp), shape = RoundedCornerShape(18.dp))
+        repeat(3) {
+            com.alturya.fluenta.ui.ShimmerBox(Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(16.dp))
         }
-        Spacer(Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun EmptyExercisesState(onBack: () -> Unit) {
+    Column(
+        Modifier.fillMaxSize().padding(40.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            Modifier.size(96.dp).clip(androidx.compose.foundation.shape.CircleShape).background(DcMint),
+            contentAlignment = Alignment.Center,
+        ) { Text("🗂️", style = MaterialTheme.typography.displaySmall) }
+        Spacer(Modifier.height(18.dp))
+        Text(I18nStore.t("lesson.emptyTitle", "No hay ejercicios aquí"), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = DcInk, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            I18nStore.t("lesson.noExercises", "Esta lección aún no tiene ejercicios disponibles."),
+            style = MaterialTheme.typography.bodyMedium, color = DcSlate, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+        Spacer(Modifier.height(20.dp))
+        OutlinedButton(onClick = onBack) { Text(I18nStore.t("lesson.backToMap", "Volver al mapa")) }
+    }
+}
+
+@Composable
+private fun TeachView(items: List<com.alturya.fluenta.network.TeachItem>, onDone: () -> Unit) {
+    Column(Modifier.fillMaxSize()) {
+        Text(
+            I18nStore.t("lesson.teachLabel", "PALABRA NUEVA"),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.ExtraBold,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(start = 26.dp, top = 22.dp, end = 26.dp),
+        )
         LazyColumn(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+            contentPadding = PaddingValues(start = 26.dp, end = 26.dp, top = 14.dp, bottom = 8.dp),
         ) {
-            items(items.size) { i ->
-                val t = items[i]
-                Card(
-                    onClick = { scope.launch { TtsPlayer.play(context, t.l2) } },
-                    modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 100.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                ) {
-                    Column(Modifier.padding(20.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(t.l2, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                            Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(24.dp))
-                        }
+            items(items.size) { i -> TeachWordCard(items[i]) }
+        }
+        Box(Modifier.padding(26.dp)) {
+            com.alturya.fluenta.ui.FluentaButton(
+                text = I18nStore.t("lesson.teachStart", "¡Listo, a practicar!"),
+                onClick = onDone,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun TeachWordCard(t: com.alturya.fluenta.network.TeachItem) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        // Tarjeta héroe (primary) con L2 grande, píldora TTS y L1.
+        Surface(
+            color = MaterialTheme.colorScheme.primary,
+            shape = RoundedCornerShape(22.dp),
+            shadowElevation = 4.dp,
+            onClick = { scope.launch { TtsPlayer.play(context, t.l2) } },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(
+                Modifier.fillMaxWidth().padding(vertical = 26.dp, horizontal = 22.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(t.l2, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onPrimary, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Spacer(Modifier.height(14.dp))
+                Surface(color = Color.White.copy(alpha = 0.22f), shape = RoundedCornerShape(99.dp)) {
+                    Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
                         t.transliteration?.takeIf { it.isNotBlank() }?.let {
-                            Text(it, style = MaterialTheme.typography.bodyMedium, fontStyle = FontStyle.Italic,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.width(8.dp))
+                            Text(it, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                         }
-                        Spacer(Modifier.height(4.dp))
-                        Text(t.l1, style = MaterialTheme.typography.bodyLarge)
-                        t.note?.takeIf { it.isNotBlank() }?.let {
-                            Spacer(Modifier.height(2.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Lightbulb, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+                Text(t.l1, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = DcMintDeep)
+            }
+        }
+        // Truco para recordar (ámbar)
+        t.note?.takeIf { it.isNotBlank() }?.let { note ->
+            Surface(color = DcAmberBg, shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
+                    Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(Color.White), contentAlignment = Alignment.Center) {
+                        Text("💡", style = MaterialTheme.typography.titleMedium)
+                    }
+                    Spacer(Modifier.width(13.dp))
+                    Column {
+                        Text(I18nStore.t("lesson.mnemonicTitle", "Truco para recordar"), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold, color = DcAmberInk)
+                        Text(note, style = MaterialTheme.typography.bodyMedium, color = Color(0xFF8A6A2A))
                     }
                 }
             }
         }
-        Spacer(Modifier.height(12.dp))
-        com.alturya.fluenta.ui.FluentaButton(
-            text = I18nStore.t("lesson.teachStart", "¡Listo, a practicar!"),
-            onClick = onDone,
-            modifier = Modifier.fillMaxWidth(),
-        )
     }
 }
 
@@ -1469,16 +1537,28 @@ private fun Stat(icon: ImageVector, value: String, label: String) {
 @Composable
 private fun ErrorView(message: String, onRetry: () -> Unit, onBack: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(32.dp),
+        modifier = Modifier.fillMaxSize().padding(40.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(56.dp))
-        Spacer(Modifier.height(12.dp))
-        Text(message, style = MaterialTheme.typography.bodyLarge)
+        Image(
+            painter = painterResource(R.drawable.ic_fluenta_saluda),
+            contentDescription = null,
+            modifier = Modifier.size(104.dp),
+        )
         Spacer(Modifier.height(20.dp))
-        Button(onClick = onRetry) { Text(I18nStore.t("common.retry", "Reintentar")) }
+        Text(
+            I18nStore.t("lesson.errorTitle", "Algo salió mal"),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.ExtraBold,
+            color = DcInk,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
         Spacer(Modifier.height(8.dp))
-        TextButton(onClick = onBack) { Text(I18nStore.t("common.back", "Volver")) }
+        Text(message, style = MaterialTheme.typography.bodyMedium, color = DcSlate, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Spacer(Modifier.height(20.dp))
+        com.alturya.fluenta.ui.FluentaButton(text = I18nStore.t("common.retry", "Reintentar"), onClick = onRetry)
+        Spacer(Modifier.height(8.dp))
+        TextButton(onClick = onBack) { Text(I18nStore.t("common.back", "Volver"), color = DcSlate) }
     }
 }
