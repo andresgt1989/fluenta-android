@@ -661,14 +661,15 @@ private fun FillBlankExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) 
             singleLine = true,
         )
         Spacer(Modifier.height(20.dp))
-        Button(
+        com.alturya.fluenta.ui.FluentaButton(
+            text = I18nStore.t("lesson.check", "Comprobar"),
             onClick = {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 onSubmit(text.trim())
             },
             enabled = text.isNotBlank(),
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-        ) { Text(I18nStore.t("lesson.check", "Comprobar")) }
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -709,11 +710,12 @@ private fun MultipleChoiceExercise(ex: PlayableExercise, onSubmit: (String) -> U
             }
         }
         Spacer(Modifier.height(20.dp))
-        Button(
+        com.alturya.fluenta.ui.FluentaButton(
+            text = I18nStore.t("lesson.check", "Comprobar"),
             onClick = { onSubmit(selected.toString()) },
             enabled = selected >= 0,
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-        ) { Text(I18nStore.t("lesson.check", "Comprobar")) }
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -787,7 +789,8 @@ private fun MatchPairsExercise(ex: PlayableExercise, onSubmit: (String) -> Unit)
             }
         }
         Spacer(Modifier.height(20.dp))
-        Button(
+        com.alturya.fluenta.ui.FluentaButton(
+            text = I18nStore.t("lesson.check", "Comprobar"),
             onClick = {
                 val arr = JSONArray()
                 matched.forEach { (l, r) ->
@@ -796,8 +799,8 @@ private fun MatchPairsExercise(ex: PlayableExercise, onSubmit: (String) -> Unit)
                 onSubmit(arr.toString())
             },
             enabled = matched.size == left.size && left.isNotEmpty(),
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-        ) { Text(I18nStore.t("lesson.check", "Comprobar")) }
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -1056,11 +1059,12 @@ private fun ListenSelectExercise(ex: PlayableExercise, onSubmit: (String) -> Uni
             }
         }
         Spacer(Modifier.height(20.dp))
-        Button(
+        com.alturya.fluenta.ui.FluentaButton(
+            text = I18nStore.t("lesson.check", "Comprobar"),
             onClick = { onSubmit(selected.toString()) },
             enabled = selected >= 0,
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-        ) { Text(I18nStore.t("lesson.check", "Comprobar")) }
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -1121,11 +1125,12 @@ private fun WordOrderExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) 
             }
         }
         Spacer(Modifier.height(20.dp))
-        Button(
+        com.alturya.fluenta.ui.FluentaButton(
+            text = I18nStore.t("lesson.check", "Comprobar"),
             onClick = { onSubmit(selected.joinToString(" ") { tokens[it] }) },
             enabled = selected.isNotEmpty(),
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-        ) { Text(I18nStore.t("lesson.check", "Comprobar")) }
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -1475,9 +1480,13 @@ private fun ErrorView(message: String, onRetry: () -> Unit, onBack: () -> Unit) 
     ) {
         Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(56.dp))
         Spacer(Modifier.height(12.dp))
-        Text(message, style = MaterialTheme.typography.bodyLarge)
+        Text(message, style = MaterialTheme.typography.bodyLarge, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         Spacer(Modifier.height(20.dp))
-        Button(onClick = onRetry) { Text(I18nStore.t("common.retry", "Reintentar")) }
+        com.alturya.fluenta.ui.FluentaButton(
+            text = I18nStore.t("common.retry", "Reintentar"),
+            onClick = onRetry,
+            modifier = Modifier.fillMaxWidth(),
+        )
         Spacer(Modifier.height(8.dp))
         TextButton(onClick = onBack) { Text(I18nStore.t("common.back", "Volver")) }
     }

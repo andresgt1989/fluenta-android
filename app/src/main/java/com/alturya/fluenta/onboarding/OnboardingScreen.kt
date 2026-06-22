@@ -6,33 +6,41 @@ package com.alturya.fluenta.onboarding
 // On pick we hand (l1, l2) back to the nav graph, which opens a real guest lesson
 // in that exact pair. L1 is inferred from the device locale.
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.MicNone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.alturya.fluenta.R
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.data.MotivationStore
 import com.alturya.fluenta.util.flag
 import com.alturya.fluenta.util.langName
 import kotlinx.coroutines.launch
 
-// Target languages offered up front. The long tail still exists in the in-app
-// selector; this is the curated set for the first-run pick.
+// Target languages offered up front: the 20 idiomas meta del MVP. The long tail
+// still exists in the in-app selector; this is the curated set for the first-run
+// pick. Todos tienen bandera + nombre localizado (ver util/LevelLabels.kt).
 private val TARGET_LANGS = listOf(
-    "en", "es", "pt", "fr", "de", "it", "ja", "zh", "ko", "ar", "ru", "hi", "tr", "nl", "sv", "pl",
+    "en", "es", "pt", "fr", "de", "it", "ja", "zh", "ko", "ar",
+    "ru", "hi", "tr", "nl", "sv", "pl", "el", "uk", "id", "vi",
 )
 
 // User (native) languages supported as L1 — courses exist from all three.
@@ -163,43 +171,64 @@ private fun SourceLanguageStep(selected: String, onPick: (String) -> Unit, onBac
 
 @Composable
 private fun WelcomeStep(onStart: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            modifier = Modifier.size(104.dp),
+    Column(Modifier.fillMaxSize()) {
+        // Hero con gradiente de marca (kit T3) + mascota búho saludando. Reúne el
+        // value prop en una sola cabecera de alto contraste (texto onPrimary).
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.primaryContainer,
+                        )
+                    )
+                )
+                .padding(horizontal = 28.dp, vertical = 40.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.MicNone, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(56.dp))
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f),
+                modifier = Modifier.size(120.dp),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Image(
+                        painter = painterResource(R.drawable.ic_fluenta_hola),
+                        contentDescription = null,
+                        modifier = Modifier.size(84.dp),
+                    )
+                }
             }
+            Spacer(Modifier.height(20.dp))
+            Text(
+                "Fluenta",
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onPrimary,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                I18nStore.t("onboarding.welcomeTagline", "Aprende un idioma de verdad, hablando desde el primer día."),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.92f),
+                textAlign = TextAlign.Center,
+            )
         }
-        Spacer(Modifier.height(20.dp))
-        Text(
-            "Fluenta",
-            style = MaterialTheme.typography.displaySmall,
-            fontWeight = FontWeight.ExtraBold,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            I18nStore.t("onboarding.welcomeTagline", "Aprende un idioma de verdad, hablando desde el primer día."),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(24.dp))
-        Bullet(I18nStore.t("onboarding.bullet1", "Habla en voz alta desde el primer minuto"))
-        Bullet(I18nStore.t("onboarding.bullet2", "Tu tutor de IA te corrige al instante"))
-        Bullet(I18nStore.t("onboarding.bullet3", "Lecciones cortas: 10 minutos al día"))
-        Spacer(Modifier.height(36.dp))
+        Column(
+            modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 32.dp),
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Bullet(I18nStore.t("onboarding.bullet1", "Habla en voz alta desde el primer minuto"))
+            Bullet(I18nStore.t("onboarding.bullet2", "Tu tutor de IA te corrige al instante"))
+            Bullet(I18nStore.t("onboarding.bullet3", "Lecciones cortas: 10 minutos al día"))
+        }
         com.alturya.fluenta.ui.FluentaButton(
             text = I18nStore.t("onboarding.start", "Empezar"),
             onClick = onStart,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp).padding(bottom = 32.dp),
         )
     }
 }

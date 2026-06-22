@@ -57,14 +57,50 @@ fun LanguageSelectorScreen(onChanged: () -> Unit = {}, previewState: LanguagesSt
 
     Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { pad ->
         Column(Modifier.fillMaxSize().padding(pad)) {
-            Text(
-                I18nStore.t("lang.chooseTitle", "Elige tu idioma"),
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(20.dp)
-            )
+            Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 4.dp)) {
+                Text(
+                    I18nStore.t("lang.chooseTitle", "Elige tu idioma"),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    I18nStore.t("lang.chooseSubtitle", "Aprende desde tu idioma. Puedes cambiarlo cuando quieras."),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
 
             if (state.loading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            } else if (state.pairs.isEmpty()) {
+                // Estado vacío explícito (antes quedaba en blanco): catálogo no cargó o
+                // está vacío. Damos una salida — reintentar.
+                Column(
+                    Modifier.fillMaxSize().padding(32.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        I18nStore.t("lang.emptyTitle", "No hay idiomas disponibles ahora mismo"),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        I18nStore.t("lang.emptyBody", "Verifica tu conexión e inténtalo de nuevo."),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                    Spacer(Modifier.height(20.dp))
+                    com.alturya.fluenta.ui.FluentaButton(
+                        text = I18nStore.t("common.retry", "Reintentar"),
+                        onClick = { vm.load() },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             } else {
                 // Priority MVP pairs first (sección 6 de FICHA_TECNICA_FLUENTA.md),
                 // luego "more languages" con el resto del catálogo.
