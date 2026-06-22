@@ -345,7 +345,24 @@ private fun MotivationStep(l2: String, onPick: (String) -> Unit, onBack: () -> U
     }
 }
 
-// Ficha bilingüe: autónimo (中文 / Español) arriba, nombre localizado debajo si difiere.
+// Cobertura real de currículo por idioma (probe backend 2026-06-23): solo en+zh son
+// profundos; sv casi vacío; el resto stub. Etiquetar honestamente evita el "callejón mudo".
+private val FULL_COVERAGE = setOf("en", "zh")
+private val COMING_COVERAGE = setOf("sv")
+
+@Composable
+private fun CoverageChip(code: String) {
+    val (label, bg, ink) = when {
+        code in FULL_COVERAGE -> Triple(I18nStore.t("coverage.full", "Completo"), Color(0xFFCDEEE6), Color(0xFF0A6F64))
+        code in COMING_COVERAGE -> Triple(I18nStore.t("coverage.coming", "Pronto"), Color(0xFFE7EEEC), Color(0xFF7C857F))
+        else -> Triple(I18nStore.t("coverage.beta", "Beta"), Color(0xFFFBE7C6), Color(0xFFC77A12))
+    }
+    Surface(shape = RoundedCornerShape(999.dp), color = bg) {
+        Text(label, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = ink,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+    }
+}
+
 @Composable
 private fun LangSelectRow(code: String, selected: Boolean, onClick: () -> Unit) {
     val auto = autonym(code)
@@ -382,7 +399,9 @@ private fun LangSelectRow(code: String, selected: Boolean, onClick: () -> Unit) 
                     )
                 }
             }
+            CoverageChip(code)
             if (selected) {
+                Spacer(Modifier.width(8.dp))
                 Box(
                     modifier = Modifier
                         .size(26.dp)
