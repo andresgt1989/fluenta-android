@@ -163,4 +163,4 @@ Cada nota se sube SOLO con evidencia real (Firebase Test Lab / código verificad
   es→fr 30u/180l, es→de 28u/168l, es→it 27u/162l, es→pt 26u/156l, es→ja 27u/162l (es→ko en curso). Antes todos en 5u.
   → 5 de 6 pares top L1=español pasaron de stub a profundidad A1→B1. (en+zh ya eran profundos.)
 - **Test de Nivel** portado al kit (intro Hoot + tarjeta ejemplo, pregunta con progreso, cargando, error Hoot triste, resultado con escalera CEFR) — compila + tests verdes; captura Firebase en curso.
-- Falta: es→ko terminar; deepen para L1=en y L1=pt; Login (mock pendiente); confirmar Ajustes/Test en captura.
+- Test de Nivel VERIFICADO en captura (estado cargando con Hoot, run 014259). Falta: es→ko terminar; deepen para L1=en y L1=pt; Login (mock pendiente); confirmar Ajustes/Test en captura.
