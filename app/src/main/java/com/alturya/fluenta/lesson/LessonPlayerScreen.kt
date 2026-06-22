@@ -5,7 +5,11 @@ import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.rotate
 import kotlin.math.sin
@@ -70,6 +74,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -91,6 +96,21 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+
+// ── Tokens del kit Claude Design (locales, sin tocar el theme compartido) ──
+private val DcInk = Color(0xFF0F2E27)
+private val DcSlate = Color(0xFF5B7268)
+private val DcSurface = Color(0xFFF1FAF6)
+private val DcMint = Color(0xFFCDEEE6)
+private val DcMintDeep = Color(0xFF06463A)
+private val DcAmber = Color(0xFFE08A00)
+private val DcAmberBg = Color(0xFFFFF3DC)
+private val DcAmberInk = Color(0xFFB86E00)
+private val DcCoral = Color(0xFFE8554B)
+private val DcCoralDark = Color(0xFFC13B32)
+private val DcCoralBg = Color(0xFFFDE7E4)
+private val DcGreenBg = Color(0xFFD6F4E4)
+private val DcHairline = Color(0xFFE7EFEB)
 
 @Composable
 fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit, onConversation: () -> Unit = {}, onNextLesson: (String) -> Unit = {}, previewState: LessonPlayerState? = null) {
@@ -140,129 +160,183 @@ fun LessonPlayerScreen(lessonId: String, onDone: () -> Unit, onConversation: () 
         )
     }
 
-    Box(Modifier.fillMaxSize()) {
-        when {
-            state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+    // El fondo del estado RESULT aprobado es un gradiente hero; el resto, superficie mint.
+    val passedResult = state.result?.passed == true
+    Surface(color = if (passedResult) Color.Transparent else DcSurface, modifier = Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize()) {
+            when {
+                state.loading -> LessonLoadingState()
+                state.error != null -> ErrorView(state.error!!, onRetry = vm::retry, onBack = onDone)
+                state.result != null -> ResultView(
+                    result = state.result!!,
+                    // Independencia de WhatsApp: "aplica lo aprendido" ahora abre la
+                    // Conversación IN-APP (el reemplazo del bot), no WhatsApp.
+                    onPracticeConversation = onConversation,
+                    nextLessonId = state.nextLessonId,
+                    onNextLesson = onNextLesson,
+                    onDone = onDone,
+                )
+                state.exercises.isEmpty() -> EmptyExercisesState(onBack = onDone)
+                !state.teachDone -> TeachView(state.teach, onDone = vm::finishTeach)
+                else -> QuizView(state, vm, onExit = { if (midLesson) showExitConfirm = true else onDone() })
             }
-            state.error != null -> ErrorView(state.error!!, onRetry = vm::retry, onBack = onDone)
-            state.result != null -> ResultView(
-                result = state.result!!,
-                // Independencia de WhatsApp: "aplica lo aprendido" ahora abre la
-                // Conversación IN-APP (el reemplazo del bot), no WhatsApp.
-                onPracticeConversation = onConversation,
-                nextLessonId = state.nextLessonId,
-                onNextLesson = onNextLesson,
-                onDone = onDone,
-            )
-            state.exercises.isEmpty() -> ErrorView(I18nStore.t("lesson.noExercises", "Esta lección aún no tiene ejercicios disponibles."), onRetry = vm::retry, onBack = onDone)
-            !state.teachDone -> TeachView(state.teach, onDone = vm::finishTeach)
-            else -> QuizView(state, vm)
         }
+    }
+}
+
+@Composable
+private fun LessonLoadingState() {
+    Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        com.alturya.fluenta.ui.ShimmerBox(Modifier.fillMaxWidth().height(14.dp), shape = RoundedCornerShape(7.dp))
+        Spacer(Modifier.height(4.dp))
+        com.alturya.fluenta.ui.ShimmerBox(Modifier.fillMaxWidth().height(96.dp), shape = RoundedCornerShape(18.dp))
+        repeat(3) {
+            com.alturya.fluenta.ui.ShimmerBox(Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun EmptyExercisesState(onBack: () -> Unit) {
+    Column(
+        Modifier.fillMaxSize().padding(40.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            Modifier.size(96.dp).clip(androidx.compose.foundation.shape.CircleShape).background(DcMint),
+            contentAlignment = Alignment.Center,
+        ) { Text("🗂️", style = MaterialTheme.typography.displaySmall) }
+        Spacer(Modifier.height(18.dp))
+        Text(I18nStore.t("lesson.emptyTitle", "No hay ejercicios aquí"), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = DcInk, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            I18nStore.t("lesson.noExercises", "Esta lección aún no tiene ejercicios disponibles."),
+            style = MaterialTheme.typography.bodyMedium, color = DcSlate, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+        Spacer(Modifier.height(20.dp))
+        OutlinedButton(onClick = onBack) { Text(I18nStore.t("lesson.backToMap", "Volver al mapa")) }
     }
 }
 
 @Composable
 private fun TeachView(items: List<com.alturya.fluenta.network.TeachItem>, onDone: () -> Unit) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    Column(Modifier.fillMaxSize().padding(20.dp)) {
+    Column(Modifier.fillMaxSize()) {
         Text(
-            I18nStore.t("lesson.teachTitle", "Vocabulario nuevo"),
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
+            I18nStore.t("lesson.teachLabel", "PALABRA NUEVA"),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.ExtraBold,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(start = 26.dp, top = 22.dp, end = 26.dp),
         )
-        Spacer(Modifier.height(4.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(6.dp))
-            Text(
-                I18nStore.t("lesson.teachSubtitle", "Toca una tarjeta para escucharla. Luego practicamos."),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Spacer(Modifier.height(16.dp))
         LazyColumn(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+            contentPadding = PaddingValues(start = 26.dp, end = 26.dp, top = 14.dp, bottom = 8.dp),
         ) {
-            items(items.size) { i ->
-                val t = items[i]
-                Card(
-                    onClick = { scope.launch { TtsPlayer.play(context, t.l2) } },
-                    modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 100.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                ) {
-                    Column(Modifier.padding(20.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(t.l2, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                            Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(24.dp))
-                        }
-                        t.transliteration?.takeIf { it.isNotBlank() }?.let {
-                            Text(it, style = MaterialTheme.typography.bodyMedium, fontStyle = FontStyle.Italic,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Spacer(Modifier.height(4.dp))
-                        Text(t.l1, style = MaterialTheme.typography.bodyLarge)
-                        t.note?.takeIf { it.isNotBlank() }?.let {
-                            Spacer(Modifier.height(2.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Lightbulb, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                    }
-                }
-            }
+            items(items.size) { i -> TeachWordCard(items[i]) }
         }
-        Spacer(Modifier.height(12.dp))
-        com.alturya.fluenta.ui.FluentaButton(
-            text = I18nStore.t("lesson.teachStart", "¡Listo, a practicar!"),
-            onClick = onDone,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        Box(Modifier.padding(26.dp)) {
+            com.alturya.fluenta.ui.FluentaButton(
+                text = I18nStore.t("lesson.teachStart", "¡Listo, a practicar!"),
+                onClick = onDone,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 
 @Composable
-private fun QuizView(state: LessonPlayerState, vm: LessonPlayerViewModel) {
+private fun TeachWordCard(t: com.alturya.fluenta.network.TeachItem) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        // Tarjeta héroe (primary) con L2 grande, píldora TTS y L1.
+        Surface(
+            color = MaterialTheme.colorScheme.primary,
+            shape = RoundedCornerShape(22.dp),
+            shadowElevation = 4.dp,
+            onClick = { scope.launch { TtsPlayer.play(context, t.l2) } },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(
+                Modifier.fillMaxWidth().padding(vertical = 26.dp, horizontal = 22.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(t.l2, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onPrimary, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Spacer(Modifier.height(14.dp))
+                Surface(color = Color.White.copy(alpha = 0.22f), shape = RoundedCornerShape(99.dp)) {
+                    Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
+                        t.transliteration?.takeIf { it.isNotBlank() }?.let {
+                            Spacer(Modifier.width(8.dp))
+                            Text(it, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+                        }
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+                Text(t.l1, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = DcMintDeep)
+            }
+        }
+        // Truco para recordar (ámbar)
+        t.note?.takeIf { it.isNotBlank() }?.let { note ->
+            Surface(color = DcAmberBg, shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
+                    Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(Color.White), contentAlignment = Alignment.Center) {
+                        Text("💡", style = MaterialTheme.typography.titleMedium)
+                    }
+                    Spacer(Modifier.width(13.dp))
+                    Column {
+                        Text(I18nStore.t("lesson.mnemonicTitle", "Truco para recordar"), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold, color = DcAmberInk)
+                        Text(note, style = MaterialTheme.typography.bodyMedium, color = Color(0xFF8A6A2A))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuizView(state: LessonPlayerState, vm: LessonPlayerViewModel, onExit: () -> Unit = {}) {
     val ex = state.exercises.getOrNull(state.currentIndex) ?: return
     val total = state.exercises.size
-    val progressFraction = state.currentIndex.toFloat() / total.toFloat()
+    val progressFraction = (state.currentIndex.toFloat() / total.toFloat()).coerceIn(0f, 1f)
 
-    Column(Modifier.fillMaxSize().padding(20.dp)) {
+    Column(Modifier.fillMaxSize().padding(horizontal = 22.dp).padding(top = 8.dp, bottom = 20.dp)) {
+        // Cabecera: salir + barra de progreso + vidas
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(I18nStore.t("lesson.exerciseOf", "Ejercicio {n} de {total}").replace("{n}", "${state.currentIndex + 1}").replace("{total}", "$total"), style = MaterialTheme.typography.labelMedium)
+            IconButton(onClick = onExit, modifier = Modifier.size(40.dp)) {
+                Icon(Icons.Default.Cancel, contentDescription = I18nStore.t("common.back", "Volver"), tint = DcSlate, modifier = Modifier.size(22.dp))
+            }
+            Spacer(Modifier.width(8.dp))
+            LinearProgressIndicator(
+                progress = { progressFraction },
+                modifier = Modifier.weight(1f).height(14.dp).clip(RoundedCornerShape(99.dp)),
+                trackColor = DcMint,
+            )
+            Spacer(Modifier.width(10.dp))
+            Text("❤️ ${state.hearts}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.ExtraBold, color = DcInk)
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                I18nStore.t("lesson.exerciseOf", "Ejercicio {n} de {total}").replace("{n}", "${state.currentIndex + 1}").replace("{total}", "$total"),
+                style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = DcSlate,
+            )
             Spacer(Modifier.weight(1f))
             // Combo de aciertos seguidos — refuerzo positivo (gamificación).
             if (state.combo >= 2) {
-                Surface(
-                    color = MaterialTheme.colorScheme.tertiaryContainer,
-                    shape = MaterialTheme.shapes.small,
-                    modifier = Modifier.padding(end = 8.dp),
-                ) {
+                Surface(color = DcAmberBg, shape = RoundedCornerShape(99.dp)) {
                     Text(
-                        "🔥 ${state.combo}",
+                        I18nStore.t("lesson.streakChip", "🔥 {n} racha").replace("{n}", "${state.combo}"),
                         style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        fontWeight = FontWeight.ExtraBold,
+                        color = DcAmberInk,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                     )
                 }
             }
-            Text(
-                "❤️".repeat(state.hearts) + "🤍".repeat((5 - state.hearts).coerceAtLeast(0)),
-                style = MaterialTheme.typography.labelMedium,
-            )
         }
-        Spacer(Modifier.height(8.dp))
-        LinearProgressIndicator(
-            progress = { progressFraction },
-            modifier = Modifier.fillMaxWidth().height(8.dp),
-        )
         Spacer(Modifier.height(20.dp))
 
         AnimatedContent(
@@ -349,13 +423,18 @@ private fun FeedbackBar(
     // verde claro fijo se veía fuera de lugar; usamos un verde que contrasta en ambos.
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
     val container = if (correct) {
-        if (isDark) Color(0xFF14532D) else Color(0xFFD7F5DD)
-    } else MaterialTheme.colorScheme.errorContainer
+        if (isDark) Color(0xFF14532D) else DcGreenBg
+    } else {
+        if (isDark) MaterialTheme.colorScheme.errorContainer else DcCoralBg
+    }
     val accent = if (correct) {
-        if (isDark) Color(0xFF86EFAC) else Color(0xFF15803D)
-    } else MaterialTheme.colorScheme.error
+        if (isDark) Color(0xFF86EFAC) else Color(0xFF0B7B53)
+    } else {
+        if (isDark) MaterialTheme.colorScheme.error else DcCoralDark
+    }
 
-    Surface(color = container, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth()) {
+    // Hoja inferior con esquinas superiores redondeadas (eco del diseño 3).
+    Surface(color = container, shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // Mascota con personalidad: celebra al acertar, anima al fallar (estilo Duolingo).
@@ -365,13 +444,13 @@ private fun FeedbackBar(
                         else com.alturya.fluenta.R.drawable.ic_fluenta_saluda
                     ),
                     contentDescription = null,
-                    modifier = Modifier.size(44.dp).scale(iconScale.value),
+                    modifier = Modifier.size(56.dp).scale(iconScale.value),
                 )
-                Spacer(Modifier.width(10.dp))
+                Spacer(Modifier.width(12.dp))
                 Text(
-                    if (correct) I18nStore.t("lesson.correct", "¡Correcto!") else I18nStore.t("lesson.almost", "Casi…"),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    if (correct) I18nStore.t("lesson.excellent", "¡Excelente!") else I18nStore.t("lesson.almostYouCan", "Casi… ¡tú puedes!"),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
                     color = accent,
                 )
             }
@@ -673,6 +752,34 @@ private fun FillBlankExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) 
     }
 }
 
+// Etiqueta de sección estilo diseño ("¿QUÉ SIGNIFICA?", "TRADUCE", …)
+@Composable
+private fun ExerciseLabel(text: String) {
+    Text(text.uppercase(), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+}
+
+// Píldora de opción del kit: blanca con borde, seleccionada en primary.
+@Composable
+private fun OptionPill(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = if (selected) MaterialTheme.colorScheme.primary else Color.White,
+        border = if (selected) null else androidx.compose.foundation.BorderStroke(2.dp, DcHairline),
+        shadowElevation = if (selected) 0.dp else 1.dp,
+        modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
+    ) {
+        Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp), contentAlignment = Alignment.CenterStart) {
+            Text(
+                text,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = if (selected) MaterialTheme.colorScheme.onPrimary else DcInk,
+            )
+        }
+    }
+}
+
 @Composable
 private fun MultipleChoiceExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) {
     val options = ex.options ?: emptyList()
@@ -680,34 +787,20 @@ private fun MultipleChoiceExercise(ex: PlayableExercise, onSubmit: (String) -> U
     val haptic = LocalHapticFeedback.current
 
     Column {
-        Card(
-            Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-        ) {
-            Column(Modifier.padding(20.dp)) {
-                Text(
-                    ex.prompt ?: "",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Medium,
-                )
-                TransliterationText(ex.transliteration)
+        ExerciseLabel(I18nStore.t("lesson.whatMeans", "¿Qué significa?"))
+        Spacer(Modifier.height(16.dp))
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(ex.prompt ?: "", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.ExtraBold, color = DcInk, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            ex.transliteration?.takeIf { it.isNotBlank() }?.let {
+                Text(it, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = DcAmber)
             }
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(24.dp))
         options.forEachIndexed { idx, opt ->
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (selected == idx) MaterialTheme.colorScheme.tertiaryContainer
-                    else MaterialTheme.colorScheme.surfaceVariant,
-                ),
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    selected = idx
-                },
-            ) {
-                Text(opt, modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyLarge)
-            }
+            OptionPill(opt, selected = selected == idx, onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                selected = idx
+            }, modifier = Modifier.padding(vertical = 6.dp))
         }
         Spacer(Modifier.height(20.dp))
         com.alturya.fluenta.ui.FluentaButton(
@@ -1003,60 +1096,30 @@ private fun ListenSelectExercise(ex: PlayableExercise, onSubmit: (String) -> Uni
     }
 
     Column {
-        // Audio play card
-        Card(
-            onClick = {
-                ex.audioText?.let { text ->
-                    scope.launch {
-                        playing = true
-                        TtsPlayer.play(context, text)
-                        playing = false
-                    }
+        ExerciseLabel(I18nStore.t("listen.label", "Escucha y elige"))
+        Spacer(Modifier.height(20.dp))
+        // Botón redondo grande de audio con relieve 3D
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(116.dp)) {
+                Box(Modifier.size(100.dp).offset(y = 6.dp).clip(CircleShape).background(Color(0xFF0A6F64)))
+                Box(
+                    Modifier.size(100.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary)
+                        .clickable {
+                            ex.audioText?.let { text -> scope.launch { playing = true; TtsPlayer.play(context, text); playing = false } }
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (playing) CircularProgressIndicator(Modifier.size(40.dp), strokeWidth = 3.dp, color = Color.White)
+                    else Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = I18nStore.t("listen.tapToHear", "Toca para escuchar"), tint = Color.White, modifier = Modifier.size(46.dp))
                 }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-        ) {
-            Row(
-                modifier = Modifier.padding(20.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                Spacer(Modifier.weight(1f))
-                if (playing) {
-                    CircularProgressIndicator(Modifier.size(36.dp), strokeWidth = 3.dp)
-                } else {
-                    Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(48.dp))
-                }
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    I18nStore.t("listen.tapToHear", "Toca para escuchar"),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Spacer(Modifier.weight(1f))
             }
         }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            I18nStore.t("listen.selectMeaning", "¿Qué significa lo que escuchas?"),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(24.dp))
         options.forEachIndexed { idx, opt ->
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (selected == idx) MaterialTheme.colorScheme.tertiaryContainer
-                    else MaterialTheme.colorScheme.surfaceVariant,
-                ),
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    selected = idx
-                },
-            ) {
-                Text(opt, modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyLarge)
-            }
+            OptionPill(opt, selected = selected == idx, onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                selected = idx
+            }, modifier = Modifier.padding(vertical = 6.dp))
         }
         Spacer(Modifier.height(20.dp))
         com.alturya.fluenta.ui.FluentaButton(
@@ -1184,43 +1247,48 @@ private fun ResultView(
         label = "pulse",
     )
 
-    Box(Modifier.fillMaxSize()) {
+    val passed = result.passed
+    // Aprobado: gradiente hero (primary→mint→surface). No aprobado: superficie mint.
+    val heroBg = Brush.verticalGradient(listOf(MaterialTheme.colorScheme.primary, DcMint, DcSurface))
+    Box(Modifier.fillMaxSize().then(if (passed) Modifier.background(heroBg) else Modifier)) {
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(28.dp))
         AnimatedVisibility(visible = visible, enter = fadeIn() + scaleIn()) {
-            if (result.passed) {
+            if (passed) {
                 Image(
                     painter = painterResource(R.drawable.ic_fluenta_celebra),
                     contentDescription = I18nStore.t("result.celebrateAlt", "¡Lección completada!"),
                     modifier = Modifier.size(150.dp).scale(pulse),
                 )
             } else {
-                Icon(
-                    Icons.AutoMirrored.Filled.TrendingUp,
+                // Mascota que anima (no celebra) cuando aún no aprueba.
+                Image(
+                    painter = painterResource(R.drawable.ic_fluenta_saluda),
                     contentDescription = I18nStore.t("result.keepGoing", "Sigue practicando"),
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(100.dp),
+                    modifier = Modifier.size(132.dp),
                 )
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(10.dp))
         Text(
-            if (result.passed) I18nStore.t("lesson.result.passed", "¡Lección completada!") else I18nStore.t("lesson.result.keepGoing", "Sigue practicando"),
+            if (passed) I18nStore.t("lesson.result.passed", "¡Lección superada!") else I18nStore.t("lesson.result.almost", "¡Casi lo logras!"),
             style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.ExtraBold,
+            color = if (passed) Color.White else DcInk,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
         Spacer(Modifier.height(16.dp))
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.scale(if (result.passed) xpScale.value else 1f),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth().scale(if (passed) xpScale.value else 1f),
         ) {
-            Stat(Icons.Default.CheckCircle, "${result.correctCount}/${result.total}", I18nStore.t("result.correct", "Correctos"))
-            Stat(Icons.Default.Star, "+${result.xpEarned}", "XP")
-            result.newStreakDays?.let { Stat(Icons.Default.LocalFireDepartment, "$it", I18nStore.t("result.streak", "Racha")) }
+            ResultStat("✅", "${result.correctCount}/${result.total}", I18nStore.t("result.correct", "Correctos"), if (passed) Color(0xFF0B7B53) else DcCoral, Modifier.weight(1f), onGradient = passed)
+            ResultStat("⚡", "+${result.xpEarned}", "XP", DcAmber, Modifier.weight(1f), onGradient = passed)
+            result.newStreakDays?.let { ResultStat(if (passed) "🔥" else "💔", "$it", I18nStore.t("result.streak", "Racha"), DcInk, Modifier.weight(1f), onGradient = passed) }
         }
 
         Spacer(Modifier.height(24.dp))
@@ -1458,15 +1526,22 @@ private fun ConfettiOverlay() {
 }
 
 @Composable
-private fun Stat(icon: ImageVector, value: String, label: String) {
-    Card(modifier = Modifier.width(96.dp)) {
+private fun ResultStat(emoji: String, value: String, label: String, valueColor: Color, modifier: Modifier = Modifier, onGradient: Boolean = false) {
+    Surface(
+        color = if (onGradient) Color.White.copy(alpha = 0.95f) else Color.White,
+        shape = RoundedCornerShape(18.dp),
+        shadowElevation = if (onGradient) 0.dp else 1.dp,
+        border = if (onGradient) null else androidx.compose.foundation.BorderStroke(2.dp, DcHairline),
+        modifier = modifier,
+    ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp, horizontal = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
-            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text(label, style = MaterialTheme.typography.labelSmall)
+            Text(emoji, style = MaterialTheme.typography.titleLarge)
+            Spacer(Modifier.height(4.dp))
+            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = valueColor)
+            Text(label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = DcSlate, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         }
     }
 }
@@ -1474,20 +1549,28 @@ private fun Stat(icon: ImageVector, value: String, label: String) {
 @Composable
 private fun ErrorView(message: String, onRetry: () -> Unit, onBack: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(32.dp),
+        modifier = Modifier.fillMaxSize().padding(40.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(56.dp))
-        Spacer(Modifier.height(12.dp))
-        Text(message, style = MaterialTheme.typography.bodyLarge, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Image(
+            painter = painterResource(R.drawable.ic_fluenta_saluda),
+            contentDescription = null,
+            modifier = Modifier.size(104.dp),
+        )
         Spacer(Modifier.height(20.dp))
-        com.alturya.fluenta.ui.FluentaButton(
-            text = I18nStore.t("common.retry", "Reintentar"),
-            onClick = onRetry,
-            modifier = Modifier.fillMaxWidth(),
+        Text(
+            I18nStore.t("lesson.errorTitle", "Algo salió mal"),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.ExtraBold,
+            color = DcInk,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
         Spacer(Modifier.height(8.dp))
-        TextButton(onClick = onBack) { Text(I18nStore.t("common.back", "Volver")) }
+        Text(message, style = MaterialTheme.typography.bodyMedium, color = DcSlate, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Spacer(Modifier.height(20.dp))
+        com.alturya.fluenta.ui.FluentaButton(text = I18nStore.t("common.retry", "Reintentar"), onClick = onRetry)
+        Spacer(Modifier.height(8.dp))
+        TextButton(onClick = onBack) { Text(I18nStore.t("common.back", "Volver"), color = DcSlate) }
     }
 }
