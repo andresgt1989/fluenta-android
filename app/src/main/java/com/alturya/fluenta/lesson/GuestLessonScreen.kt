@@ -14,7 +14,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
@@ -117,9 +116,13 @@ fun GuestLessonScreen(l1: String, l2: String, onSignUp: () -> Unit, onBack: () -
             ) {
                 Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp))
                 Spacer(Modifier.height(8.dp))
-                Text(state.error!!, style = MaterialTheme.typography.bodyLarge)
+                Text(state.error!!, style = MaterialTheme.typography.bodyLarge, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 Spacer(Modifier.height(20.dp))
-                Button(onClick = onBack) { Text(I18nStore.t("common.back", "Volver")) }
+                com.alturya.fluenta.ui.FluentaButton(
+                    text = I18nStore.t("common.back", "Volver"),
+                    onClick = onBack,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
             state.done -> GuestResultView(
                 cta = state.cta,
@@ -179,9 +182,12 @@ private fun GuestQuizView(
                         fontWeight = FontWeight.Bold,
                     )
                     Spacer(Modifier.height(12.dp))
-                    Button(onClick = onContinue, modifier = Modifier.fillMaxWidth()) {
-                        Text(I18nStore.t("common.continue", "Continuar"))
-                    }
+                    com.alturya.fluenta.ui.FluentaButton(
+                        text = I18nStore.t("common.continue", "Continuar"),
+                        onClick = onContinue,
+                        style = com.alturya.fluenta.ui.FluentaButtonStyle.Success,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
         }
@@ -200,6 +206,7 @@ private fun GuestExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) {
                 ex.prompt ?: ex.audioText ?: "",
                 style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
             )
+            GuestTransliteration(ex.transliteration)
             Spacer(Modifier.height(16.dp))
             options.forEachIndexed { idx, opt ->
                 Card(
@@ -212,14 +219,16 @@ private fun GuestExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) {
                 ) { Text(opt, Modifier.padding(16.dp), style = MaterialTheme.typography.bodyLarge) }
             }
             Spacer(Modifier.height(20.dp))
-            Button(
+            com.alturya.fluenta.ui.FluentaButton(
+                text = I18nStore.t("lesson.check", "Comprobar"),
                 onClick = { onSubmit(selected.toString()) },
                 enabled = selected >= 0,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-            ) { Text(I18nStore.t("lesson.check", "Comprobar")) }
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
         "translate_l1_to_l2", "translate_l2_to_l1", "fill_blank" -> {
             Text(ex.prompt ?: "", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            GuestTransliteration(ex.transliteration)
             ex.hint?.let { hint ->
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -237,20 +246,38 @@ private fun GuestExercise(ex: PlayableExercise, onSubmit: (String) -> Unit) {
                 singleLine = true,
             )
             Spacer(Modifier.height(20.dp))
-            Button(
+            com.alturya.fluenta.ui.FluentaButton(
+                text = I18nStore.t("lesson.check", "Comprobar"),
                 onClick = { onSubmit(textInput.trim()) },
                 enabled = textInput.isNotBlank(),
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-            ) { Text(I18nStore.t("lesson.check", "Comprobar")) }
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
         else -> {
             Text(ex.prompt ?: ex.audioText ?: "", style = MaterialTheme.typography.titleLarge)
+            GuestTransliteration(ex.transliteration)
             Spacer(Modifier.height(20.dp))
-            Button(onClick = { onSubmit("ok") }, modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                Text(I18nStore.t("common.continue", "Continuar"))
-            }
+            com.alturya.fluenta.ui.FluentaButton(
+                text = I18nStore.t("common.continue", "Continuar"),
+                onClick = { onSubmit("ok") },
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
+}
+
+// Pinyin/romaji bajo el prompt para scripts no latinos (zh/ja/ko/ar…). Solo
+// aparece si el backend manda la lectura; reúne el patrón del LessonPlayer.
+@Composable
+private fun GuestTransliteration(reading: String?) {
+    if (reading.isNullOrBlank()) return
+    Spacer(Modifier.height(2.dp))
+    Text(
+        reading,
+        style = MaterialTheme.typography.bodyMedium,
+        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable
@@ -268,7 +295,11 @@ private fun GuestResultView(
     ) {
         Spacer(Modifier.height(24.dp))
         AnimatedVisibility(visible = visible, enter = fadeIn() + scaleIn()) {
-            Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(80.dp))
+            androidx.compose.foundation.Image(
+                painter = androidx.compose.ui.res.painterResource(com.alturya.fluenta.R.drawable.ic_fluenta_celebra),
+                contentDescription = null,
+                modifier = Modifier.size(120.dp),
+            )
         }
         Spacer(Modifier.height(12.dp))
         Text(
@@ -295,10 +326,11 @@ private fun GuestResultView(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(16.dp))
-                Button(onClick = onSignUp, modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                    Text(cta?.ctaLabel ?: I18nStore.t("guest.ctaButton", "Crear cuenta gratis →"),
-                        fontWeight = FontWeight.Bold)
-                }
+                com.alturya.fluenta.ui.FluentaButton(
+                    text = cta?.ctaLabel ?: I18nStore.t("guest.ctaButton", "Crear cuenta gratis →"),
+                    onClick = onSignUp,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
         Spacer(Modifier.height(12.dp))
