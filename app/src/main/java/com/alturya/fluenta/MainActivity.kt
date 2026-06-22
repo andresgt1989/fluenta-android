@@ -178,12 +178,15 @@ class MainActivity : ComponentActivity() {
                     startDestination = dest
                 ) {
                     composable("onboarding") {
-                        OnboardingScreen(onPicked = { l1, l2 ->
-                            scope.launch { TokenStore.saveOnboardingChoice(context, l1, l2) }
-                            // Cumple la promesa "practica hablando": el wedge de voz ES el
-                            // primer contacto (hablar en <60s, sin cuenta), luego el quiz.
-                            rootNav.navigate("guest_conversation/$l1/$l2")
-                        })
+                        OnboardingScreen(
+                            onPicked = { l1, l2 ->
+                                scope.launch { TokenStore.saveOnboardingChoice(context, l1, l2) }
+                                // Cumple la promesa "practica hablando": el wedge de voz ES el
+                                // primer contacto (hablar en <60s, sin cuenta), luego el quiz.
+                                rootNav.navigate("guest_conversation/$l1/$l2")
+                            },
+                            onLogin = { rootNav.navigate("login") },
+                        )
                     }
                     composable("login") {
                         LoginScreen(

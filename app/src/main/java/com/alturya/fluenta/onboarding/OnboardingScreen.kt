@@ -65,7 +65,7 @@ private val MOTIVATION_TILES = listOf(
 )
 
 @Composable
-fun OnboardingScreen(onPicked: (l1: String, l2: String) -> Unit) {
+fun OnboardingScreen(onPicked: (l1: String, l2: String) -> Unit, onLogin: () -> Unit = {}) {
     // Device locale is just the DEFAULT — the user confirms/changes their
     // language explicitly (es/en/pt) instead of being locked to the detection.
     val detected = remember {
@@ -78,7 +78,7 @@ fun OnboardingScreen(onPicked: (l1: String, l2: String) -> Unit) {
     var step by remember { mutableStateOf(0) }
 
     when (step) {
-        0 -> WelcomeStep(onStart = { step = 1 })
+        0 -> WelcomeStep(onStart = { step = 1 }, onLogin = onLogin)
         1 -> SourceLanguageStep(selected = l1, onContinue = { l1 = it; step = 2 }, onBack = { step = 0 })
         2 -> LanguagePickStep(l1 = l1, onContinue = { l2 = it; step = 3 }, onBack = { step = 1 })
         // Paso de META / "por qué": personaliza la experiencia y crea compromiso
@@ -96,7 +96,7 @@ fun OnboardingScreen(onPicked: (l1: String, l2: String) -> Unit) {
 
 // ── Paso 0 — Hero ────────────────────────────────────────────────────────────
 @Composable
-private fun WelcomeStep(onStart: () -> Unit) {
+private fun WelcomeStep(onStart: () -> Unit, onLogin: () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
@@ -149,9 +149,28 @@ private fun WelcomeStep(onStart: () -> Unit) {
             style = FluentaButtonStyle.Ink,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 28.dp)
-                .padding(bottom = 36.dp),
+                .padding(horizontal = 28.dp),
         )
+        // "Ya tengo cuenta · Entrar" — atajo a login (kit Claude Design).
+        TextButton(
+            onClick = onLogin,
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(top = 8.dp, bottom = 28.dp),
+        ) {
+            Text(
+                I18nStore.t("onboarding.haveAccount", "Ya tengo cuenta"),
+                style = MaterialTheme.typography.bodyMedium,
+                color = FluentaTokens.Ink.copy(alpha = 0.85f),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                I18nStore.t("onboarding.login", "Entrar"),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = FluentaTokens.Ink,
+            )
+        }
     }
 }
 
