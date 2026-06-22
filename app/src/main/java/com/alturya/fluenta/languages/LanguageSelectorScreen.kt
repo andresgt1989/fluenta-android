@@ -242,18 +242,21 @@ private fun PairRow(pair: LanguagePair, selecting: Boolean, onClick: () -> Unit)
             if (selecting) {
                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = FluentaTokens.Primary)
             } else {
-                CurriculumBadge(available)
+                CurriculumBadge(l2 = pair.l2, available = available)
             }
         }
     }
 }
 
+// Profundidad real de currículo (probe backend 2026-06-23): solo en+zh son profundos.
+private val DEEP_CURRICULUM = setOf("en", "zh")
+
 @Composable
-private fun CurriculumBadge(available: Boolean) {
-    val (label, bg, fg) = if (available) {
-        Triple(I18nStore.t("lang.curriculumReady", "Con currículo"), FluentaTokens.Primary, Color.White)
-    } else {
-        Triple(I18nStore.t("lang.comingSoon", "Próximamente"), Color(0xFFE3EFEA), FluentaTokens.Muted)
+private fun CurriculumBadge(l2: String, available: Boolean) {
+    val (label, bg, fg) = when {
+        l2 in DEEP_CURRICULUM -> Triple(I18nStore.t("lang.curriculumFull", "Completo"), FluentaTokens.Primary, Color.White)
+        available -> Triple(I18nStore.t("lang.curriculumBeta", "Beta"), Color(0xFFFBE7C6), Color(0xFFC77A12))
+        else -> Triple(I18nStore.t("lang.comingSoon", "Próximamente"), Color(0xFFE3EFEA), FluentaTokens.Muted)
     }
     Surface(shape = RoundedCornerShape(99.dp), color = bg) {
         Text(
