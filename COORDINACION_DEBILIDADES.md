@@ -54,3 +54,10 @@ Prioridad por impacto:
 5. (Opcional) **Liga/Leaderboard** real para Progreso (hoy placeholder).
 
 Cuando estén en el proyecto "Fluenta Language Learning App" o en un zip de handoff, T3 los implementa 1:1 y verifica en Firebase.
+
+## es→zh — Cobertura HSK (medido en DB 2026-06-23)
+Vocab distinto por nivel CEFR (≈chunks, no palabras sueltas): a1=235, a2=250, b1=250, b2=250, c1=250, c2=249. Total ≈1484.
+Acumulado vs HSK: HSK1(150)✅ HSK2(300)✅ HSK3(600)✅ HSK4(1200)⚠️ HSK5(2500)❌ HSK6(5000)❌.
+TAREA terminal chino:
+1. Generar vocabulario B2/C1/C2 hasta 2500 (HSK5) y 5000 (HSK6) palabras únicas.
+2. Validador real: tokenizar target_vocabulary a PALABRAS y cruzar con la wordlist HSK oficial; reportar % cobertura por nivel (no contar chunks).
