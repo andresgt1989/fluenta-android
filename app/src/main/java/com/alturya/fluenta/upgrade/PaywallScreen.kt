@@ -3,36 +3,33 @@ package com.alturya.fluenta.upgrade
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.MicNone
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.WifiOff
-import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -40,8 +37,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alturya.fluenta.R
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.ApiClient
+import com.alturya.fluenta.ui.FluentaButton
+import com.alturya.fluenta.ui.theme.FluentaTokens
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -69,16 +69,24 @@ class PaywallViewModel : ViewModel() {
                 val res = ApiClient.api.getCheckoutUrl(plan)
                 _state.value = _state.value.copy(loading = false, checkoutUrl = res.url)
             } catch (e: Exception) {
-                _state.value = _state.value.copy(loading = false, error = I18nStore.t("paywall.error.checkout", "No se pudo iniciar el pago. Intenta de nuevo."))
+                _state.value = _state.value.copy(loading = false, error = I18nStore.t("paywall.error.checkout", "No se completó la compra. No se realizó ningún cargo. Inténtalo de nuevo."))
             }
         }
     }
 }
 
-// titleKey/subtitleKey: claves i18n estables; title/subtitle: fallback es. Se RESUELVEN en
-// el render con I18nStore.t(key, fallback) — no aquí, que se evalúa con memCache vacío.
-private data class Feature(val icon: ImageVector, val titleKey: String, val title: String, val subtitleKey: String, val subtitle: String, val proOnly: Boolean = false)
+// Beneficios incluidos en Pro. titleKey/title: clave i18n + fallback es (se resuelven
+// en el render, no aquí). Datos REALES del producto — no inventamos planes.
+private data class ProBenefit(val titleKey: String, val title: String)
 private data class Testimonial(val quoteKey: String, val quote: String, val authorKey: String, val author: String, val stars: Int = 5)
+
+private val PRO_BENEFITS = listOf(
+    ProBenefit("paywall.feat.convo.title", "Conversación IA ilimitada"),
+    ProBenefit("paywall.feat.shield.title", "Escudo de racha"),
+    ProBenefit("paywall.feat.offline.title", "Lecciones sin conexión"),
+    ProBenefit("paywall.feat.noads.title", "Sin anuncios ni interrupciones"),
+    ProBenefit("paywall.feat.srs.title", "Repaso inteligente ilimitado"),
+)
 
 private val TESTIMONIALS = listOf(
     Testimonial(
@@ -95,15 +103,6 @@ private val TESTIMONIALS = listOf(
     ),
 )
 
-private val FEATURES = listOf(
-    Feature(Icons.Default.MicNone,            "paywall.feat.convo.title",    "Conversación IA ilimitada",      "paywall.feat.convo.sub",    "Habla inglés sin límites con tu coach"),
-    Feature(Icons.Default.Shield,             "paywall.feat.shield.title",   "Escudo de racha",                "paywall.feat.shield.sub",   "Protege tu racha hasta 3 días", proOnly = true),
-    Feature(Icons.Default.WifiOff,            "paywall.feat.offline.title",  "Lecciones sin conexión",         "paywall.feat.offline.sub",  "Practica en el metro, sin internet", proOnly = true),
-    Feature(Icons.Default.LocalFireDepartment,"paywall.feat.noads.title",    "Sin anuncios ni interrupciones", "paywall.feat.noads.sub",    "Flujo de aprendizaje puro", proOnly = true),
-    Feature(Icons.Default.Star,               "paywall.feat.srs.title",      "Repaso inteligente ilimitado",   "paywall.feat.srs.sub",      "SRS sin tope de tarjetas por día"),
-    Feature(Icons.Default.CheckCircle,        "paywall.feat.stats.title",    "Estadísticas avanzadas",         "paywall.feat.stats.sub",    "Velocidad lectora, éxito por habilidad", proOnly = true),
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PaywallScreen(onDismiss: () -> Unit) {
@@ -111,7 +110,6 @@ fun PaywallScreen(onDismiss: () -> Unit) {
     val state by vm.state.collectAsState()
     val context = LocalContext.current
 
-    // Open checkout URL when ready
     LaunchedEffect(state.checkoutUrl) {
         state.checkoutUrl?.let { url ->
             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
@@ -121,273 +119,245 @@ fun PaywallScreen(onDismiss: () -> Unit) {
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {},
-                navigationIcon = {
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = I18nStore.t("common.close", "Cerrar"))
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { pad ->
+    Scaffold(containerColor = FluentaTokens.Surface) { pad ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(pad),
-            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // ── Hero gradient header ───────────────────────────────────────────
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.primaryContainer,
-                            )
-                        )
-                    )
-                    .padding(horizontal = 24.dp, vertical = 32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
+            // ── Hero: ✕ + mascota + título ─────────────────────────────────────
+            Column(Modifier.padding(start = 26.dp, end = 26.dp, top = 8.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = I18nStore.t("common.close", "Cerrar"), tint = FluentaTokens.Muted)
+                    }
+                }
                 AnimatedVisibility(visible = visible, enter = fadeIn(tween(400)) + slideInVertically(tween(400)) { -40 }) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "Fluenta Pro",
-                            style = MaterialTheme.typography.displaySmall,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.onPrimary,
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_fluenta_hola),
+                            contentDescription = null,
+                            modifier = Modifier.size(52.dp),
                         )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            I18nStore.t("paywall.tagline", "Habla con confianza en 90 días"),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
-                            textAlign = TextAlign.Center,
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        Surface(
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f),
-                            shape = MaterialTheme.shapes.large,
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Icon(Icons.Default.CardGiftcard, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    I18nStore.t("paywall.trialBadge", "7 días gratis — cancela cuando quieras"),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                )
-                            }
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                I18nStore.t("paywall.heroTitle", "Aprende sin límites"),
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = FluentaTokens.Ink,
+                                modifier = Modifier.semantics { heading() },
+                            )
+                            Text(
+                                I18nStore.t("paywall.heroSubtitle", "Desbloquea todo Fluenta"),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = FluentaTokens.Muted,
+                            )
                         }
                     }
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(18.dp))
 
-            // ── Plan selector ─────────────────────────────────────────────────
-            Column(Modifier.padding(horizontal = 20.dp)) {
-                Text(
-                    I18nStore.t("paywall.choosePlan", "Elige tu plan"),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-                Spacer(Modifier.height(12.dp))
-                PlanCard(
+            // ── Planes (datos reales: Anual recomendado + Mensual) ─────────────
+            Column(Modifier.padding(horizontal = 26.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                RecommendedPlanCard(
                     title = I18nStore.t("paywall.annual", "Anual"),
+                    tagline = I18nStore.t("paywall.annualTagline", "Para avanzar en serio"),
                     price = "$4.99",
                     period = I18nStore.t("paywall.perMonth", "/mes"),
                     originalPrice = "$9.99",
-                    badge = I18nStore.t("paywall.bestValue", "MEJOR VALOR · −50%"),
+                    benefits = PRO_BENEFITS.take(3),
                     selected = state.selectedPlan == "annual",
                     onClick = { vm.selectPlan("annual") },
                 )
-                Spacer(Modifier.height(10.dp))
-                PlanCard(
+                SimplePlanCard(
                     title = I18nStore.t("paywall.monthly", "Mensual"),
+                    tagline = I18nStore.t("paywall.monthlyTagline", "Flexibilidad total"),
                     price = "$9.99",
                     period = I18nStore.t("paywall.perMonth", "/mes"),
-                    originalPrice = null,
-                    badge = null,
                     selected = state.selectedPlan == "monthly",
                     onClick = { vm.selectPlan("monthly") },
                 )
             }
 
-            // ── Savings calculator ────────────────────────────────────────────
-            Spacer(Modifier.height(12.dp))
+            // ── Ahorro (plan anual) ────────────────────────────────────────────
+            Spacer(Modifier.height(14.dp))
             Surface(
-                color = Color(0xFF22C55E).copy(alpha = 0.1f),
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                color = FluentaTokens.SuccessBg,
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 26.dp),
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF16A34A), modifier = Modifier.size(16.dp))
+                Row(Modifier.padding(horizontal = 14.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = FluentaTokens.SuccessInk, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
                         I18nStore.t("paywall.savings", "Con el plan anual ahorras $60/año · equivale a $0.16/día"),
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF16A34A),
                         fontWeight = FontWeight.Medium,
+                        color = FluentaTokens.SuccessInk,
                     )
                 }
             }
 
+            // ── Beneficios ──────────────────────────────────────────────────────
             Spacer(Modifier.height(24.dp))
-
-            // ── Features ──────────────────────────────────────────────────────
-            Column(Modifier.padding(horizontal = 20.dp)) {
+            Column(Modifier.padding(horizontal = 26.dp)) {
                 Text(
                     I18nStore.t("paywall.included", "Qué incluye Pro"),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
+                    color = FluentaTokens.Ink,
                 )
                 Spacer(Modifier.height(12.dp))
-                FEATURES.forEach { feature ->
-                    FeatureRow(feature)
-                    Spacer(Modifier.height(12.dp))
+                PRO_BENEFITS.forEach { b ->
+                    Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Check, contentDescription = null, tint = FluentaTokens.Primary, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Text(I18nStore.t(b.titleKey, b.title), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = FluentaTokens.Ink)
+                    }
                 }
             }
 
+            // ── Testimonios ─────────────────────────────────────────────────────
             Spacer(Modifier.height(24.dp))
-
-            // ── Testimonios ───────────────────────────────────────────────────
-            Column(Modifier.padding(horizontal = 20.dp)) {
+            Column(Modifier.padding(horizontal = 26.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
                     I18nStore.t("paywall.testimonials", "Lo que dicen los usuarios"),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
+                    color = FluentaTokens.Ink,
                 )
-                Spacer(Modifier.height(12.dp))
-                TESTIMONIALS.forEach { t ->
-                    TestimonialCard(t)
-                    Spacer(Modifier.height(8.dp))
-                }
+                TESTIMONIALS.forEach { TestimonialCard(it) }
             }
 
+            // ── CTA ─────────────────────────────────────────────────────────────
             Spacer(Modifier.height(24.dp))
-
-            // ── CTA ───────────────────────────────────────────────────────────
-            Column(Modifier.padding(horizontal = 20.dp)) {
+            Column(Modifier.padding(horizontal = 26.dp)) {
                 state.error?.let { err ->
-                    Text(err, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(bottom = 8.dp))
+                    Text(err, color = FluentaTokens.Coral, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 8.dp))
                 }
-                com.alturya.fluenta.ui.FluentaButton(
+                FluentaButton(
                     text = if (state.loading) I18nStore.t("paywall.processing", "Procesando…")
-                           else I18nStore.t("paywall.startTrial", "Empezar 7 días gratis"),
+                    else I18nStore.t("paywall.startTrial", "Empezar 7 días gratis"),
                     onClick = { vm.startCheckout() },
                     enabled = !state.loading,
                     modifier = Modifier.fillMaxWidth(),
                     leading = if (state.loading) {
-                        { CircularProgressIndicator(Modifier.size(18.dp).padding(end = 4.dp), strokeWidth = 2.dp, color = Color.White) }
+                        { CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White) }
                     } else null,
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(10.dp))
                 TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        I18nStore.t("paywall.noThanks", "Continuar con el plan gratuito"),
+                        I18nStore.t("paywall.noThanks", "Cancela cuando quieras · Restaurar compra"),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = FluentaTokens.Muted,
                     )
                 }
                 Spacer(Modifier.height(8.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF16A34A), modifier = Modifier.size(12.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        I18nStore.t("paywall.guarantee", "Satisfacción garantizada — si no te gusta, te devolvemos el dinero"),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF16A34A),
-                    )
-                }
-                Spacer(Modifier.height(4.dp))
                 Text(
                     I18nStore.t("paywall.legal", "Sin cargos durante el período de prueba. Cancela antes de que termine para no ser cobrado. Renovación automática."),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = FluentaTokens.Muted,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-
             Spacer(Modifier.height(32.dp))
         }
     }
 }
 
 @Composable
-private fun PlanCard(
+private fun RecommendedPlanCard(
     title: String,
+    tagline: String,
     price: String,
     period: String,
     originalPrice: String?,
-    badge: String?,
+    benefits: List<ProBenefit>,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
-    val bgColor = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surface
-
-    Card(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(width = if (selected) 2.dp else 1.dp, color = borderColor, shape = MaterialTheme.shapes.medium),
-        colors = CardDefaults.cardColors(containerColor = bgColor),
-        elevation = CardDefaults.cardElevation(if (selected) 4.dp else 0.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
+    Box(Modifier.fillMaxWidth()) {
+        Surface(
+            onClick = onClick,
+            shape = RoundedCornerShape(20.dp),
+            color = Color.White,
+            border = BorderStroke(if (selected) 2.5.dp else 2.dp, if (selected) FluentaTokens.Primary else FluentaTokens.Border),
+            shadowElevation = if (selected) 6.dp else 0.dp,
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         ) {
-            RadioButton(selected = selected, onClick = onClick)
-            Spacer(Modifier.width(8.dp))
-            Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    badge?.let {
-                        Spacer(Modifier.width(8.dp))
-                        Surface(
-                            color = MaterialTheme.colorScheme.tertiary,
-                            shape = MaterialTheme.shapes.extraSmall,
-                        ) {
-                            Text(it, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onTertiary,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                        }
+            Column(Modifier.padding(18.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
+                    Column {
+                        Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = FluentaTokens.Ink)
+                        Text(tagline, style = MaterialTheme.typography.bodySmall, color = FluentaTokens.Muted)
+                    }
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(price, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = FluentaTokens.Ink)
+                        Text(period, style = MaterialTheme.typography.labelMedium, color = FluentaTokens.Muted, modifier = Modifier.padding(bottom = 3.dp))
                     }
                 }
                 originalPrice?.let {
-                    Text(it, style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textDecoration = TextDecoration.LineThrough)
+                    Text(it, style = MaterialTheme.typography.labelSmall, color = FluentaTokens.Muted, textDecoration = TextDecoration.LineThrough)
+                }
+                Spacer(Modifier.height(10.dp))
+                benefits.forEach { b ->
+                    Row(Modifier.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Check, contentDescription = null, tint = FluentaTokens.Primary, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(I18nStore.t(b.titleKey, b.title), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, color = FluentaTokens.Ink)
+                    }
                 }
             }
+        }
+        // Badge "RECOMENDADO" flotante (ámbar) — el destacado del kit.
+        Surface(
+            shape = RoundedCornerShape(99.dp),
+            color = FluentaTokens.Amber,
+            modifier = Modifier.align(Alignment.TopStart).padding(start = 18.dp),
+        ) {
+            Text(
+                I18nStore.t("paywall.recommended", "RECOMENDADO"),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.White,
+                modifier = Modifier.padding(horizontal = 11.dp, vertical = 4.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun SimplePlanCard(
+    title: String,
+    tagline: String,
+    price: String,
+    period: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(18.dp),
+        color = Color.White,
+        border = BorderStroke(2.dp, if (selected) FluentaTokens.Primary else FluentaTokens.Border),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(Modifier.padding(horizontal = 18.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            RadioButton(selected = selected, onClick = onClick, colors = RadioButtonDefaults.colors(selectedColor = FluentaTokens.Primary))
+            Spacer(Modifier.width(4.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = FluentaTokens.Ink)
+                Text(tagline, style = MaterialTheme.typography.bodySmall, color = FluentaTokens.Muted)
+            }
             Row(verticalAlignment = Alignment.Bottom) {
-                Text(price, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold,
-                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-                Text(period, style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 3.dp))
+                Text(price, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = FluentaTokens.Ink)
+                Text(period, style = MaterialTheme.typography.labelMedium, color = FluentaTokens.Muted, modifier = Modifier.padding(bottom = 2.dp))
             }
         }
     }
@@ -395,55 +365,17 @@ private fun PlanCard(
 
 @Composable
 private fun TestimonialCard(t: Testimonial) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-    ) {
+    Surface(shape = RoundedCornerShape(16.dp), color = Color.White, border = BorderStroke(1.dp, FluentaTokens.Border), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp)) {
             Row {
                 repeat(t.stars) {
-                    Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFEAB308), modifier = Modifier.size(14.dp))
+                    Icon(Icons.Default.Star, contentDescription = null, tint = FluentaTokens.Amber, modifier = Modifier.size(14.dp))
                 }
             }
             Spacer(Modifier.height(6.dp))
-            Text(
-                "\"${I18nStore.t(t.quoteKey, t.quote)}\"",
-                style = MaterialTheme.typography.bodyMedium,
-                fontStyle = FontStyle.Italic,
-            )
+            Text("\"${I18nStore.t(t.quoteKey, t.quote)}\"", style = MaterialTheme.typography.bodyMedium, fontStyle = FontStyle.Italic, color = FluentaTokens.Ink)
             Spacer(Modifier.height(4.dp))
-            Text(
-                "— ${I18nStore.t(t.authorKey, t.author)}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun FeatureRow(feature: Feature) {
-    Row(verticalAlignment = Alignment.Top) {
-        Icon(
-            imageVector = feature.icon,
-            contentDescription = null,
-            tint = if (feature.proOnly) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.size(22.dp).padding(top = 1.dp),
-        )
-        Spacer(Modifier.width(12.dp))
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(I18nStore.t(feature.titleKey, feature.title), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                if (feature.proOnly) {
-                    Spacer(Modifier.width(6.dp))
-                    Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.extraSmall) {
-                        Text("PRO", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp))
-                    }
-                }
-            }
-            Text(I18nStore.t(feature.subtitleKey, feature.subtitle), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("— ${I18nStore.t(t.authorKey, t.author)}", style = MaterialTheme.typography.labelSmall, color = FluentaTokens.Muted)
         }
     }
 }
