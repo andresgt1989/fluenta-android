@@ -139,3 +139,8 @@ Cada nota se sube SOLO con evidencia real (Firebase Test Lab / código verificad
   - Onboarding sin bienvenida duplicada (arranca en paso idioma).
 - Falta para 100 (sigue): (a) Login es una 2ª bienvenida (sin mock Claude Design); (b) auto-avance tras CADA ejercicio (solo Match→ruta hecho); (c) Home con UNA acción primaria (hoy disperso); (d) esqueleto de carga gris sin marca (sin Hoot); (e) Perfil/Ajustes y Test de Nivel aún con diseño viejo (mocks ya disponibles en el zip).
 - Global estimado ≈ 48/100 (UX deja de ser el tapón absoluto; siguiente cuello: Retención/auto-avance + Onboarding entrada).
+
+### Iteración 4 (2026-06-22) — Perfil al kit (verificado en Firebase run 233217)
+- **UX 62→66** (+4). Evidencia REAL (shot 9): "Mi perfil" con avatar búho Hoot dibujado, chip de nivel, 3 stats (Racha/XP/Nivel), tarjeta gradiente "Estás aprendiendo · Cambiar", compartir logro, Fluenta Pro, fila test de nivel; NavBar Perfil teal. Cableado intacto (checkout/badges/referral/logout).
+- Polish menor pendiente: el "nombre" muestra el id de dispositivo (d:...) en cuentas demo; ocultar ids crudos para cuentas sin teléfono/email.
+- Falta para 100: Ajustes (otro lado del mock) aún viejo; auto-avance universal; Login 2ª bienvenida; Test de Nivel viejo; esqueleto gris sin marca.
