@@ -374,7 +374,7 @@ private fun MainScaffold(
             composable("home") {
                 HomeScreen(
                     onSeeMap = { nav.navigate("map") { launchSingleTop = true } },
-                    onPronunciation = { nav.navigate("pronunciation") { launchSingleTop = true } },
+                    onPronunciation = { nav.navigate("tone") { launchSingleTop = true } },
                     onPlayMatch = { nav.navigate("match") { launchSingleTop = true } },
                     onStartLesson = { lessonId -> nav.navigate("lesson/$lessonId") },
                     onChangeLanguage = { nav.navigate("languages") { launchSingleTop = true } },
@@ -454,6 +454,7 @@ private fun MainScaffold(
             }
             composable("verbs") { VerbsTodayScreen() }
             composable("pronunciation") { PronunciationScreen() }
+            composable("tone") { com.alturya.fluenta.tone.ToneTrainerScreen(onDone = { nav.popBackStack() }) }
             composable("conversation") {
                 ConversationScreen(
                     l1 = com.alturya.fluenta.data.Session.l1 ?: "es",
