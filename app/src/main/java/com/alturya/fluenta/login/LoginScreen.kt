@@ -1,21 +1,27 @@
 package com.alturya.fluenta.login
 
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.MicNone
-import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.MailOutline
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
@@ -25,43 +31,45 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.alturya.fluenta.data.Analytics
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.ApiClient
-import com.alturya.fluenta.ui.FluentaButton
+import com.alturya.fluenta.ui.HootMascot
 import kotlinx.coroutines.launch
+
+// Tokens exactos del handoff de Claude Design (Fluenta Login.dc.html).
+private object Lc {
+    val Teal = Color(0xFF0E9D8E)
+    val TealDark = Color(0xFF0A6F64)
+    val Ink = Color(0xFF15201D)
+    val Sub = Color(0xFF5C6562)
+    val Surface = Color(0xFFFBFCFB)
+    val Border = Color(0xFFDCE5E2)
+    val Legal = Color(0xFF9AA39E)
+    val ErrBg = Color(0xFFFFE1DC)
+    val ErrInk = Color(0xFF8A2C22)
+    val ErrIcon = Color(0xFFE8554B)
+    val GoogleBlue = Color(0xFF4285F4)
+}
 
 @Composable
 fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) {
     val context = LocalContext.current
     val vm: LoginViewModel = viewModel()
     val state by vm.state.collectAsState()
+    val scope = rememberCoroutineScope()
 
-    var phone by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var code by remember { mutableStateOf("") }
-    // Email es el canal primario (no depende de Meta). Teléfono = secundario.
-    var mode by remember { mutableStateOf("email") }
-    // Las opciones email/teléfono/Google quedan OCULTAS tras un tap, para que la
-    // primera impresión sea limpia: solo "Empezar gratis". (No "pedir correo".)
-    var showSecondary by remember { mutableStateOf(false) }
-    // Google Web client ID — lo trae el backend (fuente única). Vacío = Google off.
+    var showEmail by remember { mutableStateOf(false) } // el botón email revela el flujo de email
     var googleClientId by remember { mutableStateOf("") }
-    // WhatsApp/teléfono como canal de login. El backend lo congela (app-first) con
-    // whatsappAuth=false; por defecto visible para no romper si la config no carga.
-    var whatsappAuthEnabled by remember { mutableStateOf(true) }
-    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         runCatching { ApiClient.apiNoAuth.getAuthConfig() }.getOrNull()?.let { cfg ->
             cfg.googleClientId?.let { googleClientId = it }
-            // Solo ocultamos ante un false explícito; null/ausente => mantener visible.
-            if (cfg.whatsappAuth == false) { whatsappAuthEnabled = false; mode = "email" }
         }
     }
-
     LaunchedEffect(state) {
         if (state is LoginState.Success) onSuccess((state as LoginState.Success).isNewUser)
     }
 
-    // Lanza el selector de cuentas de Google (Credential Manager) y canjea el ID token.
     fun launchGoogleSignIn() {
         if (googleClientId.isBlank()) return
         Analytics.track(context, Analytics.REGISTER_START, mapOf("method" to "google"))
@@ -74,232 +82,162 @@ fun LoginScreen(onSuccess: (Boolean) -> Unit, onTryGuest: (() -> Unit)? = null) 
                 val request = GetCredentialRequest.Builder().addCredentialOption(option).build()
                 val result = CredentialManager.create(context).getCredential(context, request)
                 val cred = result.credential
-                if (cred is CustomCredential &&
-                    cred.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
-                ) {
-                    val googleCred = GoogleIdTokenCredential.createFrom(cred.data)
-                    vm.signInWithGoogle(context, googleCred.idToken)
+                if (cred is CustomCredential && cred.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                    vm.signInWithGoogle(context, GoogleIdTokenCredential.createFrom(cred.data).idToken)
                 }
-            } catch (_: Exception) {
-                // Usuario canceló o no hay cuentas/Play Services — no es un error duro.
+            } catch (_: Exception) { /* cancelado / sin cuentas — no es error duro */ }
+        }
+    }
+    fun guest() {
+        Analytics.track(context, Analytics.REGISTER_START, mapOf("method" to "device"))
+        onTryGuest?.invoke() ?: vm.signInWithDevice(context)
+    }
+
+    val loading = state is LoginState.Loading
+
+    Column(
+        modifier = Modifier.fillMaxSize().background(Lc.Surface).padding(top = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        // ── Hero: mascota + marca + tagline ──────────────────────────────────
+        Column(
+            modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 28.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            HootMascot(Modifier.size(108.dp), sad = state is LoginState.Error)
+            Spacer(Modifier.height(26.dp))
+            Text("Fluenta", fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = Lc.Ink)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                I18nStore.t("login.tagline", "Habla un idioma nuevo desde el primer día."),
+                fontSize = 15.sp, color = Lc.Sub, textAlign = TextAlign.Center, lineHeight = 22.sp,
+                modifier = Modifier.widthIn(max = 250.dp),
+            )
+        }
+
+        // ── Zona de acciones ─────────────────────────────────────────────────
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 30.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            if (state is LoginState.Error) {
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Lc.ErrBg).padding(11.dp, 11.dp),
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Text("⚠", fontSize = 18.sp, color = Lc.ErrIcon)
+                    Spacer(Modifier.width(9.dp))
+                    Text(
+                        (state as LoginState.Error).message.ifBlank {
+                            I18nStore.t("login.errConn", "No pudimos conectar. Revisa tu internet e inténtalo de nuevo.")
+                        },
+                        fontSize = 13.sp, color = Lc.ErrInk, lineHeight = 19.sp,
+                    )
+                }
+            }
+
+            if (showEmail && state !is LoginState.Loading) {
+                // Flujo de email (revelado por el botón primario)
+                OutlinedTextField(
+                    value = email, onValueChange = { email = it }, singleLine = true,
+                    label = { Text(I18nStore.t("login.emailLabel", "Tu email")) },
+                    shape = RoundedCornerShape(16.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = state !is LoginState.OtpSent,
+                )
+                if (state is LoginState.OtpSent) {
+                    OutlinedTextField(
+                        value = code, onValueChange = { code = it }, singleLine = true,
+                        label = { Text(I18nStore.t("login.codeLabelEmail", "Código del email")) },
+                        shape = RoundedCornerShape(16.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Hard3d("✓ " + I18nStore.t("login.verify", "Verificar"), onClick = { vm.verifyEmailOtp(context, email, code) }, enabled = code.isNotBlank())
+                } else {
+                    Hard3d(I18nStore.t("login.sendCodeEmail", "Enviar código al email"), icon = Icons.Default.MailOutline, onClick = {
+                        Analytics.track(context, Analytics.REGISTER_START, mapOf("method" to "email"))
+                        vm.requestEmailOtp(email)
+                    }, enabled = email.isNotBlank())
+                }
+                GuestText(I18nStore.t("login.back", "← Volver")) { showEmail = false; vm.reset() }
+            } else {
+                // Estado por defecto / cargando: 3 botones en jerarquía.
+                Hard3d(
+                    text = if (loading) I18nStore.t("login.connecting", "Conectando…") else I18nStore.t("login.email", "Continuar con email"),
+                    icon = if (loading) null else Icons.Default.MailOutline,
+                    showSpinner = loading,
+                    onClick = { showEmail = true },
+                    enabled = !loading,
+                )
+                if (state is LoginState.Error) {
+                    Hard3d(I18nStore.t("common.retry", "Reintentar"), icon = Icons.Default.Refresh, onClick = { vm.reset() })
+                }
+                if (googleClientId.isNotBlank()) {
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(RoundedCornerShape(16.dp))
+                            .background(Color.White).border(1.dp, Lc.Border, RoundedCornerShape(16.dp))
+                            .clickable(enabled = !loading) { launchGoogleSignIn() }.padding(14.dp),
+                        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("G", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = if (loading) Lc.Legal else Lc.GoogleBlue)
+                        Spacer(Modifier.width(10.dp))
+                        Text(I18nStore.t("login.continueGoogle", "Continuar con Google"), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = if (loading) Lc.Legal else Lc.Ink)
+                    }
+                }
+                GuestText(I18nStore.t("login.guest", "Entrar como invitado"), enabled = !loading) { guest() }
+            }
+
+            // Legal
+            if (state !is LoginState.OtpSent) {
+                Text(
+                    I18nStore.t("login.legal", "Al continuar aceptas los Términos y la Privacidad."),
+                    fontSize = 11.sp, color = Lc.Legal, textAlign = TextAlign.Center, lineHeight = 16.sp,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp),
+                )
             }
         }
     }
+}
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        // ── Brand hero ────────────────────────────────────────────────────────
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            modifier = Modifier.size(96.dp),
+// Botón primario con relieve 3D (box-shadow 0 4px 0 TealDark del diseño).
+@Composable
+private fun Hard3d(
+    text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    showSpinner: Boolean = false,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+) {
+    Box(Modifier.fillMaxWidth().height(54.dp)) {
+        Box(Modifier.fillMaxWidth().height(50.dp).align(Alignment.BottomCenter).clip(RoundedCornerShape(16.dp)).background(Lc.TealDark))
+        Box(
+            Modifier.fillMaxWidth().height(50.dp).align(Alignment.TopCenter).clip(RoundedCornerShape(16.dp))
+                .background(if (enabled) Lc.Teal else Lc.Teal.copy(alpha = 0.7f)).clickable(enabled = enabled, onClick = onClick),
+            contentAlignment = Alignment.Center,
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.MicNone, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
-            }
-        }
-        Spacer(Modifier.height(16.dp))
-        Text(
-            "Fluenta",
-            style = MaterialTheme.typography.displaySmall,
-            fontWeight = FontWeight.ExtraBold,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            I18nStore.t("login.tagline", "Habla un idioma nuevo con tu tutor de IA"),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(24.dp))
-
-        // Play-first onboarding: try a lesson before registering
-        if (onTryGuest != null) {
-            FluentaButton(
-                text = I18nStore.t("login.tryNow", "▶ Probar una lección ahora"),
-                onClick = onTryGuest,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(12.dp))
-            Text(
-                I18nStore.t("login.orCreateAccount", "— o crea tu cuenta gratis —"),
-                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
-                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(12.dp))
-        } else {
-            Spacer(Modifier.height(12.dp))
-        }
-
-        // Cuenta instantánea: el camino primario, cero fricción. Entra y guarda
-        // progreso sin email ni código. (Después puede vincular email/Google.)
-        if (state !is LoginState.OtpSent) {
-            FluentaButton(
-                text = I18nStore.t("login.startFree", "Empezar gratis"),
-                onClick = {
-                    Analytics.track(context, Analytics.REGISTER_START, mapOf("method" to "device"))
-                    vm.signInWithDevice(context)
-                },
-                enabled = state !is LoginState.Loading,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(12.dp))
-            if (!showSecondary) {
-                TextButton(onClick = { showSecondary = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        I18nStore.t("login.saveProgress", "Guardar mi progreso (email · Google)"),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                if (showSpinner) {
+                    CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.5.dp)
+                    Spacer(Modifier.width(10.dp))
+                } else if (icon != null) {
+                    Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(21.dp))
+                    Spacer(Modifier.width(9.dp))
                 }
+                Text(text, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
             }
-        }
-
-        // Google Sign-In: un toque, sin OTP, sin Meta. Canal primario cuando está configurado.
-        if (showSecondary && googleClientId.isNotBlank() && state !is LoginState.OtpSent) {
-            OutlinedButton(
-                onClick = { launchGoogleSignIn() },
-                enabled = state !is LoginState.Loading,
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-            ) { Text(I18nStore.t("login.continueGoogle", "Continuar con Google")) }
-            Spacer(Modifier.height(12.dp))
-        }
-
-        // Selector de canal: Email (primario) / Teléfono. Solo tras revelar "guardar
-        // progreso". Con WhatsApp congelado (whatsappAuth=false) queda solo Email, así
-        // que ocultamos el selector entero — no tiene sentido un toggle de una opción.
-        if (showSecondary && whatsappAuthEnabled && state !is LoginState.OtpSent) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ModeButton(Icons.Default.Email, "Email", mode == "email", { mode = "email"; vm.reset() }, Modifier.weight(1f))
-                ModeButton(Icons.Default.Phone, I18nStore.t("login.phone", "Teléfono"), mode == "phone", { mode = "phone"; vm.reset() }, Modifier.weight(1f))
-            }
-            Spacer(Modifier.height(16.dp))
-        }
-
-        if (showSecondary && mode == "email") {
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text(I18nStore.t("login.emailLabel", "Tu email")) },
-                singleLine = true,
-                shape = MaterialTheme.shapes.medium,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                modifier = Modifier.fillMaxWidth(),
-                enabled = state !is LoginState.OtpSent && state !is LoginState.Loading,
-            )
-        } else if (showSecondary) {
-            OutlinedTextField(
-                value = phone,
-                onValueChange = { phone = it },
-                label = { Text(I18nStore.t("login.phoneLabel", "Teléfono (ej: +5491123456789)")) },
-                singleLine = true,
-                shape = MaterialTheme.shapes.medium,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                modifier = Modifier.fillMaxWidth(),
-                enabled = state !is LoginState.OtpSent && state !is LoginState.Loading,
-            )
-        }
-
-        if (state is LoginState.OtpSent || state is LoginState.Error) {
-            Spacer(Modifier.height(16.dp))
-            OutlinedTextField(
-                value = code,
-                onValueChange = { code = it },
-                label = { Text(if (mode == "email") I18nStore.t("login.codeLabelEmail", "Código del email") else I18nStore.t("login.codeLabel", "Código de WhatsApp")) },
-                singleLine = true,
-                shape = MaterialTheme.shapes.medium,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        if (state is LoginState.Loading) {
-            CircularProgressIndicator()
-        } else if (showSecondary && state !is LoginState.OtpSent) {
-            Button(
-                onClick = {
-                    Analytics.track(context, Analytics.REGISTER_START, mapOf("method" to mode))
-                    if (mode == "email") vm.requestEmailOtp(email) else vm.requestOtp(phone)
-                },
-                enabled = if (mode == "email") email.isNotBlank() else phone.isNotBlank(),
-                modifier = Modifier.fillMaxWidth().height(54.dp),
-            ) {
-                Text(
-                    if (mode == "email") I18nStore.t("login.sendCodeEmail", "Enviar código al email")
-                    else I18nStore.t("login.sendCode", "Enviar código por WhatsApp"),
-                )
-            }
-        } else if (state is LoginState.OtpSent) {
-            Button(
-                onClick = { if (mode == "email") vm.verifyEmailOtp(context, email, code) else vm.verifyOtp(context, phone, code) },
-                enabled = code.isNotBlank(),
-                modifier = Modifier.fillMaxWidth().height(54.dp),
-            ) { Text(I18nStore.t("login.verify", "Verificar")) }
-        }
-
-        if (state is LoginState.Error) {
-            Spacer(Modifier.height(12.dp))
-            Text(
-                (state as LoginState.Error).message,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                textAlign = TextAlign.Center,
-            )
-        }
-
-        if (showSecondary) {
-            Spacer(Modifier.height(16.dp))
-            Text(
-                if (mode == "email") I18nStore.t("login.privacyHintEmail", "Te enviaremos un código a tu email para entrar.")
-                else I18nStore.t("login.privacyHint", "Te enviaremos un código por WhatsApp para entrar."),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-        }
-
-        // Solo en modo teléfono: fallback de la ventana de 24h de WhatsApp.
-        if (mode == "phone" && (state is LoginState.OtpSent || state is LoginState.Error)) {
-            Spacer(Modifier.height(16.dp))
-            Text(
-                I18nStore.t("login.otpHelp", "¿No te llega el código? Escríbele al bot por WhatsApp y vuelve a tocar \"Enviar\"."),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(8.dp))
-            OutlinedButton(onClick = {
-                runCatching {
-                    context.startActivity(
-                        android.content.Intent(
-                            android.content.Intent.ACTION_VIEW,
-                            android.net.Uri.parse("https://wa.me/593982645527?text=Hola"),
-                        ),
-                    )
-                }
-            }) { Text(I18nStore.t("login.openWhatsapp", "Abrir WhatsApp")) }
         }
     }
 }
 
 @Composable
-private fun ModeButton(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val content: @Composable RowScope.() -> Unit = {
-        Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(6.dp))
-        Text(label)
-    }
-    if (selected) {
-        Button(onClick = onClick, modifier = modifier, content = content)
-    } else {
-        OutlinedButton(onClick = onClick, modifier = modifier, content = content)
-    }
+private fun GuestText(text: String, enabled: Boolean = true, onClick: () -> Unit) {
+    Text(
+        text, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+        color = if (enabled) Lc.TealDark else Lc.Legal, textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
+            .clickable(enabled = enabled, onClick = onClick).wrapContentHeight(),
+    )
 }
