@@ -1,6 +1,10 @@
 package com.alturya.fluenta.tone
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.speech.tts.TextToSpeech
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,7 +14,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.core.content.ContextCompat
+import kotlinx.coroutines.launch
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -84,16 +91,35 @@ fun ToneTrainerScreen(words: List<ToneWord>? = null, onDone: () -> Unit = {}) {
     }
 
     var idx by remember { mutableStateOf(0) }
-    var phase by remember { mutableStateOf("present") } // present | quiz
+    var phase by remember { mutableStateOf("present") } // present | quiz | speak
     var picked by remember { mutableStateOf<Int?>(null) }
+    // Fase de voz: grabar al usuario y puntuar su tono con ToneScorer.
+    var recState by remember { mutableStateOf("idle") } // idle | recording | result
+    var score by remember { mutableStateOf<ToneScorer.ToneScore?>(null) }
+    val scope = rememberCoroutineScope()
+    var hasMic by remember {
+        mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
+    }
+    val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { hasMic = it }
     val w = deck[idx.coerceIn(0, deck.lastIndex)]
     val total = deck.size
 
-    LaunchedEffect(idx, phase, ready) { if (ready) say(w.hanzi) }
+    LaunchedEffect(idx, phase, ready) { if (ready && phase != "speak") say(w.hanzi) }
 
     fun next() {
         picked = null
+        recState = "idle"; score = null
         if (idx + 1 >= total) onDone() else { idx += 1; phase = "present" }
+    }
+
+    fun startRecording() {
+        if (!hasMic) { permLauncher.launch(Manifest.permission.RECORD_AUDIO); return }
+        recState = "recording"; score = null
+        scope.launch {
+            val pcm = ToneMicRecorder.record()
+            score = if (pcm != null) ToneScorer.score(pcm, ToneMicRecorder.SAMPLE_RATE, w.tone) else ToneScorer.emptyScore(w.tone)
+            recState = "result"
+        }
     }
 
     Column(Modifier.fillMaxSize().background(Tc.Surface).padding(top = 12.dp)) {
@@ -103,7 +129,7 @@ fun ToneTrainerScreen(words: List<ToneWord>? = null, onDone: () -> Unit = {}) {
             Spacer(Modifier.width(12.dp))
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 repeat(total) { i ->
-                    Box(Modifier.weight(1f).height(7.dp).clip(RoundedCornerShape(999.dp)).background(if (i < idx || (i == idx && phase == "quiz")) Tc.Teal else Tc.Track))
+                    Box(Modifier.weight(1f).height(7.dp).clip(RoundedCornerShape(999.dp)).background(if (i < idx || (i == idx && phase != "present")) Tc.Teal else Tc.Track))
                 }
             }
         }
@@ -132,7 +158,7 @@ fun ToneTrainerScreen(words: List<ToneWord>? = null, onDone: () -> Unit = {}) {
             Box(Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 26.dp)) {
                 Hard3dBtn("Continuar  →") { phase = "quiz" }
             }
-        } else {
+        } else if (phase == "quiz") {
             // ── 2/3 · Entrenador de tono: elige + feedback ──
             Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 22.dp)) {
                 Spacer(Modifier.height(14.dp))
@@ -175,12 +201,141 @@ fun ToneTrainerScreen(words: List<ToneWord>? = null, onDone: () -> Unit = {}) {
             Box(Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 22.dp)) {
                 when (picked) {
                     null -> Text("Toca una opción para responder", fontSize = 12.sp, color = Tc.Muted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                    w.tone -> Hard3dBtn("✓ ¡Correcto!  →", color = Tc.Green, dark = Color(0xFF158052)) { next() }
+                    w.tone -> Column {
+                        Hard3dBtn("🎤 Repetir en voz alta", color = Tc.Green, dark = Color(0xFF158052)) { recState = "idle"; score = null; phase = "speak" }
+                        Text("Saltar  →", fontSize = 13.sp, color = Tc.Sub, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 12.dp).clickable { next() })
+                    }
                     else -> Column {
                         Text("Era el ${w.tone}.º tono: ${w.marked}", fontSize = 13.sp, color = Tc.Coral, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp))
                         Hard3dBtn("Continuar  →") { next() }
                     }
                 }
+            }
+        } else {
+            // ── 4 · Repetir en voz alta: graba + puntúa el tono (motor ToneScorer) ──
+            SpeakPhase(
+                word = w, hasMic = hasMic, recState = recState, score = score,
+                onRecord = { startRecording() },
+                onRetry = { recState = "idle"; score = null },
+                onContinue = { next() },
+                onListen = { say(w.hanzi) },
+            )
+        }
+    }
+}
+
+/** Fase de producción: el usuario repite el tono, se graba y se puntúa contra el esperado. */
+@Composable
+private fun ColumnScope.SpeakPhase(
+    word: ToneWord, hasMic: Boolean, recState: String, score: ToneScorer.ToneScore?,
+    onRecord: () -> Unit, onRetry: () -> Unit, onContinue: () -> Unit, onListen: () -> Unit,
+) {
+    Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 26.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        Text("REPITE EL TONO", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Tc.TealDark, letterSpacing = 1.5.sp)
+        Spacer(Modifier.height(14.dp))
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(word.hanzi, fontSize = 64.sp, fontWeight = FontWeight.Bold, color = Tc.HeroInk)
+            Spacer(Modifier.width(10.dp))
+            Text(word.marked, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = PinyinColors.of(word.tone))
+        }
+        Text(word.meaning, fontSize = 15.sp, color = Tc.Sub, modifier = Modifier.padding(top = 2.dp))
+        Spacer(Modifier.height(8.dp))
+        Box(Modifier.fillMaxWidth().padding(top = 6.dp), contentAlignment = Alignment.Center) {
+            Surface(shape = RoundedCornerShape(999.dp), color = Color.White, border = androidx.compose.foundation.BorderStroke(1.dp, Tc.Border), modifier = Modifier.clickable { onListen() }) {
+                Row(Modifier.padding(horizontal = 14.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.VolumeUp, contentDescription = null, tint = Tc.Sub, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Oír el modelo", color = Tc.Sub, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+
+        when (recState) {
+            "result" -> {
+                val s = score
+                if (s == null || !s.voiced) {
+                    Text("🤫 No te oí bien", fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = Tc.Ink)
+                    Text("Acércate al micrófono y vuelve a intentar.", fontSize = 13.sp, color = Tc.Sub, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp))
+                } else {
+                    val good = s.score >= 80; val mid = s.score in 60..79
+                    val ring = if (good) Tc.Green else if (mid) Color(0xFFE0A000) else Tc.Coral
+                    // anillo de score
+                    Box(Modifier.size(118.dp), contentAlignment = Alignment.Center) {
+                        Canvas(Modifier.fillMaxSize()) {
+                            val sw = 10.dp.toPx()
+                            drawArc(Tc.Track, -90f, 360f, false, style = Stroke(sw, cap = StrokeCap.Round))
+                            drawArc(ring, -90f, 360f * s.score / 100f, false, style = Stroke(sw, cap = StrokeCap.Round))
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("${s.score}", fontSize = 34.sp, fontWeight = FontWeight.Bold, color = ring)
+                            Text("/100", fontSize = 11.sp, color = Tc.Muted)
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(if (good) "✓ ¡Buen tono!" else if (mid) "Casi — afina la curva" else "Sigue practicando", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = ring)
+                    if (!s.correct) {
+                        Text("Sonó a ${s.detectedTone}.º tono; buscabas el ${s.expectedTone}.º.", fontSize = 12.sp, color = Tc.Sub, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp))
+                    }
+                    Spacer(Modifier.height(14.dp))
+                    // tu curva (color del veredicto) vs la esperada (gris)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("esperada", fontSize = 10.sp, color = Tc.Muted)
+                        Spacer(Modifier.width(8.dp))
+                        ContourCompare(expectedTone = s.expectedTone, user = s.contour, color = ring, Modifier.size(width = 150.dp, height = 56.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("tú", fontSize = 10.sp, color = ring, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+            else -> {
+                val recording = recState == "recording"
+                Box(Modifier.size(112.dp).clip(CircleShape).background(if (recording) Tc.Coral else Tc.Teal).clickable(enabled = !recording) { onRecord() }, contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Mic, contentDescription = "Grabar", tint = Color.White, modifier = Modifier.size(52.dp))
+                }
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    when { recording -> "Escuchando…"; !hasMic -> "Toca para dar permiso de micrófono"; else -> "Toca y repite el tono" },
+                    fontSize = 13.sp, color = Tc.Sub, textAlign = TextAlign.Center,
+                )
+            }
+        }
+    }
+    // pie
+    Box(Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 22.dp)) {
+        when (recState) {
+            "result" -> Column {
+                Hard3dBtn("Continuar  →") { onContinue() }
+                Text("↻  Reintentar", fontSize = 13.sp, color = Tc.Sub, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 12.dp).clickable { onRetry() })
+            }
+            "recording" -> Text("Grabando tu voz…", fontSize = 12.sp, color = Tc.Muted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+            else -> Text("Saltar  →", fontSize = 13.sp, color = Tc.Sub, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().clickable { onContinue() })
+        }
+    }
+}
+
+/** Dibuja la curva ESPERADA del tono (gris) y encima la del usuario (color del veredicto). */
+@Composable
+private fun ContourCompare(expectedTone: Int, user: FloatArray, color: Color, modifier: Modifier) {
+    Canvas(modifier) {
+        val w = size.width; val h = size.height; val pad = h * 0.15f
+        fun y(level: Float) = h - pad - level * (h - 2 * pad) // level 0..1 (grave..agudo)
+        // esperada: plantilla idealizada del tono
+        val tpl: List<Float> = when (expectedTone) {
+            1 -> listOf(0.85f, 0.85f, 0.85f, 0.85f, 0.85f)
+            2 -> listOf(0.45f, 0.55f, 0.68f, 0.82f, 0.95f)
+            3 -> listOf(0.5f, 0.28f, 0.18f, 0.45f, 0.9f)
+            else -> listOf(0.95f, 0.78f, 0.58f, 0.38f, 0.18f)
+        }
+        for (i in 0 until tpl.size - 1) {
+            drawLine(Tc.Muted, Offset(w * i / (tpl.size - 1f), y(tpl[i])), Offset(w * (i + 1) / (tpl.size - 1f), y(tpl[i + 1])), strokeWidth = 3.dp.toPx(), cap = StrokeCap.Round)
+        }
+        // usuario: normaliza su contorno (semitonos) a 0..1 y lo dibuja encima
+        if (user.size >= 2) {
+            val mn = user.minOrNull() ?: 0f; val mx = user.maxOrNull() ?: 1f; val rng = (mx - mn).takeIf { it > 0.5f } ?: 1f
+            val pts = user.mapIndexed { i, v -> Offset(w * i / (user.size - 1f), y(0.1f + 0.8f * (v - mn) / rng)) }
+            for (i in 0 until pts.size - 1) {
+                drawLine(color, pts[i], pts[i + 1], strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
             }
         }
     }
