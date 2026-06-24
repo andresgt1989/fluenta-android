@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +44,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alturya.fluenta.R
+import com.alturya.fluenta.data.Analytics
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.network.GuestPostLessonCta
@@ -128,6 +130,18 @@ fun GuestLessonScreen(l1: String, l2: String, onSignUp: () -> Unit, onBack: () -
         factory = GuestLessonViewModel.Factory(l1, l2),
     )
     val state by vm.state.collectAsState()
+
+    // fluenta_events — ACTIVACIÓN (fuga #1 del funnel, ~4% llega a lección). Antes
+    // esta pantalla NO emitía nada, así que "llegar a la 1ª lección" era invisible.
+    // lesson_start (guest) = el numerador real de la activación; lesson_complete al
+    // terminar la prueba. Props l1/l2 para segmentar por par (es→zh = flagship).
+    val ctx = LocalContext.current
+    LaunchedEffect(Unit) {
+        Analytics.track(ctx, Analytics.LESSON_START, mapOf("guest" to "true", "l1" to l1, "l2" to l2))
+    }
+    LaunchedEffect(state.done) {
+        if (state.done) Analytics.track(ctx, Analytics.LESSON_COMPLETE, mapOf("guest" to "true", "l1" to l1, "l2" to l2))
+    }
 
     Box(Modifier.fillMaxSize().background(FluentaTokens.Surface)) {
         when {

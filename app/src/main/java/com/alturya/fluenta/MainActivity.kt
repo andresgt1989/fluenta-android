@@ -205,6 +205,14 @@ class MainActivity : ComponentActivity() {
                             onStart = {
                                 val l1 = java.util.Locale.getDefault().language
                                     .takeIf { it in listOf("es", "en", "pt") } ?: "es"
+                                // fluenta_events: marca la entrada por el fast-path para poder
+                                // medir su tasa de activación (onboarding_start → lesson_start)
+                                // vs el onboarding de 3 pasos. flow=fastpath segmenta el funnel.
+                                com.alturya.fluenta.data.Analytics.track(
+                                    context,
+                                    com.alturya.fluenta.data.Analytics.ONBOARDING_START,
+                                    mapOf("flow" to "fastpath", "l1" to l1, "l2" to "zh"),
+                                )
                                 rootNav.navigate("guest_lesson/$l1/zh")
                             },
                             onLogin = { rootNav.navigate("login") },
