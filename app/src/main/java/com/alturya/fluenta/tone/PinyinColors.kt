@@ -23,4 +23,24 @@ object PinyinColors {
         4 -> Tone4
         else -> Neutral
     }
+
+    // Vocales con marca de tono (mismas que produce ToneWord.marked / mark()).
+    private const val T1 = "āēīōūǖ"
+    private const val T2 = "áéíóúǘ"
+    private const val T3 = "ǎěǐǒǔǚ"
+    private const val T4 = "àèìòùǜ"
+
+    /** Detecta el tono (1..4) de un pinyin CON marca diacrítica; 0 si es neutro/sin marca. */
+    fun toneOfMarked(pinyin: String): Int {
+        for (c in pinyin) when (c) {
+            in T1 -> return 1
+            in T2 -> return 2
+            in T3 -> return 3
+            in T4 -> return 4
+        }
+        return 0
+    }
+
+    /** Color a partir de un pinyin con marca (p. ej. "mǎ" → azul). Reutilizable en cualquier pantalla. */
+    fun ofMarked(pinyin: String): Color = of(toneOfMarked(pinyin))
 }

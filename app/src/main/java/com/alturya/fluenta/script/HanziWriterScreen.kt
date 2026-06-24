@@ -1,19 +1,24 @@
 package com.alturya.fluenta.script
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alturya.fluenta.data.I18nStore
+import com.alturya.fluenta.tone.PinyinColors
 
 // Pantalla DEDICADA de escritura de hanzi, a pantalla completa.
 //
@@ -21,7 +26,20 @@ import com.alturya.fluenta.data.I18nStore
 // WebView del trazo secuestraba el gesto vertical → no se podía scrollear ni dibujar
 // bien. Aquí el lienzo ocupa toda la pantalla (sin scroll alrededor) y se navega entre
 // caracteres con ‹ ›. Reusa ScriptViewModel para no duplicar la carga de la lección.
-@OptIn(ExperimentalMaterial3Api::class)
+//
+// Estilo: kit de Claude Design ESMERALDA, alineado 1:1 con su hermana HanziReviewScreen
+// (mismo palette + botones 3D). El pinyin se colorea por TONO (PinyinColors, reutilizable).
+private object Hw {
+    val Bg = Color(0xFFF1FAF6)
+    val Emerald = Color(0xFF10B981)
+    val EmeraldDark = Color(0xFF059669)
+    val Ink = Color(0xFF0F2E27)
+    val Muted = Color(0xFF5B7268)
+    val Track = Color(0xFFCDEEE6)
+    val Surface = Color(0xFFFFFFFF)
+    val Border = Color(0xFFDCEEE7)
+}
+
 @Composable
 fun HanziWriterScreen(l2: String, startGlyph: String? = null, onDone: () -> Unit = {}) {
     val vm: ScriptViewModel = viewModel()
@@ -31,29 +49,34 @@ fun HanziWriterScreen(l2: String, startGlyph: String? = null, onDone: () -> Unit
 
     val items = state.lesson?.items.orEmpty()
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(I18nStore.t("hanzi.writer.title", "Escribir trazos")) },
-                navigationIcon = {
-                    IconButton(onClick = onDone) {
-                        Icon(Icons.Default.Close, contentDescription = I18nStore.t("common.close", "Cerrar"))
-                    }
-                },
+    Column(Modifier.fillMaxSize().background(Hw.Bg)) {
+        // ── chrome: cerrar + título ──
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                Modifier.size(36.dp).clip(CircleShape).background(Hw.Surface).clickable { onDone() },
+                contentAlignment = Alignment.Center,
+            ) { Text("✕", fontSize = 17.sp, color = Hw.Muted, fontWeight = FontWeight.Bold) }
+            Text(
+                I18nStore.t("hanzi.writer.title", "Escribir trazos"),
+                Modifier.weight(1f), textAlign = TextAlign.Center,
+                fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = Hw.Ink,
             )
-        },
-    ) { pad ->
-        Box(Modifier.fillMaxSize().padding(pad)) {
+            Spacer(Modifier.size(36.dp)) // equilibra el botón de cerrar
+        }
+
+        Box(Modifier.fillMaxSize()) {
             when {
                 state.phase == ScriptPhase.LOADING ->
-                    CircularProgressIndicator(Modifier.align(Alignment.Center))
+                    CircularProgressIndicator(Modifier.align(Alignment.Center), color = Hw.Emerald)
 
                 items.isEmpty() ->
                     Text(
                         I18nStore.t("hanzi.writer.empty", "No hay caracteres para practicar todavía."),
                         Modifier.align(Alignment.Center).padding(24.dp),
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center, color = Hw.Muted,
                     )
 
                 else -> {
@@ -66,11 +89,14 @@ fun HanziWriterScreen(l2: String, startGlyph: String? = null, onDone: () -> Unit
                         Modifier.fillMaxSize().padding(horizontal = 16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        // Pista de lectura: romanización + significado (sin idioma puente).
+                        // Pista de lectura: pinyin coloreado por tono + significado.
                         Spacer(Modifier.height(8.dp))
-                        Text(item.romanization, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        Text(
+                            item.romanization, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold,
+                            color = PinyinColors.ofMarked(item.romanization),
+                        )
                         item.meaning?.takeIf { it.isNotBlank() }?.let {
-                            Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(it, fontSize = 16.sp, color = Hw.Muted)
                         }
 
                         // Lienzo de trazos: ocupa el espacio libre, sin scroll alrededor.
@@ -79,23 +105,15 @@ fun HanziWriterScreen(l2: String, startGlyph: String? = null, onDone: () -> Unit
                             key(item.glyph) { StrokeWriter(glyph = item.glyph) }
                         }
 
-                        // Navegación entre caracteres.
+                        // Navegación entre caracteres (botones 3D del kit).
                         Row(
                             Modifier.fillMaxWidth().padding(vertical = 12.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            FilledTonalButton(onClick = { if (index > 0) index-- }, enabled = index > 0) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text(I18nStore.t("common.prev", "Anterior"), maxLines = 1)
-                            }
-                            Text("${index + 1} / ${items.size}", style = MaterialTheme.typography.labelLarge)
-                            FilledTonalButton(onClick = { if (index < items.lastIndex) index++ }, enabled = index < items.lastIndex) {
-                                Text(I18nStore.t("common.next", "Siguiente"), maxLines = 1)
-                                Spacer(Modifier.width(6.dp))
-                                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
-                            }
+                            NavBtn(I18nStore.t("common.prev", "‹ Anterior"), enabled = index > 0) { if (index > 0) index-- }
+                            Text("${index + 1} / ${items.size}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Hw.Muted)
+                            NavBtn(I18nStore.t("common.next", "Siguiente ›"), enabled = index < items.lastIndex) { if (index < items.lastIndex) index++ }
                         }
                     }
                 }
@@ -110,5 +128,20 @@ fun HanziWriterScreen(l2: String, startGlyph: String? = null, onDone: () -> Unit
                 )
             }
         }
+    }
+}
+
+/** Botón de navegación 3D del kit esmeralda (borde inferior oscuro). */
+@Composable
+private fun NavBtn(text: String, enabled: Boolean, onClick: () -> Unit) {
+    val alpha = if (enabled) 1f else 0.4f
+    Box(Modifier.height(46.dp)) {
+        Box(Modifier.matchParentSize().padding(top = 4.dp).clip(RoundedCornerShape(14.dp)).background(Hw.EmeraldDark.copy(alpha = alpha)))
+        Box(
+            Modifier.fillMaxHeight().padding(bottom = 4.dp).clip(RoundedCornerShape(14.dp))
+                .background(Hw.Emerald.copy(alpha = alpha)).clickable(enabled = enabled, onClick = onClick)
+                .padding(horizontal = 22.dp),
+            contentAlignment = Alignment.Center,
+        ) { Text(text, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1) }
     }
 }

@@ -44,4 +44,15 @@ class ToneVocabTest {
         assertEquals(PinyinColors.Neutral, PinyinColors.of(0))
         assertEquals(PinyinColors.Neutral, PinyinColors.of(5))
     }
+
+    @Test fun detects_tone_from_marked_pinyin() {
+        assertEquals(1, PinyinColors.toneOfMarked("mā"))
+        assertEquals(2, PinyinColors.toneOfMarked("má"))
+        assertEquals(3, PinyinColors.toneOfMarked("mǎ"))
+        assertEquals(4, PinyinColors.toneOfMarked("mà"))
+        assertEquals(3, PinyinColors.toneOfMarked("nǐ hǎo")) // primera marca encontrada
+        assertEquals(0, PinyinColors.toneOfMarked("ma"))     // neutro / sin marca
+        assertEquals(PinyinColors.Tone3, PinyinColors.ofMarked("shuǐ"))
+        assertEquals(PinyinColors.Neutral, PinyinColors.ofMarked("de"))
+    }
 }
