@@ -26,6 +26,10 @@ object Streak {
         return ((streakDays - prev).toFloat() / span).coerceIn(0f, 1f)
     }
 
+    /** ¿[streakDays] cae EXACTAMENTE en un hito celebrable? (mismo set que el
+     *  rastreador de "próximo hito": la celebración no debe inventar sus propios hitos). */
+    fun isMilestone(streakDays: Int): Boolean = streakDays in MILESTONES
+
     /** Mejor racha = máximo entre la guardada localmente y la actual. */
     fun bestStreak(saved: Int, current: Int): Int = maxOf(saved, current)
 

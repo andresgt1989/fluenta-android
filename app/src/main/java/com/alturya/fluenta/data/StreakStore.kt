@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.alturya.fluenta.gamification.Streak
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 private val Context.streakDataStore by preferencesDataStore(name = "streak")
@@ -19,6 +20,7 @@ private val Context.streakDataStore by preferencesDataStore(name = "streak")
 object StreakStore {
     private val BEST = intPreferencesKey("best_streak")
     private val SHIELDS = intPreferencesKey("streak_shields")
+    private val CELEBRATED = intPreferencesKey("celebrated_streak")
 
     /** Mejor racha registrada (el récord que el usuario intenta batir). */
     fun best(context: Context): Flow<Int> =
@@ -41,5 +43,13 @@ object StreakStore {
         context.streakDataStore.edit {
             it[SHIELDS] = ((it[SHIELDS] ?: 1) - 1).coerceAtLeast(0)
         }
+    }
+
+    /** Mayor día de racha ya celebrado (para no repetir la celebración del hito). */
+    suspend fun lastCelebrated(context: Context): Int =
+        context.streakDataStore.data.first()[CELEBRATED] ?: 0
+
+    suspend fun markCelebrated(context: Context, day: Int) {
+        context.streakDataStore.edit { it[CELEBRATED] = day }
     }
 }

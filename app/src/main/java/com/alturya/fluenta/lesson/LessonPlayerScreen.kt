@@ -1232,6 +1232,46 @@ private fun ResultView(
     var visible by remember { mutableStateOf(false) }
     val xpScale = remember { Animatable(0f) }
 
+    // Handoff "Fluenta Gamificación" (estado 3): celebración de racha en HITOS
+    // (3/7/14/30… días), una sola vez por hito. Tiene prioridad visual sobre el CSAT.
+    var streakCelebrate by remember { mutableStateOf(0) }
+    LaunchedEffect(result.newStreakDays, result.passed) {
+        val d = result.newStreakDays ?: 0
+        if (result.passed && com.alturya.fluenta.gamification.isStreakMilestone(d, com.alturya.fluenta.data.StreakStore.lastCelebrated(context))) {
+            streakCelebrate = d
+            com.alturya.fluenta.data.StreakStore.markCelebrated(context, d)
+        }
+    }
+    if (streakCelebrate > 0) {
+        com.alturya.fluenta.gamification.StreakCelebrationSheet(
+            days = streakCelebrate,
+            xpEarned = result.xpEarned,
+            onClose = { streakCelebrate = 0 },
+            onShare = {
+                context.startActivity(
+                    Intent.createChooser(
+                        Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, I18nStore.t("streak.share.text", "🔥 Racha de {n} días en Fluenta · fluenta.alturya.com").replace("{n}", "$streakCelebrate"))
+                        },
+                        I18nStore.t("result.shareTitle", "Compartir mi progreso"),
+                    ),
+                )
+            },
+        )
+    }
+
+    // Handoff "Fluenta Feedback" (estado 4): el CSAT 0-10 se pide al FIN DE SESIÓN
+    // (lección aprobada), máx. 1 vez / 7 días — ver FeedbackStore.canAskCsat.
+    // Solo si NO hay celebración de racha en curso (no apilar dos overlays).
+    var showCsat by remember { mutableStateOf(false) }
+    LaunchedEffect(result.passed) {
+        if (result.passed && com.alturya.fluenta.data.FeedbackStore.canAskCsat(context)) showCsat = true
+    }
+    if (showCsat && streakCelebrate == 0) {
+        com.alturya.fluenta.ui.CsatSheet(screen = "lesson_complete", onClose = { showCsat = false })
+    }
+
     LaunchedEffect(Unit) {
         visible = true
         if (result.passed) {

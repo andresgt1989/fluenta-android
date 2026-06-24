@@ -39,6 +39,22 @@ class StreakTest {
         assertEquals(8, Streak.bestStreak(5, 8))
     }
 
+    @Test fun isMilestone_onlyTrueOnDefinedMilestones() {
+        assertTrue(Streak.isMilestone(7))
+        assertTrue(Streak.isMilestone(10))   // 10 está en el set de la app
+        assertFalse(Streak.isMilestone(8))
+        assertFalse(Streak.isMilestone(0))
+    }
+
+    @Test fun isStreakMilestone_firesOncePerMilestone() {
+        // Día 7 con hito 3 ya celebrado → celebra.
+        assertTrue(com.alturya.fluenta.gamification.isStreakMilestone(7, lastCelebrated = 3))
+        // Mismo hito ya celebrado → no repite.
+        assertFalse(com.alturya.fluenta.gamification.isStreakMilestone(7, lastCelebrated = 7))
+        // Día sin hito → nunca celebra.
+        assertFalse(com.alturya.fluenta.gamification.isStreakMilestone(8, lastCelebrated = 3))
+    }
+
     @Test fun atRisk_onlyWhenStreakAliveButNoActivityToday() {
         assertTrue(Streak.atRisk(streakDays = 7, todayXp = 0))
         assertFalse(Streak.atRisk(streakDays = 7, todayXp = 15)) // ya estudió hoy
