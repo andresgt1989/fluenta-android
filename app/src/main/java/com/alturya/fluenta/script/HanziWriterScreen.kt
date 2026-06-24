@@ -100,6 +100,15 @@ fun HanziWriterScreen(l2: String, startGlyph: String? = null, onDone: () -> Unit
                     }
                 }
             }
+
+            // Feedback colapsado (handoff "Fluenta Feedback" · estado 5: pantalla de
+            // FOCO). Pill discreto en esquina que no tapa el trazado; respeta el tope 72h.
+            if (items.isNotEmpty() && state.phase != ScriptPhase.LOADING) {
+                com.alturya.fluenta.ui.FeedbackPill(
+                    screen = "hanzi_writer",
+                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+                )
+            }
         }
     }
 }
