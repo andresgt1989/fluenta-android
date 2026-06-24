@@ -489,6 +489,10 @@ private fun EndedSummary(guest: Boolean, state: ConvoUiState, onDone: () -> Unit
                     onClick = onDone,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Spacer(Modifier.height(14.dp))
+                // Feedback de 1 toque del wedge (activación = fuga #1) — solo al
+                // terminar, sin interrumpir. Handoff "Fluenta Feedback".
+                com.alturya.fluenta.ui.FeedbackBar(screen = "conversation")
             }
         }
     }

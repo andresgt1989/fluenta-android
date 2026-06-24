@@ -43,6 +43,13 @@ interface ApiService {
     @POST("api/events")
     suspend fun postEvent(@Body body: EventBody): Response<ResponseBody>
 
+    // A/B experiment variant assignment (sticky, deterministic per user+experiment)
+    @GET("api/experiments/assign")
+    suspend fun getExperimentVariant(
+        @Query("key") key: String,
+        @Query("anonId") anonId: String? = null,
+    ): ExperimentAssignResponse
+
     @GET("api/coach/next")
     suspend fun getCoachNext(): CoachNext
 

@@ -117,7 +117,10 @@ fun PaywallScreen(onDismiss: () -> Unit) {
     }
 
     var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { visible = true }
+    LaunchedEffect(Unit) {
+        visible = true
+        com.alturya.fluenta.data.Analytics.track(context, com.alturya.fluenta.data.Analytics.PAYWALL_VIEW)
+    }
 
     Scaffold(containerColor = FluentaTokens.Surface) { pad ->
         Column(

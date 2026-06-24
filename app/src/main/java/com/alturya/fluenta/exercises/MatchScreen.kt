@@ -206,7 +206,7 @@ private fun WinPanel(attempts: Int, total: Int, onAgain: () -> Unit, onDone: () 
             Text(I18nStore.t("match.backToMap", "Volver al mapa"), color = Mz.Muted, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().clickable(onClick = onDone))
             Spacer(Modifier.height(10.dp))
-            FeedbackBar(surface = "match")
+            FeedbackBar(screen = "match")
         }
     }
 }

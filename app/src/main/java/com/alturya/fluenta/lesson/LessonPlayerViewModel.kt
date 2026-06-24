@@ -243,6 +243,11 @@ class LessonPlayerViewModel(savedState: SavedStateHandle, private val app: Appli
             "passed" to res.passed.toString(),
             "timeSpentSeconds" to timeSpentSeconds.toString(),
         ))
+        // streak_day: disparar cuando el servidor confirma una racha activa
+        val newStreak = res.newStreakDays ?: 0
+        if (newStreak > 0) {
+            Analytics.track(ctx, Analytics.STREAK_DAY, mapOf("days" to newStreak.toString()))
+        }
         // unidad_completada: derivada del mapa de currículo (fuente de verdad del
         // backend). Si todas las lecciones de la unidad que contiene a ésta quedan
         // `completed`, la unidad se completó con esta lección. Fire-and-forget: si

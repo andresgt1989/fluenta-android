@@ -213,7 +213,16 @@ data class DiagnosticStartResponse(
     val progress: DiagnosticProgress
 )
 data class DiagnosticAnswerBody(val sessionId: String, val answerIndex: Int)
-data class FeedbackBody(val surface: String, val rating: Int? = null, val comment: String? = null)
+// surface (legacy) + screen/sentiment/reason del handoff "Fluenta Feedback":
+// control de 1 toque (sentiment 😞😐😊) y CSAT 0-10 (rating). reason = chip de motivo.
+data class FeedbackBody(
+    val surface: String,
+    val rating: Int? = null,
+    val comment: String? = null,
+    val screen: String? = null,
+    val sentiment: String? = null,
+    val reason: String? = null,
+)
 
 data class MatchPair(val l2: String, val l1: String)
 data class MatchResponse(val pairs: List<MatchPair>, val cached: Boolean?, val message: String?)
@@ -421,6 +430,13 @@ data class UiStringsResponse(
 // `nativeName`/`flag` son opcionales: si faltan, el cliente completa desde su registro.
 data class InterfaceLangDto(val code: String?, val nativeName: String?, val flag: String?)
 data class InterfaceLanguagesResponse(val languages: List<InterfaceLangDto>?)
+
+// ── A/B Experiments ──────────────────────────────────────────────────────────
+data class ExperimentAssignResponse(
+    val experiment: String,
+    val variant: String,  // "control" | "treatment"
+    val cached: Boolean,
+)
 
 // ── Conversación de voz abierta (el wedge) ──────────────────────────────────
 data class ConvoStartBody(val lessonId: String? = null, val scenario: String? = null, val goal: String? = null)

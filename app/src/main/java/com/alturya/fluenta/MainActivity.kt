@@ -30,6 +30,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.alturya.fluenta.curriculum.CurriculumMapScreen
 import com.alturya.fluenta.data.Analytics
+import com.alturya.fluenta.data.ExperimentsStore
+import com.alturya.fluenta.data.Experiments
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.data.SettingsStore
 import com.alturya.fluenta.data.TokenStore
@@ -173,6 +175,13 @@ class MainActivity : ComponentActivity() {
                         CircularProgressIndicator()
                     }
                 } else {
+                // Tiempo por pantalla del flujo de activación (welcome/onboarding/
+                // login/level_test) — la fuga #1 del funnel. "main" lo cubre el nav
+                // interno, así que aquí lo excluimos para no emitir un screen_view
+                // gigante por toda la sesión.
+                val rootBackStack by rootNav.currentBackStackEntryAsState()
+                val rootRoute = rootBackStack?.destination?.route
+                com.alturya.fluenta.data.TrackNavTime(context, rootRoute?.takeIf { it != "main" })
                 NavHost(
                     navController = rootNav,
                     startDestination = dest
@@ -186,7 +195,18 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         com.alturya.fluenta.welcome.WelcomeScreen(
-                            onStart = { rootNav.navigate("onboarding") },
+                            // Fast-path de ACTIVACIÓN (fuga #1 del funnel, ~4% llega a
+                            // lección): el usuario nuevo entra DIRECTO a su 1ª lección de
+                            // chino (es→zh, L1 inferido del locale), saltando los 3 pasos
+                            // del onboarding. Reusa GuestLessonScreen — sin pantallas nuevas.
+                            // El picker completo de idioma sigue accesible vía Login → "probar
+                            // como invitado". (Nota T5: este atajo fija guest_lesson y omite el
+                            // A/B ONBOARDING_FLOW_V1 para la entrada por welcome.)
+                            onStart = {
+                                val l1 = java.util.Locale.getDefault().language
+                                    .takeIf { it in listOf("es", "en", "pt") } ?: "es"
+                                rootNav.navigate("guest_lesson/$l1/zh")
+                            },
                             onLogin = { rootNav.navigate("login") },
                             // Build de prueba: acceso directo a toda la app (cuenta de dispositivo).
                             onDemo = { demoVm.signInWithDevice(context) },
@@ -195,10 +215,18 @@ class MainActivity : ComponentActivity() {
                     composable("onboarding") {
                         OnboardingScreen(
                             onPicked = { l1, l2 ->
-                                scope.launch { TokenStore.saveOnboardingChoice(context, l1, l2) }
-                                // Cumple la promesa "practica hablando": el wedge de voz ES el
-                                // primer contacto (hablar en <60s, sin cuenta), luego el quiz.
-                                rootNav.navigate("guest_conversation/$l1/$l2")
+                                scope.launch {
+                                    TokenStore.saveOnboardingChoice(context, l1, l2)
+                                    // A/B experiment: onboarding_flow_v1
+                                    // control   → voice wedge (hablar en <60s, sin cuenta)
+                                    // treatment → guest lesson (tap-based, lower friction)
+                                    val variant = ExperimentsStore.getVariant(context, Experiments.ONBOARDING_FLOW_V1)
+                                    if (variant == "treatment") {
+                                        rootNav.navigate("guest_lesson/$l1/$l2")
+                                    } else {
+                                        rootNav.navigate("guest_conversation/$l1/$l2")
+                                    }
+                                }
                             },
                             onLogin = { rootNav.navigate("login") },
                             onBack = { rootNav.popBackStack() },
@@ -308,6 +336,10 @@ private fun MainScaffold(
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.hierarchy?.firstOrNull()?.route
+    val appContext = LocalContext.current
+
+    // Tiempo por pantalla (screen_view +ms) para TODAS las rutas de la app.
+    com.alturya.fluenta.data.TrackNavTime(appContext, currentRoute)
 
     // Auto-open the lesson when MainActivity received it via deep link.
     LaunchedEffect(pendingLessonId) {
@@ -328,6 +360,7 @@ private fun MainScaffold(
                     NavigationBarItem(
                         selected = currentRoute == tab.route,
                         onClick = {
+                            com.alturya.fluenta.data.Analytics.tap(appContext, "tab_${tab.route}", currentRoute)
                             nav.navigate(tab.route) {
                                 popUpTo(nav.graph.findStartDestination().id) { saveState = true }
                                 launchSingleTop = true
@@ -384,6 +417,20 @@ private fun MainScaffold(
                     onConversationLesson = { lessonId -> nav.navigate("conversation_lesson/$lessonId") },
                     onScript = { l2 -> nav.navigate("script/$l2") { launchSingleTop = true } },
                     onUpgrade = { nav.navigate("paywall") },
+                    onStreak = { streak, today -> nav.navigate("streak/$streak/$today") { launchSingleTop = true } },
+                )
+            }
+            composable(
+                route = "streak/{streak}/{today}",
+                arguments = listOf(
+                    navArgument("streak") { type = NavType.IntType },
+                    navArgument("today") { type = NavType.IntType },
+                ),
+            ) { entry ->
+                com.alturya.fluenta.gamification.StreakScreen(
+                    streakDays = entry.arguments?.getInt("streak") ?: 0,
+                    todayXp = entry.arguments?.getInt("today") ?: 0,
+                    onBack = { nav.popBackStack() },
                 )
             }
             composable("paywall") {

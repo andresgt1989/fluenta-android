@@ -143,6 +143,10 @@ fun ReferralCard() {
             // Share buttons — system chooser primary (reaches all apps), WhatsApp shortcut secondary
             Button(
                 onClick = {
+                    com.alturya.fluenta.data.Analytics.track(
+                        context, com.alturya.fluenta.data.Analytics.SHARE,
+                        mapOf("type" to "referral"),
+                    )
                     context.startActivity(Intent.createChooser(
                         Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"

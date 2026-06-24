@@ -39,6 +39,28 @@ private object Tz {
 fun DiagnosticScreen(onDone: () -> Unit = {}) {
     val vm: DiagnosticViewModel = viewModel()
     val state by vm.state.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    // Track screen view and diagnostic lifecycle events
+    com.alturya.fluenta.data.TrackScreen(context, "Diagnostic")
+    LaunchedEffect(state) {
+        when (state) {
+            is DiagnosticUiState.Quiz -> {
+                val q = (state as DiagnosticUiState.Quiz)
+                if (q.progress.current == 1) {
+                    com.alturya.fluenta.data.Analytics.track(context, com.alturya.fluenta.data.Analytics.DIAGNOSTIC_START)
+                }
+            }
+            is DiagnosticUiState.Result -> {
+                val r = state as DiagnosticUiState.Result
+                com.alturya.fluenta.data.Analytics.track(
+                    context, com.alturya.fluenta.data.Analytics.DIAGNOSTIC_COMPLETE,
+                    mapOf("level" to r.level),
+                )
+            }
+            else -> {}
+        }
+    }
 
     Box(Modifier.fillMaxSize()) {
         when (val s = state) {

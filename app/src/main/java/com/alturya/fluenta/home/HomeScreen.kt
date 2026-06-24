@@ -80,6 +80,7 @@ fun HomeScreen(
     onConversationLesson: (String) -> Unit = {},
     onScript: (String) -> Unit = {},
     onUpgrade: () -> Unit = {},
+    onStreak: (Int, Int) -> Unit = { _, _ -> },
     previewState: HomeState? = null,
 ) {
     val context = LocalContext.current
@@ -180,7 +181,7 @@ fun HomeScreen(
                 }
                 Spacer(Modifier.weight(1f))
                 if (p?.l2 != null) {
-                    HeaderPill(AmberBg, Icons.Default.LocalFireDepartment, Amber, "$streak", Color(0xFF9A5E00))
+                    HeaderPill(AmberBg, Icons.Default.LocalFireDepartment, Amber, "$streak", Color(0xFF9A5E00), onClick = { onStreak(streak, todayXp) })
                     Spacer(Modifier.width(8.dp))
                     HeaderPill(MintBg, Icons.Default.Star, TealDark, "$totalXp", TealDark)
                 }
@@ -333,9 +334,13 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HeaderPill(bg: Color, icon: ImageVector, iconTint: Color, value: String, valueColor: Color) {
+private fun HeaderPill(bg: Color, icon: ImageVector, iconTint: Color, value: String, valueColor: Color, onClick: (() -> Unit)? = null) {
     Row(
-        Modifier.clip(RoundedCornerShape(999.dp)).background(bg).padding(horizontal = 9.dp, vertical = 5.dp),
+        Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .background(bg)
+            .padding(horizontal = 9.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(16.dp))
