@@ -63,8 +63,10 @@ private val STARTER = listOf(
 )
 
 @Composable
-fun ToneTrainerScreen(words: List<ToneWord> = STARTER, onDone: () -> Unit = {}) {
+fun ToneTrainerScreen(words: List<ToneWord>? = null, onDone: () -> Unit = {}) {
     val context = LocalContext.current
+    // Vocab REAL es→zh por defecto (HSK1 balanceado por tono); estable entre recomposiciones.
+    val deck = remember(words) { (words ?: ToneVocab.session(perTone = 2)).ifEmpty { STARTER } }
     // TTS chino nativo (audio real sin backend).
     var ready by remember { mutableStateOf(false) }
     val tts = remember {
@@ -84,8 +86,8 @@ fun ToneTrainerScreen(words: List<ToneWord> = STARTER, onDone: () -> Unit = {}) 
     var idx by remember { mutableStateOf(0) }
     var phase by remember { mutableStateOf("present") } // present | quiz
     var picked by remember { mutableStateOf<Int?>(null) }
-    val w = words[idx.coerceIn(0, words.lastIndex)]
-    val total = words.size
+    val w = deck[idx.coerceIn(0, deck.lastIndex)]
+    val total = deck.size
 
     LaunchedEffect(idx, phase, ready) { if (ready) say(w.hanzi) }
 
@@ -115,7 +117,7 @@ fun ToneTrainerScreen(words: List<ToneWord> = STARTER, onDone: () -> Unit = {}) 
                     Text(w.hanzi, fontSize = 104.sp, fontWeight = FontWeight.Bold, color = Tc.HeroInk)
                 }
                 Spacer(Modifier.height(18.dp))
-                Text(w.marked, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = Tc.Teal)
+                Text(w.marked, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = PinyinColors.of(w.tone))
                 Text(w.meaning, fontSize = 17.sp, color = Tc.Sub, modifier = Modifier.padding(top = 2.dp))
                 Spacer(Modifier.height(24.dp))
                 Surface(shape = RoundedCornerShape(999.dp), color = Tc.Teal, shadowElevation = 0.dp, modifier = Modifier.clickable { say(w.hanzi) }) {
@@ -208,7 +210,7 @@ private fun ToneOption(tone: Int, pinyin: String, picked: Int?, correct: Int, mo
     ) {
         Text(labels[tone] ?: "", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Tc.Sub, letterSpacing = 0.6.sp)
         ToneCurve(tone, curveColor, Modifier.size(width = 44.dp, height = 22.dp))
-        Text(mark(pinyin, tone), fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = Tc.Ink)
+        Text(mark(pinyin, tone), fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = PinyinColors.of(tone))
     }
 }
 
