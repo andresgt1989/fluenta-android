@@ -22,6 +22,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Spa
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alturya.fluenta.R
+import com.alturya.fluenta.data.Analytics
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.data.MotivationStore
 import com.alturya.fluenta.ui.FluentaButton
@@ -72,25 +76,33 @@ fun OnboardingScreen(onPicked: (l1: String, l2: String) -> Unit, onLogin: () -> 
         java.util.Locale.getDefault().language.takeIf { it in SOURCE_LANGS } ?: "es"
     }
     val context = androidx.compose.ui.platform.LocalContext.current
-    val scope = rememberCoroutineScope()
-    var l1 by remember { mutableStateOf(detected) }
-    var l2 by remember { mutableStateOf("") }
-    // La bienvenida vive ahora en WelcomeScreen (Claude Design), antes del onboarding.
-    // Por eso arrancamos en el paso 1 — sin una segunda bienvenida duplicada.
+    // Onboarding SIN FRICCIÓN (mock): sin paso de idioma-origen (L1 se infiere del
+    // locale, como el fast-path) y SIN paso de motivación. Solo: idioma destino
+    // (chino preseleccionado) → nivel SALTABLE → micro-lección. Registro al final.
+    val l1 = detected
+    var l2 by remember { mutableStateOf("zh") }
     var step by remember { mutableStateOf(1) }
 
     when (step) {
-        1 -> SourceLanguageStep(selected = l1, onContinue = { l1 = it; step = 2 }, onBack = onBack)
-        2 -> LanguagePickStep(l1 = l1, onContinue = { l2 = it; step = 3 }, onBack = { step = 1 })
-        // Paso de META / "por qué": personaliza la experiencia y crea compromiso
-        // antes del primer minuto (lo que pedía el scorecard de onboarding).
-        else -> MotivationStep(
-            l2 = l2,
-            onPick = { motivationId ->
-                scope.launch { MotivationStore.set(context, motivationId) }
+        1 -> LanguagePickStep(
+            l1 = l1,
+            onContinue = { picked ->
+                l2 = picked
+                Analytics.track(context, Analytics.ONBOARDING_STEP, mapOf("step" to "language", "lang" to picked))
+                step = 2
+            },
+            onBack = onBack,
+        )
+        else -> LevelStep(
+            onContinue = { level ->
+                Analytics.track(context, Analytics.ONBOARDING_STEP, mapOf("step" to "level", "level" to level))
                 onPicked(l1, l2)
             },
-            onBack = { step = 2 },
+            onSkip = {
+                Analytics.track(context, Analytics.ONBOARDING_STEP, mapOf("step" to "level", "level" to "skipped"))
+                onPicked(l1, l2)
+            },
+            onBack = { step = 1 },
         )
     }
 }
@@ -276,12 +288,17 @@ private fun SourceLanguageStep(selected: String, onContinue: (String) -> Unit, o
 
 @Composable
 private fun LanguagePickStep(l1: String, onContinue: (String) -> Unit, onBack: () -> Unit) {
-    val targets = remember(l1) { TARGET_LANGS.filter { it != l1 } }
-    var sel by remember { mutableStateOf("") }
+    // Onboarding sin fricción (mock 02): CHINO DESTACADO y PRESELECCIONADO → el
+    // usuario avanza en 1 toque. El chino va primero; el resto debajo. (Sin esto,
+    // elegir idioma era un paso de fricción antes de la 1ª lección de chino.)
+    val targets = remember(l1) {
+        listOf("zh") + TARGET_LANGS.filter { it != l1 && it != "zh" }
+    }
+    var sel by remember { mutableStateOf("zh") }
     OnboardingStepScaffold(
-        step = 2, total = 3,
+        step = 1, total = 2,
         title = I18nStore.t("onboarding.pickTitle", "¿Qué quieres aprender?"),
-        subtitle = I18nStore.t("onboarding.pickSubtitle", "Empieza ahora mismo, sin crear cuenta."),
+        subtitle = I18nStore.t("onboarding.pickSubtitle", "Toca un idioma para empezar."),
         onBack = onBack,
     ) {
         Column(
@@ -292,11 +309,18 @@ private fun LanguagePickStep(l1: String, onContinue: (String) -> Unit, onBack: (
             verticalArrangement = Arrangement.spacedBy(11.dp),
         ) {
             targets.forEach { code ->
-                LangSelectRow(code = code, selected = code == sel, onClick = { sel = code })
+                LangSelectRow(
+                    code = code,
+                    selected = code == sel,
+                    featured = code == "zh",
+                    onClick = { sel = code },
+                )
             }
         }
         FluentaButton(
-            text = I18nStore.t("common.continue", "Continuar"),
+            text = if (sel.isNotEmpty())
+                I18nStore.t("onboarding.continueWith", "Continuar con {lang}").replace("{lang}", langName(sel))
+            else I18nStore.t("common.continue", "Continuar"),
             onClick = { onContinue(sel) },
             enabled = sel.isNotEmpty(),
             modifier = Modifier
@@ -306,14 +330,16 @@ private fun LanguagePickStep(l1: String, onContinue: (String) -> Unit, onBack: (
     }
 }
 
+// Onboarding sin fricción · pantalla 03 (SALTABLE): nivel de partida. Ajusta la 1ª
+// lección; el usuario puede saltarlo (link "Saltar") o elegir un nivel. Quitó la
+// fricción del antiguo paso de Motivación.
 @Composable
-private fun MotivationStep(l2: String, onPick: (String) -> Unit, onBack: () -> Unit) {
+private fun LevelStep(onContinue: (String) -> Unit, onSkip: () -> Unit, onBack: () -> Unit) {
     var sel by remember { mutableStateOf("") }
     OnboardingStepScaffold(
-        step = 3, total = 3,
-        title = I18nStore.t("onboarding.motivationTitle", "¿Por qué aprendes {lang}?")
-            .replace("{lang}", langName(l2)),
-        subtitle = I18nStore.t("onboarding.motivationSubtitle", "Personalizamos tu experiencia según tu meta."),
+        step = 2, total = 2,
+        title = I18nStore.t("onboarding.levelTitle", "¿Cuánto chino sabes?"),
+        subtitle = I18nStore.t("onboarding.levelSubtitle", "Ajustamos tu primera lección. Puedes saltarlo."),
         onBack = onBack,
     ) {
         Column(
@@ -323,25 +349,98 @@ private fun MotivationStep(l2: String, onPick: (String) -> Unit, onBack: () -> U
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(13.dp),
         ) {
-            MotivationStore.OPTIONS.forEachIndexed { i, opt ->
-                MotivationTile(
-                    emoji = opt.emoji,
-                    label = I18nStore.t("motivation.${opt.id}", opt.label),
-                    tile = MOTIVATION_TILES[i % MOTIVATION_TILES.size],
-                    selected = sel == opt.id,
-                    onClick = { sel = opt.id },
-                )
-            }
+            LevelRow(
+                Icons.Default.Spa,
+                I18nStore.t("onboarding.levelZero", "Desde cero"),
+                I18nStore.t("onboarding.levelZeroSub", "Nunca he estudiado chino"),
+                sel == "zero",
+            ) { sel = "zero" }
+            LevelRow(
+                Icons.Default.School,
+                I18nStore.t("onboarding.levelSome", "Sé algo"),
+                I18nStore.t("onboarding.levelSomeSub", "Conozco saludos y tonos"),
+                sel == "some",
+            ) { sel = "some" }
+            LevelRow(
+                Icons.Default.TrendingUp,
+                I18nStore.t("onboarding.levelPractice", "Quiero practicar"),
+                I18nStore.t("onboarding.levelPracticeSub", "Ya tengo base, busco fluidez"),
+                sel == "practice",
+            ) { sel = "practice" }
         }
         FluentaButton(
-            text = I18nStore.t("onboarding.motivationCta", "Comenzar mi aventura"),
-            onClick = { onPick(sel) },
+            text = I18nStore.t("common.continue", "Continuar"),
+            onClick = { onContinue(sel) },
             enabled = sel.isNotEmpty(),
-            style = FluentaButtonStyle.Success,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
+                .padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 4.dp),
         )
+        TextButton(
+            onClick = onSkip,
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(bottom = 20.dp),
+        ) {
+            Text(
+                I18nStore.t("onboarding.skip", "Saltar"),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = FluentaTokens.BrandText,
+            )
+        }
+    }
+}
+
+@Composable
+private fun LevelRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val borderColor = if (selected) FluentaTokens.Primary else FluentaTokens.Border
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        border = androidx.compose.foundation.BorderStroke(2.dp, borderColor),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .semantics { this.selected = selected },
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(FluentaTokens.Container),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = FluentaTokens.BrandText, modifier = Modifier.size(22.dp))
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = FluentaTokens.Ink)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = FluentaTokens.Muted)
+            }
+            if (selected) {
+                Box(
+                    Modifier
+                        .size(26.dp)
+                        .clip(CircleShape)
+                        .background(FluentaTokens.Primary),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                }
+            }
+        }
     }
 }
 
@@ -364,7 +463,7 @@ private fun CoverageChip(code: String) {
 }
 
 @Composable
-private fun LangSelectRow(code: String, selected: Boolean, onClick: () -> Unit) {
+private fun LangSelectRow(code: String, selected: Boolean, featured: Boolean = false, onClick: () -> Unit) {
     val auto = autonym(code)
     val localized = langName(code)
     val borderColor = if (selected) FluentaTokens.Primary else FluentaTokens.Border
@@ -397,6 +496,22 @@ private fun LangSelectRow(code: String, selected: Boolean, onClick: () -> Unit) 
                         style = MaterialTheme.typography.bodySmall,
                         color = FluentaTokens.Muted,
                     )
+                }
+                if (featured) {
+                    Spacer(Modifier.height(4.dp))
+                    Box(
+                        Modifier
+                            .clip(RoundedCornerShape(99.dp))
+                            .background(FluentaTokens.Primary)
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                    ) {
+                        Text(
+                            I18nStore.t("onboarding.featured", "DESTACADO"),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                        )
+                    }
                 }
             }
             CoverageChip(code)

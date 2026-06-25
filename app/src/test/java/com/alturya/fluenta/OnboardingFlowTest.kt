@@ -15,9 +15,10 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * Test de UI de FLUJO CRÍTICO (corre en JVM, sin emulador). Conduce el Onboarding
- * real y verifica que pregunta el idioma de origen — el flujo que confirmamos en
- * Firebase Test Lab. Si una regresión rompe esto (p.ej. vuelve a saltarse la
- * pregunta de idioma), el build FALLA. Red de seguridad del primer minuto.
+ * SIN FRICCIÓN (mock Claude Design) y verifica el camino que ataca la fuga #1:
+ * idioma destino con CHINO destacado/preseleccionado → nivel SALTABLE. Sin paso de
+ * idioma-origen ni de motivación (esos añadían fricción antes de la 1ª lección).
+ * Si una regresión reintroduce fricción, el build FALLA. Red de seguridad del 1er minuto.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -26,39 +27,23 @@ class OnboardingFlowTest {
 
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
-    @Test fun onboarding_asks_source_language() {
+    @Test fun onboarding_starts_with_target_language_chinese_featured() {
         compose.setContent { OnboardingScreen(onPicked = { _, _ -> }) }
 
-        // La bienvenida vive ahora en WelcomeScreen; el onboarding arranca directo
-        // en el paso 1 (sin segunda bienvenida duplicada).
-        // Paso 1: DEBE preguntar el idioma de origen (es/en/pt) — no saltarse a chino
-        compose.onNodeWithText("¿Qué idioma hablas?").assertIsDisplayed()
-        compose.onNodeWithText("Español").assertIsDisplayed()
-        compose.onNodeWithText("Inglés").assertIsDisplayed()
-        compose.onNodeWithText("Portugués").assertIsDisplayed()
-    }
-
-    @Test fun onboarding_then_asks_target_language() {
-        compose.setContent { OnboardingScreen(onPicked = { _, _ -> }) }
-        // Kit Claude Design: seleccionar idioma de origen → confirmar con "Continuar".
-        compose.onNodeWithText("Español").performClick()
-        compose.onNodeWithText("Continuar").performClick()
-
-        // Paso 2: pregunta qué aprender (el default NO es chino — Inglés está disponible)
+        // Paso 1 (sin fricción): arranca DIRECTO en "¿qué quieres aprender?", con
+        // chino DESTACADO y preseleccionado — sin preguntar primero el idioma de origen.
         compose.onNodeWithText("¿Qué quieres aprender?").assertIsDisplayed()
-        compose.onNodeWithText("Inglés").assertIsDisplayed()
+        compose.onNodeWithText("DESTACADO").assertIsDisplayed()
     }
 
-    @Test fun onboarding_asks_goal_after_language() {
+    @Test fun onboarding_then_asks_level_and_is_skippable() {
         compose.setContent { OnboardingScreen(onPicked = { _, _ -> }) }
-        compose.onNodeWithText("Español").performClick()
-        compose.onNodeWithText("Continuar").performClick()
-        compose.onNodeWithText("Inglés").performClick()
-        compose.onNodeWithText("Continuar").performClick()
+        // Chino ya está preseleccionado → el CTA confirma chino en 1 toque.
+        compose.onNodeWithText("Continuar con", substring = true).performClick()
 
-        // Paso 3: DEBE preguntar la META / el "por qué" (gap del scorecard de onboarding)
-        compose.onNodeWithText("¿Por qué aprendes", substring = true).assertIsDisplayed()
-        compose.onNodeWithText("Viajar").assertIsDisplayed()
-        compose.onNodeWithText("Trabajo y carrera").assertIsDisplayed()
+        // Paso 2: nivel de partida, SALTABLE (link "Saltar"). Sin paso de motivación.
+        compose.onNodeWithText("¿Cuánto chino sabes?").assertIsDisplayed()
+        compose.onNodeWithText("Desde cero").assertIsDisplayed()
+        compose.onNodeWithText("Saltar").assertIsDisplayed()
     }
 }

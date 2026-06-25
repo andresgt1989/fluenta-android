@@ -195,46 +195,34 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         com.alturya.fluenta.welcome.WelcomeScreen(
-                            // Fast-path de ACTIVACIÓN (fuga #1 del funnel, ~4% llega a
-                            // lección): el usuario nuevo entra DIRECTO a su 1ª lección de
-                            // chino (es→zh, L1 inferido del locale), saltando los 3 pasos
-                            // del onboarding. Reusa GuestLessonScreen — sin pantallas nuevas.
-                            // El picker completo de idioma sigue accesible vía Login → "probar
-                            // como invitado". (Nota T5: este atajo fija guest_lesson y omite el
-                            // A/B ONBOARDING_FLOW_V1 para la entrada por welcome.)
-                            onStart = {
-                                val l1 = java.util.Locale.getDefault().language
-                                    .takeIf { it in listOf("es", "en", "pt") } ?: "es"
-                                // fluenta_events: marca la entrada por el fast-path para poder
-                                // medir su tasa de activación (onboarding_start → lesson_start)
-                                // vs el onboarding de 3 pasos. flow=fastpath segmenta el funnel.
-                                com.alturya.fluenta.data.Analytics.track(
-                                    context,
-                                    com.alturya.fluenta.data.Analytics.ONBOARDING_START,
-                                    mapOf("flow" to "fastpath", "l1" to l1, "l2" to "zh"),
-                                )
-                                rootNav.navigate("guest_lesson/$l1/zh")
-                            },
+                            // Onboarding SIN FRICCIÓN (mock 01→02): Empezar → flujo frictionless
+                            // (idioma zh destacado → nivel saltable → micro-lección de tono →
+                            // registro DIFERIDO). El composable("onboarding") emite onboarding_start.
+                            onStart = { rootNav.navigate("onboarding") },
                             onLogin = { rootNav.navigate("login") },
                             // Build de prueba: acceso directo a toda la app (cuenta de dispositivo).
                             onDemo = { demoVm.signInWithDevice(context) },
                         )
                     }
                     composable("onboarding") {
+                        // fluenta_events: marca de entrada al onboarding de 3 pasos
+                        // (flow=steps). Sin esto, el flujo de 3 pasos no tenía evento de
+                        // entrada y era IMPOSIBLE comparar su activación (onboarding_start→
+                        // lesson_start) contra el fast-path (flow=fastpath) en el A/B.
+                        LaunchedEffect(Unit) {
+                            com.alturya.fluenta.data.Analytics.track(
+                                context,
+                                com.alturya.fluenta.data.Analytics.ONBOARDING_START,
+                                mapOf("flow" to "steps"),
+                            )
+                        }
                         OnboardingScreen(
                             onPicked = { l1, l2 ->
-                                scope.launch {
-                                    TokenStore.saveOnboardingChoice(context, l1, l2)
-                                    // A/B experiment: onboarding_flow_v1
-                                    // control   → voice wedge (hablar en <60s, sin cuenta)
-                                    // treatment → guest lesson (tap-based, lower friction)
-                                    val variant = ExperimentsStore.getVariant(context, Experiments.ONBOARDING_FLOW_V1)
-                                    if (variant == "treatment") {
-                                        rootNav.navigate("guest_lesson/$l1/$l2")
-                                    } else {
-                                        rootNav.navigate("guest_conversation/$l1/$l2")
-                                    }
-                                }
+                                scope.launch { TokenStore.saveOnboardingChoice(context, l1, l2) }
+                                // Mock 1:1 (04): tras idioma+nivel cae DIRECTO en la micro-lección
+                                // de tono en modo invitado. (Nota T5: reemplaza ONBOARDING_FLOW_V1
+                                // para la entrada por onboarding; el flujo del mock es determinista.)
+                                rootNav.navigate("onboarding_tone/$l1/$l2")
                             },
                             onLogin = { rootNav.navigate("login") },
                             onBack = { rootNav.popBackStack() },
@@ -293,6 +281,35 @@ class MainActivity : ComponentActivity() {
                             l2 = gl2,
                             // Pico de valor tras hablar inglés → registro (conversión), no el quiz.
                             onDone = { rootNav.navigate("login") { popUpTo("onboarding") { inclusive = true } } },
+                        )
+                    }
+                    // Mock 04 — el "ajá": micro-lección de tono en modo invitado. Reusa el
+                    // entrenador de tono; emite lesson_start/complete (guest) para el funnel.
+                    composable(
+                        route = "onboarding_tone/{l1}/{l2}",
+                        arguments = listOf(
+                            navArgument("l1") { type = NavType.StringType },
+                            navArgument("l2") { type = NavType.StringType },
+                        ),
+                    ) { entry ->
+                        val gl1 = entry.arguments?.getString("l1") ?: "es"
+                        val gl2 = entry.arguments?.getString("l2") ?: "zh"
+                        LaunchedEffect(Unit) {
+                            Analytics.track(context, Analytics.LESSON_START, mapOf("guest" to "true", "kind" to "onboarding_tone", "l1" to gl1, "l2" to gl2))
+                        }
+                        com.alturya.fluenta.tone.ToneTrainerScreen(
+                            onDone = {
+                                Analytics.track(context, Analytics.LESSON_COMPLETE, mapOf("guest" to "true", "kind" to "onboarding_tone", "l1" to gl1, "l2" to gl2))
+                                rootNav.navigate("onboarding_celebration")
+                            },
+                        )
+                    }
+                    // Mock 05 — celebración + registro DIFERIDO (la clave anti-fricción: el
+                    // registro es el ÚLTIMO paso, tras el "ajá"). Invitado continúa al HOME.
+                    composable("onboarding_celebration") {
+                        com.alturya.fluenta.onboarding.CelebrationScreen(
+                            onRegister = { rootNav.navigate("login") { popUpTo("onboarding") { inclusive = true } } },
+                            onGuest = { rootNav.navigate("main") { popUpTo("welcome") { inclusive = true } } },
                         )
                     }
                     composable("main") {
@@ -426,6 +443,7 @@ private fun MainScaffold(
                     onScript = { l2 -> nav.navigate("script/$l2") { launchSingleTop = true } },
                     onUpgrade = { nav.navigate("paywall") },
                     onStreak = { streak, today -> nav.navigate("streak/$streak/$today") { launchSingleTop = true } },
+                    onGoal = { today -> nav.navigate("goal/$today") { launchSingleTop = true } },
                 )
             }
             composable(
@@ -439,6 +457,16 @@ private fun MainScaffold(
                     streakDays = entry.arguments?.getInt("streak") ?: 0,
                     todayXp = entry.arguments?.getInt("today") ?: 0,
                     onBack = { nav.popBackStack() },
+                )
+            }
+            composable(
+                route = "goal/{today}",
+                arguments = listOf(navArgument("today") { type = NavType.IntType }),
+            ) { entry ->
+                com.alturya.fluenta.gamification.DailyGoalScreen(
+                    todayXp = entry.arguments?.getInt("today") ?: 0,
+                    onBack = { nav.popBackStack() },
+                    onContinue = { nav.popBackStack() },
                 )
             }
             composable("paywall") {
