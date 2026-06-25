@@ -81,6 +81,7 @@ fun HomeScreen(
     onScript: (String) -> Unit = {},
     onUpgrade: () -> Unit = {},
     onStreak: (Int, Int) -> Unit = { _, _ -> },
+    onGoal: (Int) -> Unit = {},
     previewState: HomeState? = null,
 ) {
     val context = LocalContext.current
@@ -205,7 +206,7 @@ fun HomeScreen(
             )
             Spacer(Modifier.height(if (newUser) 20.dp else 12.dp))
             if (!newUser) {
-                GoalBarInline(todayXp = todayXp, goalXp = localGoalXp) { showGoalDialog = true }
+                GoalBarInline(todayXp = todayXp, goalXp = localGoalXp) { onGoal(todayXp) }
                 Spacer(Modifier.height(20.dp))
             }
 
