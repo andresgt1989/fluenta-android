@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -72,8 +73,16 @@ private val STARTER = listOf(
 @Composable
 fun ToneTrainerScreen(words: List<ToneWord>? = null, onDone: () -> Unit = {}) {
     val context = LocalContext.current
-    // Vocab REAL es→zh por defecto (HSK1 balanceado por tono); estable entre recomposiciones.
-    val deck = remember(words) { (words ?: ToneVocab.session(perTone = 2)).ifEmpty { STARTER } }
+    // Vocab REAL es→zh por defecto; estable entre recomposiciones. Si hay tonos VENCIDOS
+    // en el SRS, la sesión prioriza repasarlos (cierra el loop de retención).
+    var deck by remember { mutableStateOf((words ?: ToneVocab.session(perTone = 2)).ifEmpty { STARTER }) }
+    LaunchedEffect(words) {
+        if (words == null) {
+            val due = runCatching { ToneSrsStore.due(context, "zh", System.currentTimeMillis()).first() }.getOrNull().orEmpty()
+            val review = ToneSrs.reviewDeck(due)
+            if (review.size >= 4) deck = review
+        }
+    }
     // TTS chino nativo (audio real sin backend).
     var ready by remember { mutableStateOf(false) }
     val tts = remember {

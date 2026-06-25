@@ -36,6 +36,21 @@ object ToneSrs {
 
     fun keyOf(w: ToneWord): String = "${w.hanzi}|${w.pinyin}|${w.tone}"
 
+    /** Reconstruye la palabra entrenable desde una carta (para armar el mazo de repaso). */
+    fun toWord(card: ToneCard): ToneWord = ToneWord(card.hanzi, card.pinyin, card.tone, card.meaning)
+
+    /**
+     * Mazo de REPASO desde las cartas vencidas (ya ordenadas por due): hasta [max]
+     * palabras válidas (con hanzi y tono 1..4). Puro/testeable; la pantalla decide si
+     * usarlo o caer a una sesión nueva cuando no hay suficiente vencido.
+     */
+    fun reviewDeck(dueCards: List<ToneCard>, max: Int = 8): List<ToneWord> =
+        dueCards.asSequence()
+            .filter { it.hanzi.isNotBlank() && it.tone in 1..4 }
+            .map { toWord(it) }
+            .take(max)
+            .toList()
+
     /** Carta nueva desde una palabra: vencida de inmediato (entra a la cola hoy). */
     fun newCard(w: ToneWord, nowMillis: Long): ToneCard =
         ToneCard(key = keyOf(w), hanzi = w.hanzi, pinyin = w.pinyin, tone = w.tone, meaning = w.meaning, dueAtMillis = nowMillis)

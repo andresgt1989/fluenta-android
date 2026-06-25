@@ -58,6 +58,24 @@ class ToneSrsTest {
         assertEquals(95, c.bestScore)
     }
 
+    @Test fun review_deck_rebuilds_words_from_due_cards() {
+        val cards = listOf(
+            ToneCard("妈|ma|1", "妈", "ma", 1, "mamá", dueAtMillis = now - 100),
+            ToneCard("好|hao|3", "好", "hao", 3, "bueno", dueAtMillis = now - 50),
+            ToneCard("bad||0", "", "", 0, dueAtMillis = now), // inválida: se descarta
+        )
+        val deck = ToneSrs.reviewDeck(cards, max = 8)
+        assertEquals(2, deck.size)
+        assertEquals("妈", deck[0].hanzi)
+        assertEquals(1, deck[0].tone)
+        assertTrue(deck.none { it.hanzi.isBlank() })
+    }
+
+    @Test fun review_deck_respects_max() {
+        val many = (1..20).map { ToneCard("k$it", "字", "zi", 4, dueAtMillis = now - it) }
+        assertEquals(5, ToneSrs.reviewDeck(many, max = 5).size)
+    }
+
     @Test fun due_returns_only_overdue_sorted() {
         val a = ToneCard("a|a|1", "啊", "a", 1, dueAtMillis = now - 2000)
         val b = ToneCard("b|b|2", "波", "bo", 2, dueAtMillis = now - 5000)
