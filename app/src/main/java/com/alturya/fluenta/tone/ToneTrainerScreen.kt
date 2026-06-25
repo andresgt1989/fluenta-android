@@ -117,10 +117,16 @@ fun ToneTrainerScreen(words: List<ToneWord>? = null, onDone: () -> Unit = {}) {
         recState = "recording"; score = null
         scope.launch {
             val pcm = ToneMicRecorder.record()
-            score = if (pcm != null) ToneScorer.score(pcm, ToneMicRecorder.SAMPLE_RATE, w.tone) else ToneScorer.emptyScore(w.tone)
+            val result = if (pcm != null) ToneScorer.score(pcm, ToneMicRecorder.SAMPLE_RATE, w.tone) else ToneScorer.emptyScore(w.tone)
+            score = result
             recState = "result"
+            // Conecta el score de voz al SRS: lo que sale mal vuelve pronto, lo dominado se espacia.
+            if (result.voiced) ToneSrsStore.grade(context, "zh", ToneSrs.keyOf(w), result.score)
         }
     }
+
+    // Siembra el mazo de la sesión en el SRS de tono (idempotente).
+    LaunchedEffect(deck) { ToneSrsStore.enqueue(context, "zh", deck) }
 
     Column(Modifier.fillMaxSize().background(Tc.Surface).padding(top = 12.dp)) {
         // chrome: cerrar + progreso segmentado

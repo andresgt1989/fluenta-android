@@ -36,6 +36,28 @@ class ToneVocabTest {
         for (t in 1..4) assertEquals("tono $t", 2, byTone[t]?.size)
     }
 
+    @Test fun has_real_vocab_for_levels_1_to_3_balanced() {
+        for (lvl in 1..3) {
+            val byTone = ToneVocab.byLevel[lvl]!!.groupBy { it.tone }
+            for (t in 1..4) assertTrue("nivel $lvl tono $t escaso", (byTone[t]?.size ?: 0) >= 2)
+        }
+    }
+
+    @Test fun all_is_deduped_and_spans_levels() {
+        val all = ToneVocab.all
+        // sin duplicados por identidad
+        assertEquals(all.size, all.distinctBy { "${it.hanzi}|${it.pinyin}|${it.tone}" }.size)
+        // incluye sílabas de HSK2/HSK3, no solo HSK1
+        assertTrue(all.any { it.hanzi == "鱼" })  // HSK2
+        assertTrue(all.any { it.hanzi == "甜" })  // HSK3
+    }
+
+    @Test fun session_can_target_a_level() {
+        val s = ToneVocab.session(perTone = 2, shuffle = false, level = 2)
+        assertEquals(8, s.size)
+        assertTrue(s.all { it in ToneVocab.HSK2 })
+    }
+
     @Test fun pinyin_color_follows_convention() {
         assertEquals(PinyinColors.Tone1, PinyinColors.of(1))
         assertEquals(PinyinColors.Tone2, PinyinColors.of(2))
