@@ -332,6 +332,9 @@ data class SubmissionAnswerBody(
 data class LessonSubmitBody(
     val answers: List<SubmissionAnswerBody>,
     @SerializedName("timeSpentSeconds") val timeSpentSeconds: Int? = null,
+    // Meta diaria de XP elegida por el usuario (GoalStore). El servidor la usa para
+    // decidir dailyGoalMet; si es null cae al default 100.
+    @SerializedName("dailyGoalXp") val dailyGoalXp: Int? = null,
 )
 
 data class ExerciseResult(
@@ -350,6 +353,12 @@ data class LessonSubmitResponse(
     val xpEarned: Int,
     val results: List<ExerciseResult>,
     val newStreakDays: Int?,
+    // Progreso de la meta diaria al terminar la lección. Destraban el estado
+    // "¡Meta diaria cumplida!" del mock de gamificación. Nullable por compatibilidad
+    // con respuestas viejas en caché.
+    @SerializedName("todayXp") val todayXp: Int? = null,
+    @SerializedName("dailyGoalXp") val dailyGoalXp: Int? = null,
+    @SerializedName("dailyGoalMet") val dailyGoalMet: Boolean? = null,
 )
 
 data class HandoffResponse(val intent: String, val message: String, val url: String?)

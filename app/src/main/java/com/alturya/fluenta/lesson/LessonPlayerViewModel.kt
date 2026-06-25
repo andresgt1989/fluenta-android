@@ -6,6 +6,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alturya.fluenta.data.Analytics
+import com.alturya.fluenta.data.GoalStore
 import com.alturya.fluenta.data.I18nStore
 import com.alturya.fluenta.network.ApiClient
 import com.alturya.fluenta.network.ExerciseCheckBody
@@ -18,6 +19,7 @@ import com.alturya.fluenta.network.SubmissionAnswerBody
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -218,9 +220,12 @@ class LessonPlayerViewModel(savedState: SavedStateHandle, private val app: Appli
                     SubmissionAnswerBody(exerciseIndex = idx, value = s.answers[idx] ?: "")
                 }
                 val timeSpent = ((System.currentTimeMillis() - s.startedAtMs) / 1000L).toInt()
+                // Meta diaria elegida por el usuario: el servidor la necesita para
+                // decidir si esta lección cruzó la meta (dailyGoalMet).
+                val goalXp = app?.let { GoalStore.flow(it).first() }
                 val res = ApiClient.api.submitLesson(
                     lessonId,
-                    LessonSubmitBody(answers = answers, timeSpentSeconds = timeSpent),
+                    LessonSubmitBody(answers = answers, timeSpentSeconds = timeSpent, dailyGoalXp = goalXp),
                 )
                 _state.update { it.copy(submitting = false, result = res) }
                 trackCompletion(res, timeSpent)

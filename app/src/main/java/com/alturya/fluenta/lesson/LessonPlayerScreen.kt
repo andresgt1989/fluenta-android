@@ -1261,14 +1261,38 @@ private fun ResultView(
         )
     }
 
+    // Handoff "Fluenta Gamificación" (estado 4): "¡Meta diaria cumplida!" se muestra
+    // SOLO en la lección que CRUZA la meta diaria de XP. El backend (T5) marca el
+    // cruce vía dailyGoalMet/todayXp en la respuesta del submit; aquí detectamos el
+    // FLANCO (no el estado) para no recelebrar en cada lección posterior: el XP previo
+    // a esta lección = todayXp − xpEarned; si estaba por debajo de la meta y ahora la
+    // alcanza, es el cruce. Prioridad visual debajo de la racha (no apilar overlays).
+    var goalCelebrate by remember { mutableStateOf(false) }
+    LaunchedEffect(result.dailyGoalMet, result.passed) {
+        val today = result.todayXp
+        val goal = result.dailyGoalXp
+        if (result.passed && result.dailyGoalMet == true && today != null && goal != null &&
+            (today - result.xpEarned) < goal
+        ) {
+            goalCelebrate = true
+        }
+    }
+    if (goalCelebrate && streakCelebrate == 0) {
+        com.alturya.fluenta.gamification.DailyGoalCelebrationSheet(
+            todayXp = result.todayXp ?: 0,
+            goalXp = result.dailyGoalXp ?: 0,
+            onClose = { goalCelebrate = false },
+        )
+    }
+
     // Handoff "Fluenta Feedback" (estado 4): el CSAT 0-10 se pide al FIN DE SESIÓN
     // (lección aprobada), máx. 1 vez / 7 días — ver FeedbackStore.canAskCsat.
-    // Solo si NO hay celebración de racha en curso (no apilar dos overlays).
+    // Solo si NO hay otra celebración en curso (racha o meta diaria): no apilar overlays.
     var showCsat by remember { mutableStateOf(false) }
     LaunchedEffect(result.passed) {
         if (result.passed && com.alturya.fluenta.data.FeedbackStore.canAskCsat(context)) showCsat = true
     }
-    if (showCsat && streakCelebrate == 0) {
+    if (showCsat && streakCelebrate == 0 && !goalCelebrate) {
         com.alturya.fluenta.ui.CsatSheet(screen = "lesson_complete", onClose = { showCsat = false })
     }
 
