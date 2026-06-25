@@ -72,8 +72,28 @@ object ToneVocab {
         ToneWord("旧", "jiu", 4, "viejo"),
     )
 
-    /** Vocab por nivel HSK (clave = 1,2,3). */
-    val byLevel: Map<Int, List<ToneWord>> = mapOf(1 to HSK1, 2 to HSK2, 3 to HSK3)
+    /**
+     * Set HSK6 «god-level» — caracteres únicos de registro ELEVADO (书面语) que distinguen
+     * al hablante avanzado, balanceados por tono. Lleva el diferenciador del tono al léxico
+     * culto que el alumno C1/C2 encuentra en el contenido es→zh (coordinación con T3).
+     */
+    val HSK6: List<ToneWord> = listOf(
+        ToneWord("兼", "jian", 1, "simultanear"),
+        ToneWord("枢", "shu", 1, "eje, pivote"),
+        ToneWord("巍", "wei", 1, "imponente"),
+        ToneWord("凝", "ning", 2, "concentrar, cuajar"),
+        ToneWord("谋", "mou", 2, "idear, estrategia"),
+        ToneWord("魂", "hun", 2, "alma"),
+        ToneWord("谨", "jin", 3, "prudente"),
+        ToneWord("朴", "pu", 3, "sencillo, sobrio"),
+        ToneWord("舔", "tian", 3, "lamer"),
+        ToneWord("弊", "bi", 4, "mal, abuso"),
+        ToneWord("赋", "fu", 4, "dotar, conferir"),
+        ToneWord("誉", "yu", 4, "honor, prestigio"),
+    )
+
+    /** Vocab por nivel HSK (clave = 1,2,3,6). El 6 = god-level. */
+    val byLevel: Map<Int, List<ToneWord>> = mapOf(1 to HSK1, 2 to HSK2, 3 to HSK3, 6 to HSK6)
 
     /** Todo el vocab disponible, de-duplicado por (hanzi+pinyin+tono). */
     val all: List<ToneWord> = byLevel.values.flatten().distinctBy { "${it.hanzi}|${it.pinyin}|${it.tone}" }

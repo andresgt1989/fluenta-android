@@ -36,8 +36,8 @@ class ToneVocabTest {
         for (t in 1..4) assertEquals("tono $t", 2, byTone[t]?.size)
     }
 
-    @Test fun has_real_vocab_for_levels_1_to_3_balanced() {
-        for (lvl in 1..3) {
+    @Test fun has_real_vocab_for_each_level_balanced() {
+        for (lvl in ToneVocab.byLevel.keys) {
             val byTone = ToneVocab.byLevel[lvl]!!.groupBy { it.tone }
             for (t in 1..4) assertTrue("nivel $lvl tono $t escaso", (byTone[t]?.size ?: 0) >= 2)
         }
@@ -47,9 +47,16 @@ class ToneVocabTest {
         val all = ToneVocab.all
         // sin duplicados por identidad
         assertEquals(all.size, all.distinctBy { "${it.hanzi}|${it.pinyin}|${it.tone}" }.size)
-        // incluye sílabas de HSK2/HSK3, no solo HSK1
+        // incluye sílabas de HSK2/HSK3 y god-level HSK6, no solo HSK1
         assertTrue(all.any { it.hanzi == "鱼" })  // HSK2
         assertTrue(all.any { it.hanzi == "甜" })  // HSK3
+        assertTrue(all.any { it.hanzi == "誉" })  // HSK6 god-level
+    }
+
+    @Test fun god_level_session_targets_hsk6() {
+        val s = ToneVocab.session(perTone = 2, shuffle = false, level = 6)
+        assertEquals(8, s.size)
+        assertTrue(s.all { it in ToneVocab.HSK6 })
     }
 
     @Test fun session_can_target_a_level() {
